@@ -1,4 +1,6 @@
 import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
+import { UserMessage, AgentMessage } from "./ChatBubble.jsx";
+import UserInputArea from "./UserInputArea.jsx";
 
 const mock_data = [
     { id: 1, user: "You", text: "Can you help me analyze the meeting transcript?" },
@@ -15,29 +17,13 @@ export default function ChatPanel() {
         <div className="chat-panel-container">
             <div className="chat-history">
                 {mock_data.map(message => (
-                    <div key={message.id} className={`message ${message.user === 'You' ? 'user-message' : 'ai-message'}`}>
-                        <div className="message-content">
-                            <span className="message-text">{message.text}</span>
-                        </div>
-                    </div>
+                    message.user === 'You'
+                        ? <UserMessage key={message.id} text={message.text} />
+                        : <AgentMessage key={message.id} text={message.text} />
                 ))}
             </div>
 
-            <div className="chat-input-area">
-                <textarea
-                    className="chat-textarea"
-                    placeholder="Start with an idea or task."
-                    rows={2}
-                />
-                <div className="input-controls">
-                    <div className="input-buttons">
-                        <button className="control-button">+</button>
-                        <button className="control-button">🌐</button>
-                        <button className="control-button">📦</button>
-                    </div>
-                    <button className="send-button">↑</button>
-                </div>
-            </div>
+            <UserInputArea />
         </div>
     </LiquidGlassDiv>
 

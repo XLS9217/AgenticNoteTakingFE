@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(find:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Read(//e/Project/_MeetingNoteTaking/AgenticNoteTakingBE/**)"
     ],
     "deny": [],
     "ask": []
