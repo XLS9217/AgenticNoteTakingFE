@@ -1,6 +1,6 @@
 import './Modules.css';
 import WorkSpacePanel from "./WorkSpacePanel.jsx";
-import ChatPanel from "./ChatPanel.jsx";
+import ChatPanel from "./ChatPanel/ChatPanel.jsx";
 
 export default function Application(){
     return (
