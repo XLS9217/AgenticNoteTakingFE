@@ -1,0 +1,59 @@
+/*
+==========================================
+Application Layout
+==========================================
+*/
+
+.application-container {
+  position: fixed;
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  z-index: 1;
+}
+
+.layout-panel {
+  display: flex;
+  box-sizing: border-box;
+}
+
+/* 3:1 ratio - workspace takes 75%, chat takes 25% */
+.layout-panel--workspace {
+  max-width: 75%;
+}
+
+.layout-panel--chat {
+  max-width: 25%;
+}
+
+/* Workspace internal layout */
+.workspace-container {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+  padding: var(--spacing-sm);
+  gap: var(--spacing-xs);
+  box-sizing: border-box;
+}
+
+.workspace-panel {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make liquid glass containers fill workspace panel height */
+.workspace-panel > * {
+  flex: 1;
+  height: 100%;
+}
+
+/* Make inner content (like LiquidGlassDiv) grow to fill panel */
+.layout-panel > * {
+  flex: 1 1 auto;
+  min-width: 0; /* prevent overflow from long words */
+}

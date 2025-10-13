@@ -1,0 +1,115 @@
+:root {
+  /* Typography */
+  --font-family-primary: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --line-height-base: 1.5;
+
+  /* Colors */
+  --color-primary: #646cff;
+  --color-primary-hover: #535bf2;
+  --color-primary-light: #747bff;
+  --color-text-primary: rgba(255, 255, 255, 0.87);
+  --color-text-secondary: #213547;
+  --color-background-dark: #242424;
+  --color-background-light: #ffffff;
+  --color-background-button-dark: #1a1a1a;
+  --color-background-button-light: #f9f9f9;
+
+  /* Glass morphism */
+  --glass-background: rgba(255, 255, 255, 0.05);
+  --glass-background-hover: rgba(255, 255, 255, 0.15);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-border-hover: rgba(255, 255, 255, 0.25);
+  --glass-blur: blur(20px);
+  --glass-blur-enhanced: blur(25px);
+
+  /* Spacing */
+  --spacing-xs: 8px;
+  --spacing-sm: 16px;
+  --spacing-md: 24px;
+  --spacing-lg: 32px;
+  --spacing-xl: 40px;
+
+  /* Border radius */
+  --border-radius-sm: 8px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 20px;
+
+  /* Transitions */
+  --transition-base: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.25s ease;
+
+  /* Apply base styles */
+  font-family: var(--font-family-primary);
+  line-height: var(--line-height-base);
+  font-weight: var(--font-weight-normal);
+
+  color-scheme: light dark;
+  color: var(--color-text-primary);
+  background-color: var(--color-background-dark);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: var(--border-radius-sm);
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: var(--font-weight-medium);
+  font-family: inherit;
+  background-color: var(--color-background-button-dark);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+button:hover {
+  border-color: var(--color-primary);
+}
+
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: var(--color-text-secondary);
+    background-color: var(--color-background-light);
+  }
+
+  a:hover {
+    color: var(--color-primary-light);
+  }
+
+  button {
+    background-color: var(--color-background-button-light);
+  }
+}
