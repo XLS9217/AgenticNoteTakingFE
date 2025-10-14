@@ -55,15 +55,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: var(--color-primary-hover);
-}
 
 body {
   margin: 0;
@@ -90,14 +81,6 @@ button {
   transition: var(--transition-fast);
 }
 
-button:hover {
-  border-color: var(--color-primary);
-}
-
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
 
 @media (prefers-color-scheme: light) {
   :root {
@@ -105,9 +88,7 @@ button:focus-visible {
     background-color: var(--color-background-light);
   }
 
-  a:hover {
-    color: var(--color-primary-light);
-  }
+
 
   button {
     background-color: var(--color-background-button-light);

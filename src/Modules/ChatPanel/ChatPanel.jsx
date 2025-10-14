@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
-import { UserMessage, AgentMessage } from "./ChatBubble.jsx";
+import { UserMessage, AgentMessage, RunningMessage } from "./ChatBubble.jsx";
 import UserInputArea from "./UserInputArea.jsx";
 import { connectToChatSession, sendChatMessage } from "../../Api/gateway.js";
 
@@ -19,6 +19,7 @@ export default function ChatPanel() {
     const [messages, setMessages] = useState([]);
     const [socket, setSocket] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
+    const [currentChunk, setCurrentChunk] = useState(null);
 
     useEffect(() => {
         // Connect to WebSocket session
@@ -45,7 +46,12 @@ export default function ChatPanel() {
                         user: 'AI',
                         text: data.text
                     }]);
-                } else if (data.error) {
+                }
+                else if(data.type === "agent_chunk"){
+                    // Pass chunk data to RunningMessage component
+                    setCurrentChunk(data);
+                }
+                else if (data.error) {
                     console.error('Error from server:', data.error);
                 }
             } catch (error) {
@@ -72,6 +78,15 @@ export default function ChatPanel() {
             }
         };
     }, []);
+
+    // Callback for when RunningMessage completes
+    const handleMessageComplete = (completeText) => {
+        setMessages(prev => [...prev, {
+            id: Date.now(),
+            user: 'AI',
+            text: completeText
+        }]);
+    };
 
     // Function to send user message
     const handleSendMessage = async (text) => {
@@ -110,6 +125,10 @@ export default function ChatPanel() {
                             ? <UserMessage key={message.id} text={message.text} />
                             : <AgentMessage key={message.id} text={message.text} />
                     ))}
+                    <RunningMessage
+                        chunkData={currentChunk}
+                        onMessageComplete={handleMessageComplete}
+                    />
                 </div>
 
                 <UserInputArea onSendMessage={handleSendMessage} />

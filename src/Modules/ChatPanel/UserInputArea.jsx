@@ -38,7 +38,7 @@ export default function UserInputArea({ onSendMessage }) {
                     onClick={handleSend}
                     disabled={!messageText.trim()}
                 >
-                    Send
+                    ↑
                 </button>
             </div>
         </div>

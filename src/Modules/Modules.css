@@ -21,11 +21,11 @@ Application Layout
 
 /* 3:1 ratio - workspace takes 75%, chat takes 25% */
 .layout-panel--workspace {
-  max-width: 75%;
+  flex: 3;
 }
 
 .layout-panel--chat {
-  max-width: 25%;
+  flex: 1;
 }
 
 /* Workspace internal layout */
@@ -91,8 +91,8 @@ Chat Panel Layout
 
 .user-message {
   align-self: flex-end;
-  background: rgba(100, 108, 255, 0.3);
-  border: 1px solid rgba(100, 108, 255, 0.4);
+    background: rgba(107, 242, 255, 0.3);
+  border: 1px solid rgba(107, 242, 255, 0.4);
   max-width: 80%;
 }
 
