@@ -2,7 +2,7 @@ import axios from 'axios';
 
 
 const request = axios.create({
-    baseURL: 'http://localhost:7008'
+    baseURL: 'http://172.16.16.202:7008'
 });
 
 

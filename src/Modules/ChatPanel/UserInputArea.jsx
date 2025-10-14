@@ -1,10 +1,31 @@
-export default function UserInputArea() {
+import { useState } from "react";
+
+export default function UserInputArea({ onSendMessage }) {
+    const [messageText, setMessageText] = useState('');
+
+    const handleSend = () => {
+        if (messageText.trim() && onSendMessage) {
+            onSendMessage(messageText);
+            setMessageText('');
+        }
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
+
     return (
         <div className="chat-input-area">
             <textarea
                 className="chat-textarea"
                 placeholder="Start with an idea or task."
                 rows={2}
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyPress={handleKeyPress}
             />
             <div className="input-controls">
                 <div className="input-buttons">
@@ -12,7 +33,13 @@ export default function UserInputArea() {
                     <button className="control-button">🌐</button>
                     <button className="control-button">📦</button>
                 </div>
-                <button className="send-button">Send</button>
+                <button
+                    className="send-button"
+                    onClick={handleSend}
+                    disabled={!messageText.trim()}
+                >
+                    Send
+                </button>
             </div>
         </div>
     );

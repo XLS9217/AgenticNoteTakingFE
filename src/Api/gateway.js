@@ -28,7 +28,7 @@ export function connectToChatSession() {
         return socket;
     }
 
-    socket = new WebSocket('ws://localhost:7008/agent/chat_session');
+    socket = new WebSocket('ws://172.16.16.202:7008/agent/chat_session');
 
     return socket;
 }
