@@ -44,7 +44,9 @@ function LiquidGlassDiv({ children, blurriness = 0.0, isButton = false, variant 
 
   return (
     <div className={className} style={style}>
-      {children}
+      <div style={{ position: 'relative', zIndex: 2, height: '100%' }}>
+        {children}
+      </div>
     </div>
   )
 }

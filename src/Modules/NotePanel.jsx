@@ -3,8 +3,10 @@ import LiquidGlassDiv from "../Components/LiquidGlassDiv.jsx";
 export default function NotePanel() {
 
     return <LiquidGlassDiv isButton={false}>
-        <h2>Note Panel</h2>
-        <p>This is the second liquid glass div taking 40% of the width.</p>
+        <div className="panel-container">
+            <h2 className="panel-title">Note</h2>
+            <p className="panel-content">this is the note</p>
+        </div>
     </LiquidGlassDiv>
 
 }

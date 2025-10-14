@@ -3,8 +3,13 @@ import LiquidGlassDiv from "../Components/LiquidGlassDiv.jsx";
 export default function TranscriptPanel() {
 
     return <LiquidGlassDiv isButton={false}>
-        <h2>Transcription Panel</h2>
-        <p>This is the second liquid glass div taking 40% of the width.</p>
+        <div className="panel-container">
+            <h2 className="panel-title">Transcription</h2>
+            <textarea
+                className="transcription-textarea"
+                placeholder="Transcription will appear here..."
+            />
+        </div>
     </LiquidGlassDiv>
 
 }
