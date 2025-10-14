@@ -453,3 +453,110 @@ Authentication Screens
   color: rgba(107, 242, 255, 0.95);
   transform: translateX(2px);
 }
+
+/*
+==========================================
+Workspace Selection - Grid Layout
+==========================================
+*/
+
+.workspace-selection-container {
+  padding: var(--spacing-lg);
+  max-width: 1200px;
+  width: 100%;
+}
+
+.workspace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.workspace-main-title {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 2em;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.new-workspace-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: transparent;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: inherit;
+  font-size: 0.95em;
+  font-weight: 400;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.new-workspace-button:hover {
+  color: rgba(107, 242, 255, 0.95);
+}
+
+.new-workspace-icon {
+  font-size: 1.5em;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.workspace-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+}
+
+.workspace-thumbnail {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.workspace-placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.5em;
+  font-weight: 300;
+}
+
+.workspace-info {
+  padding: 0 var(--spacing-xs);
+}
+
+.workspace-name {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1em;
+  font-weight: 500;
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.workspace-meta {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85em;
+  margin: 0;
+  font-weight: 400;
+}

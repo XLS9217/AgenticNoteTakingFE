@@ -20,6 +20,36 @@ export async function sendChatMessage(message) {
 }
 
 /**
+ * Authenticate a user
+ * @param {{username: string, password: string}} credentials
+ * @returns {Promise<Object>} Response from the backend (e.g., token, user info)
+ */
+export async function authUser(credentials) {
+    try {
+        const response = await request.post('/user/auth', credentials);
+        return response.data;
+    } catch (error) {
+        console.error('Error authenticating user:', error);
+        throw error;
+    }
+}
+
+/**
+ * Create/register a new user
+ * @param {{username: string, password: string}} payload
+ * @returns {Promise<Object>} Response from the backend (e.g., created user)
+ */
+export async function createUser(payload) {
+    try {
+        const response = await request.post('/user/create', payload);
+        return response.data;
+    } catch (error) {
+        console.error('Error creating user:', error);
+        throw error;
+    }
+}
+
+/**
  * Establishes a WebSocket connection to the chat session endpoint
  * @returns {WebSocket} The WebSocket instance
  */
@@ -28,7 +58,11 @@ export function connectToChatSession() {
         return socket;
     }
 
-    socket = new WebSocket('ws://172.16.16.202:7008/agent/chat_session');
+    const { protocol, host } = window.location;
+    const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${wsProtocol}//${host}/agent/chat_session`;
+
+    socket = new WebSocket(url);
 
     return socket;
 }

@@ -2,7 +2,8 @@ import axios from 'axios';
 
 
 const request = axios.create({
-    baseURL: 'http://172.16.16.202:7008'
+    // Use Vite dev server proxy to avoid CORS during development
+    baseURL: '/api'
 });
 
 

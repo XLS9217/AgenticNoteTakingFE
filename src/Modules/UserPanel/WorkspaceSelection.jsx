@@ -1,25 +1,42 @@
 import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
 
 export default function WorkspaceSelection({ onWorkspaceSelect }) {
-    const workspaces = ['Alpha', 'Beta', 'Theta'];
+    const workspaces = [
+        { name: 'Alpha', thumbnail: null, lastRefined: 'October 14, 2025' },
+        { name: 'Beta', thumbnail: null, lastRefined: 'October 11, 2025' },
+        { name: 'Theta', thumbnail: null, lastRefined: 'October 10, 2025' },
+        { name: 'Delta', thumbnail: null, lastRefined: 'September 22, 2025' }
+    ];
 
     return (
-        <LiquidGlassDiv blurriness={0.5}>
-            <div className="workspace-selection">
-                <h1 className="auth-title">Choose Workspace</h1>
-                <div className="workspace-list">
-                    {workspaces.map((workspace) => (
-                        <LiquidGlassDiv key={workspace} isButton={true}>
-                            <button
-                                className="workspace-item"
-                                onClick={() => onWorkspaceSelect(workspace)}
-                            >
-                                {workspace}
-                            </button>
-                        </LiquidGlassDiv>
-                    ))}
-                </div>
+        <div className="workspace-selection-container">
+            <div className="workspace-header">
+                <h1 className="workspace-main-title">Workspaces</h1>
+                <LiquidGlassDiv isButton={true}>
+                    <button className="new-workspace-button">
+                        <span className="new-workspace-icon">+</span>
+                        New Workspace
+                    </button>
+                </LiquidGlassDiv>
             </div>
-        </LiquidGlassDiv>
+            <div className="workspace-grid">
+                {workspaces.map((workspace) => (
+                    <LiquidGlassDiv key={workspace.name} isButton={true}>
+                        <button
+                            className="workspace-card"
+                            onClick={() => onWorkspaceSelect(workspace.name)}
+                        >
+                            <div className="workspace-thumbnail">
+                                {workspace.thumbnail || <span className="workspace-placeholder">{workspace.name}</span>}
+                            </div>
+                            <div className="workspace-info">
+                                <h3 className="workspace-name">{workspace.name}</h3>
+                                <p className="workspace-meta">Last refined on {workspace.lastRefined}</p>
+                            </div>
+                        </button>
+                    </LiquidGlassDiv>
+                ))}
+            </div>
+        </div>
     );
 }
