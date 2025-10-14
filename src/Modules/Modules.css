@@ -186,3 +186,66 @@ Chat Panel Layout
 .send-button:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+
+/*
+==========================================
+Streaming Message Animation
+==========================================
+*/
+
+.ai-message--streaming {
+  position: relative;
+}
+
+.streaming-indicator {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  align-items: center;
+  height: 12px;
+}
+
+.liquid-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 2px 8px rgba(107, 242, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  animation: liquidPulse 1.4s ease-in-out infinite;
+}
+
+.liquid-dot--1 {
+  animation-delay: 0s;
+}
+
+.liquid-dot--2 {
+  animation-delay: 0.2s;
+}
+
+.liquid-dot--3 {
+  animation-delay: 0.4s;
+}
+
+@keyframes liquidPulse {
+  0%, 100% {
+    transform: scale(0.8);
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow:
+      0 2px 8px rgba(107, 242, 255, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: scale(1.2);
+    background: rgba(107, 242, 255, 0.5);
+    box-shadow:
+      0 4px 16px rgba(107, 242, 255, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  }
+}

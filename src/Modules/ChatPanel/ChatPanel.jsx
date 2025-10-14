@@ -128,6 +128,7 @@ export default function ChatPanel() {
                     <RunningMessage
                         chunkData={currentChunk}
                         onMessageComplete={handleMessageComplete}
+                        debugForceShow={false }
                     />
                 </div>
 
