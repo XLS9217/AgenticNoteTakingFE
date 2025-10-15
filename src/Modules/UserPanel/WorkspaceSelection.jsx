@@ -1,6 +1,6 @@
 import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
 
-export default function WorkspaceSelection({ onWorkspaceSelect }) {
+export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
     const workspaces = [
         { name: 'Alpha', thumbnail: null, lastRefined: 'October 14, 2025' },
         { name: 'Beta', thumbnail: null, lastRefined: 'October 11, 2025' },
@@ -8,10 +8,12 @@ export default function WorkspaceSelection({ onWorkspaceSelect }) {
         { name: 'Delta', thumbnail: null, lastRefined: 'September 22, 2025' }
     ];
 
+    const username = userInfo?.username || 'User';
+
     return (
         <div className="workspace-selection-container">
             <div className="workspace-header">
-                <h1 className="workspace-main-title">Workspaces</h1>
+                <h1 className="workspace-main-title">Workspace for {username}</h1>
             </div>
             <div className="workspace-grid-wrapper">
                 <div className="workspace-grid">

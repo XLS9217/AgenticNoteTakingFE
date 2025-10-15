@@ -20,6 +20,25 @@ export async function sendChatMessage(message) {
 }
 
 /**
+ * Establishes a WebSocket connection to the chat session endpoint
+ * @returns {WebSocket} The WebSocket instance
+ */
+export function connectToChatSession() {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        return socket;
+    }
+
+    const { protocol, host } = window.location;
+    const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${wsProtocol}//${host}/agent/chat_session`;
+
+    socket = new WebSocket(url);
+
+    return socket;
+}
+
+
+/**
  * Authenticate a user
  * @param {{username: string, password: string}} credentials
  * @returns {Promise<Object>} Response from the backend (e.g., token, user info)
@@ -50,19 +69,16 @@ export async function createUser(payload) {
 }
 
 /**
- * Establishes a WebSocket connection to the chat session endpoint
- * @returns {WebSocket} The WebSocket instance
+ * Get user information by username
+ * @param {string} username - The username to fetch info for
+ * @returns {Promise<Object>} User information
  */
-export function connectToChatSession() {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        return socket;
+export async function getUserInfo(username) {
+    try {
+        const response = await request.get(`/user/info/${username}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching user info:', error);
+        throw error;
     }
-
-    const { protocol, host } = window.location;
-    const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${wsProtocol}//${host}/agent/chat_session`;
-
-    socket = new WebSocket(url);
-
-    return socket;
 }
