@@ -7,11 +7,22 @@ Application Layout
 .application-container {
   position: fixed;
   display: flex;
-  flex-direction: row;
+  align-items: center;
+  justify-content: center;
   height: 100%;
   width: 100%;
   top: 0;
+  left: 0;
+  padding-left: 100px;
+  box-sizing: border-box;
   z-index: 1;
+}
+
+.workspace-main {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
 }
 
 .layout-panel {
@@ -361,6 +372,8 @@ Authentication Screens
   height: 100vh;
   width: 100vw;
   padding: var(--spacing-md);
+  padding-left: 100px;
+  box-sizing: border-box;
 }
 
 .login-form {
@@ -461,15 +474,17 @@ Workspace Selection - Grid Layout
 */
 
 .workspace-selection-container {
-  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
   max-width: 1200px;
   width: 100%;
+  height: 100%;
+  padding: var(--spacing-lg);
+  box-sizing: border-box;
 }
 
 .workspace-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-shrink: 0;
   margin-bottom: var(--spacing-lg);
 }
 
@@ -479,6 +494,12 @@ Workspace Selection - Grid Layout
   font-weight: 500;
   margin: 0;
   letter-spacing: -0.01em;
+}
+
+.workspace-grid-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .new-workspace-button {
@@ -541,6 +562,12 @@ Workspace Selection - Grid Layout
   color: rgba(255, 255, 255, 0.5);
   font-size: 1.5em;
   font-weight: 300;
+}
+
+.workspace-placeholder--new {
+  font-size: 3em;
+  font-weight: 200;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .workspace-info {

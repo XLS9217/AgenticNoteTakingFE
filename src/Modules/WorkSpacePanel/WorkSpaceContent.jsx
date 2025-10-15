@@ -1,7 +1,7 @@
 import TranscriptPanel from "./TranscriptPanel.jsx";
 import NotePanel from "./NotePanel.jsx";
 
-export default function WorkSpacePanel() {
+export default function WorkSpaceContent() {
     return (
         <div className="workspace-container">
             <div className="workspace-panel workspace-panel--transcript">
@@ -11,5 +11,5 @@ export default function WorkSpacePanel() {
                 <NotePanel />
             </div>
         </div>
-    )
+    );
 }

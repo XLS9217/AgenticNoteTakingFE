@@ -21,9 +21,9 @@ export default function UtilBar({ onAction }) {
   };
 
   return (
-    <div className="util-bar util-bar--top">
+    <div className="util-bar util-bar--side">
       <LiquidGlassDiv blurriness={0.5}>
-        <nav className="util-bar-nav util-bar-nav--horizontal">
+        <nav className="util-bar-nav util-bar-nav--vertical">
           {navItems.map(({ key, icon, label }) => (
             <button
               key={key}

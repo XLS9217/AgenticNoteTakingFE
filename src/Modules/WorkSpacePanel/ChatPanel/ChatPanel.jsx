@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
+import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import { UserMessage, AgentMessage, RunningMessage } from "./ChatBubble.jsx";
 import UserInputArea from "./UserInputArea.jsx";
-import { connectToChatSession, sendChatMessage } from "../../Api/gateway.js";
+import { connectToChatSession, sendChatMessage } from "../../../Api/gateway.js";
 
 
 /* Only for testing layout do not use*/

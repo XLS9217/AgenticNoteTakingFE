@@ -1,4 +1,4 @@
-import LiquidGlassDiv from "../Components/LiquidGlassDiv.jsx";
+import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
 
 export default function TranscriptPanel() {
 
