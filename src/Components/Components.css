@@ -119,3 +119,72 @@ Background Section
 .background-content {
   z-index: 1;
 }
+
+
+
+/*
+==========================================
+Utility Bar - Horizontal Glass Panel
+==========================================
+*/
+
+.util-bar {
+    position: fixed;
+    top: var(--spacing-lg);
+    left: var(--spacing-lg);
+    z-index: 1000;
+}
+
+.util-bar-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: 0px 0px;
+}
+
+.util-bar-nav--horizontal {
+    flex-direction: row;
+}
+
+.util-bar-item {
+    display: flex;
+    align-items: center;
+    background: transparent;
+    border: none;
+    padding: 2px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.util-bar-item:hover .util-bar-icon-circle {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.util-bar-item--active .util-bar-icon-circle {
+    background: rgba(0, 0, 0, 0.35);
+    box-shadow: 0 10px 24px rgba(11, 21, 40, 0.3);
+}
+
+.util-bar-icon-circle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    transition: var(--transition-fast);
+    background: transparent;
+}
+
+.util-bar-icon-image {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+.util-bar--top .liquid-glass-container {
+    border-radius: 999px;
+    padding: 6px 14px;
+}

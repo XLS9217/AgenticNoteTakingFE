@@ -1,41 +1,45 @@
 import { useState } from 'react';
 import LiquidGlassDiv from './LiquidGlassDiv.jsx';
-import './UtilBar.css';
+import './Components.css';
 
-export default function UtilBar() {
-    const [isExpanded, setIsExpanded] = useState(false);
+const navItems = [
+  { key: 'user', icon: '/icon_user.png', label: 'User' },
+  { key: 'workspace', icon: '/icon_ws.png', label: 'Workspace' },
+  { key: 'background', icon: '/icon_bg.png', label: 'Change Background' },
+  { key: 'settings', icon: '/icon_setting.png', label: 'Setting' },
+  { key: 'logout', icon: '/icon_logout.png', label: 'Logout' }
+];
 
-    return (
-        <>
-            <div
-                className="util-bar-trigger"
-                onMouseEnter={() => setIsExpanded(true)}
-            />
-            <div
-                className={`util-bar ${isExpanded ? 'util-bar--expanded' : ''}`}
-                onMouseLeave={() => setIsExpanded(false)}
+export default function UtilBar({ onAction }) {
+  const [activeKey, setActiveKey] = useState('user');
+
+  const handleClick = (itemKey) => {
+    setActiveKey(itemKey);
+    if (typeof onAction === 'function') {
+      onAction(itemKey);
+    }
+  };
+
+  return (
+    <div className="util-bar util-bar--top">
+      <LiquidGlassDiv blurriness={0.5}>
+        <nav className="util-bar-nav util-bar-nav--horizontal">
+          {navItems.map(({ key, icon, label }) => (
+            <button
+              key={key}
+              className={`util-bar-item ${activeKey === key ? 'util-bar-item--active' : ''}`}
+              onClick={() => handleClick(key)}
+              type="button"
+              title={label}
+              aria-label={label}
             >
-                <LiquidGlassDiv blurriness={0.3}>
-                    <nav className="util-bar-nav">
-                        <button className="util-bar-item util-bar-item--active">
-                            <span className="util-bar-icon">🏠</span>
-                            {isExpanded && <span className="util-bar-label">Home</span>}
-                        </button>
-                        <button className="util-bar-item">
-                            <span className="util-bar-icon">📁</span>
-                            {isExpanded && <span className="util-bar-label">Projects</span>}
-                        </button>
-                        <button className="util-bar-item">
-                            <span className="util-bar-icon">👤</span>
-                            {isExpanded && <span className="util-bar-label">Profile</span>}
-                        </button>
-                        <button className="util-bar-item">
-                            <span className="util-bar-icon">☰</span>
-                            {isExpanded && <span className="util-bar-label">Menu</span>}
-                        </button>
-                    </nav>
-                </LiquidGlassDiv>
-            </div>
-        </>
-    );
+              <span className="util-bar-icon-circle">
+                <img src={icon} alt="" className="util-bar-icon-image" />
+              </span>
+            </button>
+          ))}
+        </nav>
+      </LiquidGlassDiv>
+    </div>
+  );
 }
