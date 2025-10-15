@@ -1,14 +1,41 @@
+import { useState, useEffect } from 'react';
 import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
+import { createWorkspace, getWorkspacesByOwner } from "../../Api/gateway.js";
 
 export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
-    const workspaces = [
-        { name: 'Alpha', thumbnail: null, lastRefined: 'October 14, 2025' },
-        { name: 'Beta', thumbnail: null, lastRefined: 'October 11, 2025' },
-        { name: 'Theta', thumbnail: null, lastRefined: 'October 10, 2025' },
-        { name: 'Delta', thumbnail: null, lastRefined: 'September 22, 2025' }
-    ];
-
     const username = userInfo?.username || 'User';
+    const [workspaces, setWorkspaces] = useState([]);
+
+    const fetchWorkspaces = async () => {
+        try {
+            const ownerWorkspaces = await getWorkspacesByOwner(username);
+            console.log('Workspaces by owner:', ownerWorkspaces);
+            setWorkspaces(ownerWorkspaces);
+        } catch (error) {
+            console.error('Failed to fetch workspaces:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchWorkspaces();
+    }, [username]);
+
+    const handleNewWorkspace = async () => {
+        try {
+            const response = await createWorkspace({
+                workspace_name: "Untitled",
+                owner: username,
+                note: "",
+                transcript: ""
+            });
+            console.log('Create workspace response:', response);
+
+            // Enter the newly created workspace
+            onWorkspaceSelect(response.workspace_id);
+        } catch (error) {
+            console.error('Failed to create workspace:', error);
+        }
+    };
 
     return (
         <div className="workspace-selection-container">
@@ -18,7 +45,7 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
             <div className="workspace-grid-wrapper">
                 <div className="workspace-grid">
                     <LiquidGlassDiv isButton={true}>
-                        <button className="workspace-card workspace-card--new">
+                        <button className="workspace-card workspace-card--new" onClick={handleNewWorkspace}>
                             <div className="workspace-thumbnail">
                                 <span className="workspace-placeholder workspace-placeholder--new">+</span>
                             </div>
@@ -29,17 +56,17 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
                         </button>
                     </LiquidGlassDiv>
                     {workspaces.map((workspace) => (
-                        <LiquidGlassDiv key={workspace.name} isButton={true}>
+                        <LiquidGlassDiv key={workspace.workspace_id} isButton={true}>
                             <button
                                 className="workspace-card"
-                                onClick={() => onWorkspaceSelect(workspace.name)}
+                                onClick={() => onWorkspaceSelect(workspace.workspace_id)}
                             >
                                 <div className="workspace-thumbnail">
-                                    {workspace.thumbnail || <span className="workspace-placeholder">{workspace.name}</span>}
+                                    <span className="workspace-placeholder">{workspace.workspace_name}</span>
                                 </div>
                                 <div className="workspace-info">
-                                    <h3 className="workspace-name">{workspace.name}</h3>
-                                    <p className="workspace-meta">Last refined on {workspace.lastRefined}</p>
+                                    <h3 className="workspace-name">{workspace.workspace_name}</h3>
+                                    <p className="workspace-meta">Last updated: {new Date(workspace.updated_at).toLocaleDateString()}</p>
                                 </div>
                             </button>
                         </LiquidGlassDiv>

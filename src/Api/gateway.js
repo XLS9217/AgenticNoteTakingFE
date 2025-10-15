@@ -82,3 +82,63 @@ export async function getUserInfo(username) {
         throw error;
     }
 }
+
+/**
+ * Create a new workspace
+ * @param {{workspace_name: string, owner: string, note: string, transcript: string}} payload
+ * @returns {Promise<Object>} Response from the backend
+ */
+export async function createWorkspace(payload) {
+    try {
+        const response = await request.post('/workspace/create', payload);
+        return response.data;
+    } catch (error) {
+        console.error('Error creating workspace:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get workspace by ID
+ * @param {string} workspaceId - The workspace ID to fetch
+ * @returns {Promise<Object>} Workspace data
+ */
+export async function getWorkspace(workspaceId) {
+    try {
+        const response = await request.get(`/workspace/${workspaceId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching workspace:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get all workspaces by owner
+ * @param {string} owner - The owner username
+ * @returns {Promise<Array>} List of workspaces
+ */
+export async function getWorkspacesByOwner(owner) {
+    try {
+        const response = await request.get(`/workspace/owner/${owner}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching workspaces by owner:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete a workspace by ID
+ * @param {string} workspaceId - The workspace ID to delete
+ * @returns {Promise<Object>} Response from the backend
+ */
+export async function deleteWorkspace(workspaceId) {
+    try {
+        const response = await request.delete('/workspace/delete', { data: { workspace_id: workspaceId } });
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting workspace:', error);
+        throw error;
+    }
+}
