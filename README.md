@@ -60,7 +60,7 @@ src/
 │   ├── Application.jsx  # Main layout component
 │   ├── ChatPanel.jsx    # Chat functionality
 │   ├── NotePanel.jsx    # Note-taking interface
-│   ├── TranscriptPanel.jsx # Transcription display
+│   ├── SourcePanel.jsx # Transcription display
 │   └── Modules.css      # Module-specific styles
 ├── App.jsx             # Root application component
 ├── App.css             # Global application styles

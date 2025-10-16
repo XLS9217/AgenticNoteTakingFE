@@ -6,11 +6,9 @@
   --line-height-base: 1.5;
 
   /* Colors */
-  --color-primary: rgba(79, 183, 179, 0.95);
-  --color-primary-hover: rgba(168, 251, 211, 0.85);
-  --color-primary-light: rgba(168, 251, 211, 0.6);
+  --color-primary: rgb(107, 242, 255);
+  --color-primary-rgb: 107, 242, 255;
   --color-text-primary: rgba(255, 255, 255, 0.87);
-  --color-text-secondary: #213547;
   --color-background-dark: #242424;
   --color-background-light: #ffffff;
   --color-background-button-dark: #1a1a1a;
