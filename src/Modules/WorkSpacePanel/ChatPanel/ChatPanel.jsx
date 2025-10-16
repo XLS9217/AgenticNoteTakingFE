@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
+import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
 import { UserMessage, AgentMessage, RunningMessage } from "./ChatBubble.jsx";
 import UserInputArea from "./UserInputArea.jsx";
 import { connectToChatSession, getWorkspace } from "../../../Api/gateway.js";
@@ -158,7 +159,7 @@ export default function ChatPanel({ workspaceId, onWorkspaceDataReceived }) {
                     {isLoading ? '🟡 Loading...' : (isConnected ? '🟢 Connected' : '🔴 Disconnected')}
                 </div>
 
-                <div className="chat-history">
+                <LiquidGlassScrollBar className="chat-history">
                     {messages.map(message => (
                         message.user === 'You'
                             ? <UserMessage key={message.id} text={message.text} />
@@ -169,7 +170,7 @@ export default function ChatPanel({ workspaceId, onWorkspaceDataReceived }) {
                         onMessageComplete={handleMessageComplete}
                         debugForceShow={false }
                     />
-                </div>
+                </LiquidGlassScrollBar>
 
                 <UserInputArea onSendMessage={handleSendMessage} />
             </div>

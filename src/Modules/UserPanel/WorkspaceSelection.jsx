@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
+import LiquidGlassScrollBar from "../../Components/LiquidGlassScrollBar.jsx";
 import { createWorkspace, getWorkspacesByOwner, deleteWorkspace } from "../../Api/gateway.js";
 
 export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
@@ -53,7 +54,7 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
             <div className="workspace-header">
                 <h1 className="workspace-main-title">Workspace for {username}</h1>
             </div>
-            <div className="workspace-grid-wrapper">
+            <LiquidGlassScrollBar className="workspace-grid-wrapper">
                 <div className="workspace-grid">
                     <LiquidGlassDiv isButton={true}>
                         <button className="workspace-card workspace-card--new" onClick={handleNewWorkspace}>
@@ -92,7 +93,7 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
                         </div>
                     ))}
                 </div>
-            </div>
+            </LiquidGlassScrollBar>
         </div>
     );
 }

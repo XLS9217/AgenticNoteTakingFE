@@ -87,7 +87,6 @@ Chat Panel Layout
   display: flex;
   flex-direction: column;
   padding: var(--spacing-xs);
-  overflow-y: auto;
   gap: var(--spacing-xs);
   min-height: 0;
 }
@@ -500,8 +499,6 @@ Workspace Selection - Grid Layout
 
 .workspace-grid-wrapper {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 .new-workspace-button {
