@@ -44,7 +44,7 @@ export default function Application(){
                 {currentView === 'user' ? (
                     <UserPanel userInfo={userInfo} />
                 ) : activeWorkspace ? (
-                    <WorkSpacePanel />
+                    <WorkSpacePanel workspaceId={activeWorkspace} />
                 ) : (
                     <WorkspaceSelection onWorkspaceSelect={(workspace) => setActiveWorkspace(workspace)} userInfo={userInfo} />
                 )}

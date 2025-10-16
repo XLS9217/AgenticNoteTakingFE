@@ -15,7 +15,7 @@ const mock_data = [
     { id: 6, user: "AI", text: "Sure! I'll extract actionable tasks with assigned owners and deadlines from the discussion." }
 ];
 
-export default function ChatPanel() {
+export default function ChatPanel({ workspaceId }) {
     const [messages, setMessages] = useState([]);
     const [socket, setSocket] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
@@ -30,6 +30,13 @@ export default function ChatPanel() {
         ws.onopen = () => {
             console.log('WebSocket connected successfully');
             setIsConnected(true);
+
+            // Send workspace switch message
+            ws.send(JSON.stringify({
+                type: "workspace_switch",
+                workspace_id: workspaceId
+            }));
+            console.log('Sent workspace_switch message:', workspaceId);
         };
 
         // onmessage handler
@@ -77,7 +84,7 @@ export default function ChatPanel() {
                 ws.close();
             }
         };
-    }, []);
+    }, [workspaceId]);
 
     // Callback for when RunningMessage completes
     const handleMessageComplete = (completeText) => {
