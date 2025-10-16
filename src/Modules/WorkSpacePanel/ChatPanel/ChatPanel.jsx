@@ -3,7 +3,7 @@ import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
 import { UserMessage, AgentMessage, RunningMessage } from "./ChatBubble.jsx";
 import UserInputArea from "./UserInputArea.jsx";
-import { connectToChatSession, getWorkspace } from "../../../Api/gateway.js";
+import { connectToChatSession, getWorkspace, changeWorkspaceName } from "../../../Api/gateway.js";
 
 
 /* Only for testing layout do not use*/
@@ -16,23 +16,37 @@ const mock_data = [
     { id: 6, user: "AI", text: "Sure! I'll extract actionable tasks with assigned owners and deadlines from the discussion." }
 ];
 
+const STATUS_DISPLAY = {
+    loading: '🟡 Loading...',
+    connected: '🟢 Connected',
+    disconnected: '🔴 Disconnected'
+};
+
 export default function ChatPanel({ workspaceId, onWorkspaceDataReceived }) {
     const [messages, setMessages] = useState([]);
     const [socket, setSocket] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [currentChunk, setCurrentChunk] = useState(null);
+    const [connectionStatus, setConnectionStatus] = useState('loading');
+    const [workspaceName, setWorkspaceName] = useState('');
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [editNameValue, setEditNameValue] = useState('');
 
     useEffect(() => {
         let ws = null;
 
         const loadWorkspace = async () => {
             setIsLoading(true);
+            setConnectionStatus('loading');
 
             try {
                 // Step 1: Fetch workspace data via HTTP API
                 const workspaceData = await getWorkspace(workspaceId);
                 console.log('Workspace data loaded:', workspaceData);
+
+                // Set workspace name
+                setWorkspaceName(workspaceData.workspace_name || 'Untitled Workspace');
 
                 // Step 2: Load chat history
                 if (workspaceData.chat_history && Array.isArray(workspaceData.chat_history)) {
@@ -61,6 +75,7 @@ export default function ChatPanel({ workspaceId, onWorkspaceDataReceived }) {
                 ws.onopen = () => {
                     console.log('WebSocket connected successfully');
                     setIsConnected(true);
+                    setConnectionStatus('connected');
 
                     // Send workspace_id to WebSocket for conversation
                     ws.send(JSON.stringify({
@@ -96,16 +111,19 @@ export default function ChatPanel({ workspaceId, onWorkspaceDataReceived }) {
                 ws.onerror = (error) => {
                     console.error('WebSocket error:', error);
                     setIsConnected(false);
+                    setConnectionStatus('disconnected');
                 };
 
                 ws.onclose = () => {
                     console.log('WebSocket connection closed');
                     setIsConnected(false);
+                    setConnectionStatus('disconnected');
                 };
 
             } catch (error) {
                 console.error('Error loading workspace:', error);
                 setIsLoading(false);
+                setConnectionStatus('disconnected');
             }
         };
 
@@ -152,11 +170,63 @@ export default function ChatPanel({ workspaceId, onWorkspaceDataReceived }) {
         }
     };
 
+    // Handler for clicking workspace name to edit
+    const handleNameClick = () => {
+        setIsEditingName(true);
+        setEditNameValue(workspaceName);
+    };
+
+    // Handler for name change
+    const handleNameChange = (e) => {
+        setEditNameValue(e.target.value);
+    };
+
+    // Handler for pressing Enter to save name
+    const handleNameKeyDown = async (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const newName = editNameValue.trim();
+            if (newName && newName !== workspaceName) {
+                try {
+                    await changeWorkspaceName(workspaceId, newName);
+                    setWorkspaceName(newName);
+                } catch (error) {
+                    console.error('Failed to change workspace name:', error);
+                }
+            }
+            setIsEditingName(false);
+        } else if (e.key === 'Escape') {
+            setIsEditingName(false);
+        }
+    };
+
+    // Handler for blur to cancel editing
+    const handleNameBlur = () => {
+        setIsEditingName(false);
+    };
+
     return (
         <LiquidGlassDiv blurriness={0.75} isButton={false} variant="chat">
             <div className="chat-panel-container">
-                <div className="connection-status">
-                    {isLoading ? '🟡 Loading...' : (isConnected ? '🟢 Connected' : '🔴 Disconnected')}
+                <div className="chat-header">
+                    {isEditingName ? (
+                        <textarea
+                            className="workspace-name-input"
+                            value={editNameValue}
+                            onChange={handleNameChange}
+                            onKeyDown={handleNameKeyDown}
+                            onBlur={handleNameBlur}
+                            autoFocus
+                            rows={1}
+                        />
+                    ) : (
+                        <div className="workspace-name-display" onClick={handleNameClick}>
+                            {workspaceName}
+                        </div>
+                    )}
+                    <div className="connection-status">
+                        {STATUS_DISPLAY[connectionStatus]}
+                    </div>
                 </div>
 
                 <LiquidGlassScrollBar className="chat-history">

@@ -82,6 +82,48 @@ Chat Panel Layout
   gap: var(--spacing-sm);
 }
 
+.chat-header {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.workspace-name-display {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.1em;
+  font-weight: 500;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-fast);
+}
+
+.workspace-name-display:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(107, 242, 255, 0.95);
+}
+
+.workspace-name-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(107, 242, 255, 0.5);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-xs);
+  color: rgba(255, 255, 255, 0.95);
+  font-family: inherit;
+  font-size: 1.1em;
+  font-weight: 500;
+  resize: none;
+  outline: none;
+  overflow: hidden;
+}
+
+.connection-status {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75em;
+  padding-left: var(--spacing-xs);
+}
+
 .chat-history {
   flex: 0.7; /* 70% of available height */
   display: flex;

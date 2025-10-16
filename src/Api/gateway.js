@@ -142,3 +142,22 @@ export async function deleteWorkspace(workspaceId) {
         throw error;
     }
 }
+
+/**
+ * Change workspace name
+ * @param {string} workspaceId - The workspace ID
+ * @param {string} newName - The new workspace name
+ * @returns {Promise<Object>} Response from the backend
+ */
+export async function changeWorkspaceName(workspaceId, newName) {
+    try {
+        const response = await request.put('/workspace/change-name', {
+            workspace_id: workspaceId,
+            new_name: newName
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error changing workspace name:', error);
+        throw error;
+    }
+}

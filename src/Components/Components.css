@@ -130,7 +130,7 @@ Utility Bar - Horizontal Glass Panel
 
 .util-bar {
     position: fixed;
-    left: var(--spacing-lg);
+    left: var(--spacing-md);
     z-index: 1000;
 }
 
