@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
-import { createWorkspace, getWorkspacesByOwner } from "../../Api/gateway.js";
+import { createWorkspace, getWorkspacesByOwner, deleteWorkspace } from "../../Api/gateway.js";
 
 export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
     const username = userInfo?.username || 'User';
@@ -37,6 +37,17 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
         }
     };
 
+    const handleDeleteWorkspace = async (e, workspaceId) => {
+        e.stopPropagation(); // Prevent card click event
+        try {
+            await deleteWorkspace(workspaceId);
+            // Refresh workspace list after deletion
+            fetchWorkspaces();
+        } catch (error) {
+            console.error('Failed to delete workspace:', error);
+        }
+    };
+
     return (
         <div className="workspace-selection-container">
             <div className="workspace-header">
@@ -56,20 +67,29 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
                         </button>
                     </LiquidGlassDiv>
                     {workspaces.map((workspace) => (
-                        <LiquidGlassDiv key={workspace.workspace_id} isButton={true}>
+                        <div key={workspace.workspace_id} className="workspace-card-container">
                             <button
-                                className="workspace-card"
-                                onClick={() => onWorkspaceSelect(workspace.workspace_id)}
+                                className="workspace-delete-btn"
+                                onClick={(e) => handleDeleteWorkspace(e, workspace.workspace_id)}
+                                aria-label="Delete workspace"
                             >
-                                <div className="workspace-thumbnail">
-                                    <span className="workspace-placeholder">{workspace.workspace_name}</span>
-                                </div>
-                                <div className="workspace-info">
-                                    <h3 className="workspace-name">{workspace.workspace_name}</h3>
-                                    <p className="workspace-meta">Last updated: {new Date(workspace.updated_at).toLocaleDateString()}</p>
-                                </div>
+                                <img src="/icon_trash.png" alt="Delete" />
                             </button>
-                        </LiquidGlassDiv>
+                            <LiquidGlassDiv isButton={true}>
+                                <button
+                                    className="workspace-card"
+                                    onClick={() => onWorkspaceSelect(workspace.workspace_id)}
+                                >
+                                    <div className="workspace-thumbnail">
+                                        <span className="workspace-placeholder">{workspace.workspace_name}</span>
+                                    </div>
+                                    <div className="workspace-info">
+                                        <h3 className="workspace-name">{workspace.workspace_name}</h3>
+                                        <p className="workspace-meta">Last updated: {new Date(workspace.updated_at).toLocaleDateString()}</p>
+                                    </div>
+                                </button>
+                            </LiquidGlassDiv>
+                        </div>
                     ))}
                 </div>
             </div>

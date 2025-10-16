@@ -1,6 +1,6 @@
 import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
 
-export default function TranscriptPanel() {
+export default function TranscriptPanel({ transcript }) {
 
     return <LiquidGlassDiv isButton={false}>
         <div className="panel-container">
@@ -8,6 +8,8 @@ export default function TranscriptPanel() {
             <textarea
                 className="transcription-textarea"
                 placeholder="Transcription will appear here..."
+                value={transcript}
+                readOnly
             />
         </div>
     </LiquidGlassDiv>

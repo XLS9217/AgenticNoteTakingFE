@@ -89,6 +89,7 @@ Chat Panel Layout
   padding: var(--spacing-xs);
   overflow-y: auto;
   gap: var(--spacing-xs);
+  min-height: 0;
 }
 
 .message {
@@ -100,6 +101,7 @@ Chat Panel Layout
   font-size: 0.9em;
   line-height: 1.4;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
 }
 
 .message::before {
@@ -533,6 +535,12 @@ Workspace Selection - Grid Layout
   gap: var(--spacing-md);
 }
 
+.workspace-card-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .workspace-card {
   display: flex;
   flex-direction: column;
@@ -543,6 +551,40 @@ Workspace Selection - Grid Layout
   cursor: pointer;
   text-align: left;
   overflow: hidden;
+}
+
+.workspace-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: var(--transition-fast);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: var(--border-radius-sm);
+}
+
+.workspace-delete-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.workspace-card-container:hover .workspace-delete-btn {
+  opacity: 1;
+}
+
+.workspace-delete-btn:hover {
+  background: rgba(255, 80, 80, 0.3);
+  border: 1px solid rgba(255, 80, 80, 0.5);
 }
 
 .workspace-thumbnail {

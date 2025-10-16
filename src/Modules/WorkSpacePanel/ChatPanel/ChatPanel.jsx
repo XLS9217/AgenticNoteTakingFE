@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import { UserMessage, AgentMessage, RunningMessage } from "./ChatBubble.jsx";
 import UserInputArea from "./UserInputArea.jsx";
-import { connectToChatSession, sendChatMessage } from "../../../Api/gateway.js";
+import { connectToChatSession, getWorkspace } from "../../../Api/gateway.js";
 
 
 /* Only for testing layout do not use*/
@@ -15,68 +15,100 @@ const mock_data = [
     { id: 6, user: "AI", text: "Sure! I'll extract actionable tasks with assigned owners and deadlines from the discussion." }
 ];
 
-export default function ChatPanel({ workspaceId }) {
+export default function ChatPanel({ workspaceId, onWorkspaceDataReceived }) {
     const [messages, setMessages] = useState([]);
     const [socket, setSocket] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [currentChunk, setCurrentChunk] = useState(null);
 
     useEffect(() => {
-        // Connect to WebSocket session
-        const ws = connectToChatSession();
-        setSocket(ws);
+        let ws = null;
 
-        // onconnect handler
-        ws.onopen = () => {
-            console.log('WebSocket connected successfully');
-            setIsConnected(true);
+        const loadWorkspace = async () => {
+            setIsLoading(true);
 
-            // Send workspace switch message
-            ws.send(JSON.stringify({
-                type: "workspace_switch",
-                workspace_id: workspaceId
-            }));
-            console.log('Sent workspace_switch message:', workspaceId);
-        };
-
-        // onmessage handler
-        ws.onmessage = (event) => {
             try {
-                const data = JSON.parse(event.data);
-                console.log('Received message:', data);
+                // Step 1: Fetch workspace data via HTTP API
+                const workspaceData = await getWorkspace(workspaceId);
+                console.log('Workspace data loaded:', workspaceData);
 
-                // Handle different message types based on backend session rules
-                if (data.type === 'agent_message') {
-                    // Add agent response to messages
-                    setMessages(prev => [...prev, {
-                        id: Date.now(),
-                        user: 'AI',
-                        text: data.text
-                    }]);
+                // Step 2: Load chat history
+                if (workspaceData.chat_history && Array.isArray(workspaceData.chat_history)) {
+                    const loadedMessages = workspaceData.chat_history.map((msg, index) => ({
+                        id: Date.now() + index,
+                        user: msg.role === 'user' ? 'You' : 'AI',
+                        text: msg.content
+                    }));
+                    setMessages(loadedMessages);
                 }
-                else if(data.type === "agent_chunk"){
-                    // Pass chunk data to RunningMessage component
-                    setCurrentChunk(data);
+
+                // Step 3: Pass note and transcript to parent
+                if (onWorkspaceDataReceived) {
+                    onWorkspaceDataReceived({
+                        note: workspaceData.note || '',
+                        transcript: workspaceData.transcript || ''
+                    });
                 }
-                else if (data.error) {
-                    console.error('Error from server:', data.error);
-                }
+
+                setIsLoading(false);
+
+                // Step 4: Connect to WebSocket after data is loaded
+                ws = connectToChatSession();
+                setSocket(ws);
+
+                ws.onopen = () => {
+                    console.log('WebSocket connected successfully');
+                    setIsConnected(true);
+
+                    // Send workspace_id to WebSocket for conversation
+                    ws.send(JSON.stringify({
+                        type: "workspace_switch",
+                        workspace_id: workspaceId
+                    }));
+                    console.log('Sent workspace_switch message:', workspaceId);
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('Received message:', data);
+
+                        if (data.type === 'agent_message') {
+                            setMessages(prev => [...prev, {
+                                id: Date.now(),
+                                user: 'AI',
+                                text: data.text
+                            }]);
+                        }
+                        else if(data.type === "agent_chunk"){
+                            setCurrentChunk(data);
+                        }
+                        else if (data.error) {
+                            console.error('Error from server:', data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error parsing message:', error);
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    setIsConnected(false);
+                };
+
+                ws.onclose = () => {
+                    console.log('WebSocket connection closed');
+                    setIsConnected(false);
+                };
+
             } catch (error) {
-                console.error('Error parsing message:', error);
+                console.error('Error loading workspace:', error);
+                setIsLoading(false);
             }
         };
 
-        // onerror handler
-        ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            setIsConnected(false);
-        };
-
-        // onclose handler
-        ws.onclose = () => {
-            console.log('WebSocket connection closed');
-            setIsConnected(false);
-        };
+        loadWorkspace();
 
         // Cleanup on component unmount
         return () => {
@@ -123,7 +155,7 @@ export default function ChatPanel({ workspaceId }) {
         <LiquidGlassDiv blurriness={0.75} isButton={false} variant="chat">
             <div className="chat-panel-container">
                 <div className="connection-status">
-                    {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+                    {isLoading ? '🟡 Loading...' : (isConnected ? '🟢 Connected' : '🔴 Disconnected')}
                 </div>
 
                 <div className="chat-history">
