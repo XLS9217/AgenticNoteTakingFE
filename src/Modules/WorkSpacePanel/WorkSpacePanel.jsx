@@ -1,9 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NoteTakingContent from "./NotetakingContent/NoteTakingContent.jsx";
 import ChatPanel from "./ChatPanel/ChatPanel.jsx";
+import { useUtilBar } from "../../Components/UtilBar/UtilBarProvider.jsx";
 
-export default function WorkSpacePanel({ workspaceId }) {
+export default function WorkSpacePanel({ workspaceId, onLeave }) {
     const [workspaceData, setWorkspaceData] = useState({ note: '', transcript: '' });
+    const { setOverride, clearOverride } = useUtilBar();
+
+    useEffect(() => {
+        setOverride([
+            {
+                key: 'workspace',
+                icon: '/icon_ws.png',
+                label: 'Workspace',
+                action: () => onLeave?.()
+            }
+        ]);
+
+        return () => clearOverride();
+    }, []);
 
     return (
         <div className="workspace-main">

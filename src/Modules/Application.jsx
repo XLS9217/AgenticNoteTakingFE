@@ -1,27 +1,70 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './Modules.css';
 import WorkSpacePanel from "./WorkSpacePanel/WorkSpacePanel.jsx";
 import LoginScreen from "./UserPanel/LoginScreen.jsx";
 import WorkspaceSelection from "./UserPanel/WorkspaceSelection.jsx";
 import UserPanel from "./UserPanel/UserPanel.jsx";
-import UtilBar from "../Components/UtilBar.jsx";
+import UtilBar from "../Components/UtilBar/UtilBar.jsx";
+import { UtilBarProvider, useUtilBar } from "../Components/UtilBar/UtilBarProvider.jsx";
+
+function ApplicationContent({ activeWorkspace, setActiveWorkspace, currentView, setCurrentView, setIsAuthenticated, userInfo }) {
+    const { setDefault } = useUtilBar();
+
+    useEffect(() => {
+        setDefault([
+            {
+                key: 'user',
+                icon: '/icon_user.png',
+                label: 'User',
+                action: () => setCurrentView('user')
+            },
+            {
+                key: 'background',
+                icon: '/icon_bg.png',
+                label: 'Change Background',
+                action: () => console.log('Background clicked')
+            },
+            {
+                key: 'settings',
+                icon: '/icon_setting.png',
+                label: 'Setting',
+                action: () => console.log('Settings clicked')
+            },
+            {
+                key: 'logout',
+                icon: '/icon_logout.png',
+                label: 'Logout',
+                action: () => setIsAuthenticated(false)
+            }
+        ]);
+    }, [setDefault, setCurrentView, setIsAuthenticated]);
+
+    const handleLeaveWorkspace = () => {
+        setActiveWorkspace('');
+        setCurrentView('workspace');
+    };
+
+    return (
+        <>
+            <UtilBar />
+            <div className="application-container">
+                {currentView === 'user' ? (
+                    <UserPanel userInfo={userInfo} />
+                ) : activeWorkspace ? (
+                    <WorkSpacePanel workspaceId={activeWorkspace} onLeave={handleLeaveWorkspace} />
+                ) : (
+                    <WorkspaceSelection onWorkspaceSelect={(workspace) => setActiveWorkspace(workspace)} userInfo={userInfo} />
+                )}
+            </div>
+        </>
+    );
+}
 
 export default function Application(){
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [activeWorkspace, setActiveWorkspace] = useState('');
     const [currentView, setCurrentView] = useState('workspace');
     const [userInfo, setUserInfo] = useState(null);
-
-    const handleUtilBarAction = (action) => {
-        if (action === 'workspace') {
-            setActiveWorkspace('');
-            setCurrentView('workspace');
-        } else if (action === 'user') {
-            setCurrentView('user');
-        } else if (action === 'logout') {
-            setIsAuthenticated(false);
-        }
-    };
 
     if (!isAuthenticated) {
         return (
@@ -38,17 +81,15 @@ export default function Application(){
     }
 
     return (
-        <>
-            <UtilBar onAction={handleUtilBarAction} />
-            <div className="application-container">
-                {currentView === 'user' ? (
-                    <UserPanel userInfo={userInfo} />
-                ) : activeWorkspace ? (
-                    <WorkSpacePanel workspaceId={activeWorkspace} />
-                ) : (
-                    <WorkspaceSelection onWorkspaceSelect={(workspace) => setActiveWorkspace(workspace)} userInfo={userInfo} />
-                )}
-            </div>
-        </>
+        <UtilBarProvider>
+            <ApplicationContent
+                activeWorkspace={activeWorkspace}
+                setActiveWorkspace={setActiveWorkspace}
+                currentView={currentView}
+                setCurrentView={setCurrentView}
+                setIsAuthenticated={setIsAuthenticated}
+                userInfo={userInfo}
+            />
+        </UtilBarProvider>
     );
 }

@@ -1,0 +1,54 @@
+.liquid-glass-scrollbar {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.liquid-glass-scrollbar::-webkit-scrollbar {
+    width: 10px;
+}
+
+.liquid-glass-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50px;
+    margin: 4px 0;
+}
+
+.liquid-glass-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(200, 200, 200, 0.3);
+    border-radius: 50px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(200, 200, 200, 0.4);
+    box-shadow:
+        0 2px 8px rgba(200, 200, 200, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.liquid-glass-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(220, 220, 220, 0.5);
+    border-color: rgba(220, 220, 220, 0.6);
+    box-shadow:
+        0 4px 12px rgba(220, 220, 220, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.liquid-glass-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(240, 240, 240, 0.7);
+    border-color: rgba(240, 240, 240, 0.8);
+}
+
+.liquid-glass-scrollbar::-webkit-scrollbar-button {
+    background: rgba(200, 200, 200, 0.3);
+    border-radius: 50px;
+    height: 10px;
+}
+
+.liquid-glass-scrollbar::-webkit-scrollbar-button:hover {
+    background: rgba(220, 220, 220, 0.5);
+}
+
+/* Firefox */
+.liquid-glass-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(200, 200, 200, 0.3) rgba(255, 255, 255, 0.05);
+}
