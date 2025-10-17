@@ -3,7 +3,7 @@ import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
 import { UserMessage, AgentMessage, RunningMessage } from "./ChatBubble.jsx";
 import UserInputArea from "./UserInputArea.jsx";
-import { connectToChatSession, getWorkspace, changeWorkspaceName } from "../../../Api/gateway.js";
+import { connectToChatSession, changeWorkspaceName } from "../../../Api/gateway.js";
 
 
 /* Only for testing layout do not use*/
@@ -22,53 +22,37 @@ const STATUS_DISPLAY = {
     disconnected: '🔴 Disconnected'
 };
 
-export default function ChatPanel({ workspaceId, onWorkspaceDataReceived }) {
+export default function ChatPanel({ workspaceId, chatHistory, workspaceName, onWorkspaceNameChange }) {
     const [messages, setMessages] = useState([]);
     const [socket, setSocket] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [currentChunk, setCurrentChunk] = useState(null);
     const [connectionStatus, setConnectionStatus] = useState('loading');
-    const [workspaceName, setWorkspaceName] = useState('');
     const [isEditingName, setIsEditingName] = useState(false);
     const [editNameValue, setEditNameValue] = useState('');
 
     useEffect(() => {
+        // Load chat history from props
+        if (chatHistory && Array.isArray(chatHistory)) {
+            const loadedMessages = chatHistory.map((msg, index) => ({
+                id: Date.now() + index,
+                user: msg.role === 'user' ? 'You' : 'AI',
+                text: msg.content
+            }));
+            setMessages(loadedMessages);
+        }
+    }, [chatHistory]);
+
+    useEffect(() => {
         let ws = null;
 
-        const loadWorkspace = async () => {
+        const connectWebSocket = () => {
             setIsLoading(true);
             setConnectionStatus('loading');
 
             try {
-                // Step 1: Fetch workspace data via HTTP API
-                const workspaceData = await getWorkspace(workspaceId);
-                console.log('Workspace data loaded:', workspaceData);
-
-                // Set workspace name
-                setWorkspaceName(workspaceData.workspace_name || 'Untitled Workspace');
-
-                // Step 2: Load chat history
-                if (workspaceData.chat_history && Array.isArray(workspaceData.chat_history)) {
-                    const loadedMessages = workspaceData.chat_history.map((msg, index) => ({
-                        id: Date.now() + index,
-                        user: msg.role === 'user' ? 'You' : 'AI',
-                        text: msg.content
-                    }));
-                    setMessages(loadedMessages);
-                }
-
-                // Step 3: Pass note and transcript to parent
-                if (onWorkspaceDataReceived) {
-                    onWorkspaceDataReceived({
-                        note: workspaceData.note || '',
-                        transcript: workspaceData.transcript || ''
-                    });
-                }
-
-                setIsLoading(false);
-
-                // Step 4: Connect to WebSocket after data is loaded
+                // Connect to WebSocket
                 ws = connectToChatSession();
                 setSocket(ws);
 
@@ -76,6 +60,7 @@ export default function ChatPanel({ workspaceId, onWorkspaceDataReceived }) {
                     console.log('WebSocket connected successfully');
                     setIsConnected(true);
                     setConnectionStatus('connected');
+                    setIsLoading(false);
 
                     // Send workspace_id to WebSocket for conversation
                     ws.send(JSON.stringify({
@@ -112,6 +97,7 @@ export default function ChatPanel({ workspaceId, onWorkspaceDataReceived }) {
                     console.error('WebSocket error:', error);
                     setIsConnected(false);
                     setConnectionStatus('disconnected');
+                    setIsLoading(false);
                 };
 
                 ws.onclose = () => {
@@ -121,13 +107,13 @@ export default function ChatPanel({ workspaceId, onWorkspaceDataReceived }) {
                 };
 
             } catch (error) {
-                console.error('Error loading workspace:', error);
+                console.error('Error connecting WebSocket:', error);
                 setIsLoading(false);
                 setConnectionStatus('disconnected');
             }
         };
 
-        loadWorkspace();
+        connectWebSocket();
 
         // Cleanup on component unmount
         return () => {
@@ -189,7 +175,7 @@ export default function ChatPanel({ workspaceId, onWorkspaceDataReceived }) {
             if (newName && newName !== workspaceName) {
                 try {
                     await changeWorkspaceName(workspaceId, newName);
-                    setWorkspaceName(newName);
+                    onWorkspaceNameChange(newName);
                 } catch (error) {
                     console.error('Failed to change workspace name:', error);
                 }

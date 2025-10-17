@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
 import { updateTranscript } from "../../../Api/gateway.js";
@@ -8,6 +8,10 @@ export default function TranscriptPanel({ workspaceId, transcript }) {
     const [editedTranscript, setEditedTranscript] = useState(transcript || 'No notes yet...');
     const [isDragging, setIsDragging] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+
+    useEffect(() => {
+        setEditedTranscript(transcript || 'No notes yet...');
+    }, [transcript]);
 
     const handleDragOver = (e) => {
         e.preventDefault();

@@ -2,10 +2,33 @@ import { useState, useEffect } from "react";
 import NoteTakingContent from "./NotetakingContent/NoteTakingContent.jsx";
 import ChatPanel from "./ChatPanel/ChatPanel.jsx";
 import { useUtilBar } from "../../Components/UtilBar/UtilBarProvider.jsx";
+import { getWorkspace } from "../../Api/gateway.js";
 
 export default function WorkSpacePanel({ workspaceId, onLeave }) {
     const [workspaceData, setWorkspaceData] = useState({ note: '', transcript: '' });
+    const [chatHistory, setChatHistory] = useState([]);
+    const [workspaceName, setWorkspaceName] = useState('');
     const { setOverride, clearOverride } = useUtilBar();
+
+    useEffect(() => {
+        const loadWorkspace = async () => {
+            try {
+                const data = await getWorkspace(workspaceId);
+                console.log('Workspace data loaded:', data);
+
+                setWorkspaceData({
+                    note: data.note || '',
+                    transcript: data.transcript || ''
+                });
+                setChatHistory(data.chat_history || []);
+                setWorkspaceName(data.workspace_name || 'Untitled Workspace');
+            } catch (error) {
+                console.error('Error loading workspace:', error);
+            }
+        };
+
+        loadWorkspace();
+    }, [workspaceId]);
 
     useEffect(() => {
         setOverride([
@@ -40,7 +63,7 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
             </div>
             {/*chatbox panel*/}
             <div className="layout-panel layout-panel--chat">
-                <ChatPanel workspaceId={workspaceId} onWorkspaceDataReceived={setWorkspaceData} />
+                <ChatPanel workspaceId={workspaceId} chatHistory={chatHistory} workspaceName={workspaceName} onWorkspaceNameChange={setWorkspaceName} />
             </div>
         </div>
     );
