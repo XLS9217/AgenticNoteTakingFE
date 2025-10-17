@@ -30,8 +30,12 @@ export default function UserInputArea({ onSendMessage }) {
             <div className="input-controls">
                 <div className="input-buttons">
                     <button className="control-button">+</button>
-                    <button className="control-button">🌐</button>
-                    <button className="control-button">📦</button>
+                    <button className="control-button">
+                        <img src="/icons/icon_globe.png" alt="globe" style={{ width: '16px', height: '16px' }} />
+                    </button>
+                    <button className="control-button">
+                        <img src="/icons/icon_suitcase.png" alt="suitcase" style={{ width: '16px', height: '16px' }} />
+                    </button>
                 </div>
                 <button
                     className="send-button"

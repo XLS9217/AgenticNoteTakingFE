@@ -11,9 +11,21 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
         setOverride([
             {
                 key: 'workspace',
-                icon: '/icon_ws.png',
+                icon: '/icons/icon_ws.png',
                 label: 'Workspace',
                 action: () => onLeave?.()
+            },
+            {
+                key: 'import',
+                icon: '/icons/icon_import.png',
+                label: 'Import',
+                action: () => console.log('Import clicked')
+            },
+            {
+                key: 'export',
+                icon: '/icons/icon_export.png',
+                label: 'Export',
+                action: () => console.log('Export clicked')
             }
         ]);
 

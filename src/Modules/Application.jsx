@@ -14,25 +14,25 @@ function ApplicationContent({ activeWorkspace, setActiveWorkspace, currentView, 
         setDefault([
             {
                 key: 'user',
-                icon: '/icon_user.png',
+                icon: '/icons/icon_user.png',
                 label: 'User',
                 action: () => setCurrentView('user')
             },
             {
                 key: 'background',
-                icon: '/icon_bg.png',
+                icon: '/icons/icon_bg.png',
                 label: 'Change Background',
                 action: () => console.log('Background clicked')
             },
             {
                 key: 'settings',
-                icon: '/icon_setting.png',
+                icon: '/icons/icon_setting.png',
                 label: 'Setting',
                 action: () => console.log('Settings clicked')
             },
             {
                 key: 'logout',
-                icon: '/icon_logout.png',
+                icon: '/icons/icon_logout.png',
                 label: 'Logout',
                 action: () => setIsAuthenticated(false)
             }
