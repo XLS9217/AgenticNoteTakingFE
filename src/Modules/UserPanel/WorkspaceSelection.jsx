@@ -74,7 +74,7 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
                                 onClick={(e) => handleDeleteWorkspace(e, workspace.workspace_id)}
                                 aria-label="Delete workspace"
                             >
-                                <img src="/icon_trash.png" alt="Delete" />
+                                <img src="/icons/icon_trash.png" alt="Delete" />
                             </button>
                             <LiquidGlassDiv isButton={true}>
                                 <button
