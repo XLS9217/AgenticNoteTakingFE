@@ -666,3 +666,73 @@ Workspace Selection - Grid Layout
   margin: 0;
   font-weight: 400;
 }
+
+/*
+==========================================
+Transcript Panel Styles
+==========================================
+*/
+
+.transcript-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.transcript-sync-status {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85em;
+  margin-left: var(--spacing-xs);
+}
+
+.transcript-edit-button {
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  border-radius: var(--border-radius-lg);
+  cursor: pointer;
+  padding: 8px;
+  transition: var(--transition-fast);
+}
+
+.transcript-edit-button--editing {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.transcript-edit-button:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.transcript-edit-button--editing:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.transcript-edit-icon {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+.transcript-dropzone {
+  padding: var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-sm);
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85em;
+  transition: var(--transition-fast);
+}
+
+.transcript-dropzone--dragging {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.transcript-edit-area {
+  flex: 1;
+}
+
+.transcript-content-wrapper {
+  flex: 1;
+  padding: var(--spacing-xs);
+}

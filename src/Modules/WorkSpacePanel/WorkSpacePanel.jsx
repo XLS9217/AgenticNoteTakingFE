@@ -36,7 +36,7 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
         <div className="workspace-main">
             {/*Workspace panel*/}
             <div className="layout-panel layout-panel--workspace">
-                <NoteTakingContent note={workspaceData.note} transcript={workspaceData.transcript} />
+                <NoteTakingContent workspaceId={workspaceId} note={workspaceData.note} transcript={workspaceData.transcript} />
             </div>
             {/*chatbox panel*/}
             <div className="layout-panel layout-panel--chat">

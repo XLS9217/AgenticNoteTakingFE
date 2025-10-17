@@ -1,11 +1,13 @@
 import { useState } from "react";
 import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
+import { updateTranscript } from "../../../Api/gateway.js";
 
-export default function TranscriptPanel({ transcript }) {
+export default function TranscriptPanel({ workspaceId, transcript }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTranscript, setEditedTranscript] = useState(transcript || 'No notes yet...');
     const [isDragging, setIsDragging] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
 
     const handleDragOver = (e) => {
         e.preventDefault();
@@ -36,27 +38,33 @@ export default function TranscriptPanel({ transcript }) {
         }
     };
 
+    const handleFinishEditing = async () => {
+        setIsEditing(false);
+        setIsSyncing(true);
+        try {
+            await updateTranscript(workspaceId, editedTranscript);
+        } catch (error) {
+            console.error('Failed to sync transcript:', error);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
     return <LiquidGlassDiv isButton={false}>
         <div className="panel-container">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 className="panel-title">Transcript</h2>
+            <div className="transcript-header">
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <h2 className="panel-title">Transcript</h2>
+                    {isSyncing && <span className="transcript-sync-status">(Syncing...)</span>}
+                </div>
                 <button
-                    onClick={() => setIsEditing(!isEditing)}
-                    style={{
-                        background: isEditing ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.3)',
-                        border: 'none',
-                        borderRadius: 'var(--border-radius-lg)',
-                        cursor: 'pointer',
-                        padding: '8px',
-                        transition: 'var(--transition-fast)'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = isEditing ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.2)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = isEditing ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.3)'}
+                    onClick={isEditing ? handleFinishEditing : () => setIsEditing(true)}
+                    className={`transcript-edit-button ${isEditing ? 'transcript-edit-button--editing' : ''}`}
                 >
                     <img
                         src={isEditing ? '/icons/icon_note.png' : '/icons/icon_transcript.png'}
                         alt="edit"
-                        style={{ width: '28px', height: '28px', display: 'block' }}
+                        className="transcript-edit-icon"
                     />
                 </button>
             </div>
@@ -65,22 +73,13 @@ export default function TranscriptPanel({ transcript }) {
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    style={{
-                        padding: 'var(--spacing-sm)',
-                        background: isDragging ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                        border: isDragging ? '2px dashed rgba(255, 255, 255, 0.5)' : '2px dashed rgba(255, 255, 255, 0.2)',
-                        borderRadius: 'var(--border-radius-sm)',
-                        textAlign: 'center',
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        fontSize: '0.85em',
-                        transition: 'var(--transition-fast)'
-                    }}
+                    className={`transcript-dropzone ${isDragging ? 'transcript-dropzone--dragging' : ''}`}
                 >
                     Drop .txt file here
                 </div>
             )}
             {isEditing ? (
-                <div className="chat-input-area" style={{ flex: 1 }}>
+                <div className="chat-input-area transcript-edit-area">
                     <textarea
                         className="chat-textarea"
                         value={editedTranscript}
@@ -89,7 +88,7 @@ export default function TranscriptPanel({ transcript }) {
                 </div>
             ) : (
                 <LiquidGlassScrollBar>
-                    <div style={{ flex: 1, padding: 'var(--spacing-xs)' }}>
+                    <div className="transcript-content-wrapper">
                         <p className="panel-content">{editedTranscript}</p>
                     </div>
                 </LiquidGlassScrollBar>

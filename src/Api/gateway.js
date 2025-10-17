@@ -161,3 +161,41 @@ export async function changeWorkspaceName(workspaceId, newName) {
         throw error;
     }
 }
+
+/**
+ * Update workspace transcript
+ * @param {string} workspaceId - The workspace ID
+ * @param {string} transcript - The new transcript content
+ * @returns {Promise<Object>} Response from the backend
+ */
+export async function updateTranscript(workspaceId, transcript) {
+    try {
+        const response = await request.put('/note-taking/update-transcript', {
+            workspace_id: workspaceId,
+            transcript: transcript
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating transcript:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update workspace note
+ * @param {string} workspaceId - The workspace ID
+ * @param {string} note - The new note content
+ * @returns {Promise<Object>} Response from the backend
+ */
+export async function updateNote(workspaceId, note) {
+    try {
+        const response = await request.put('/note-taking/update-note', {
+            workspace_id: workspaceId,
+            note: note
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating note:', error);
+        throw error;
+    }
+}
