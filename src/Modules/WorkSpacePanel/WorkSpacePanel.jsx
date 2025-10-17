@@ -18,13 +18,13 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
             {
                 key: 'import',
                 icon: '/icons/icon_import.png',
-                label: 'Import',
+                label: 'Import Workspace',
                 action: () => console.log('Import clicked')
             },
             {
                 key: 'export',
                 icon: '/icons/icon_export.png',
-                label: 'Export',
+                label: 'Export Workspace',
                 action: () => console.log('Export clicked')
             }
         ]);
