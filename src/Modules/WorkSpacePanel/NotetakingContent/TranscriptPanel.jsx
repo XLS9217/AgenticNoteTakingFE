@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
+import LiquidGlassTextButton from "../../../Components/LiquidGlassTextButton.jsx";
 import { updateTranscript } from "../../../Api/gateway.js";
 
 function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, setIsEditing }) {
@@ -95,12 +96,9 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript }) {
             <LiquidGlassScrollBar>
                 <div className="transcript-content-wrapper">
                     <div className="transcript-empty-state">
-                        <button
-                            onClick={handleStartInitialProcess}
-                            className="transcript-toggle-button"
-                        >
+                        <LiquidGlassTextButton onClick={handleStartInitialProcess}>
                             Start Initial Process
-                        </button>
+                        </LiquidGlassTextButton>
                     </div>
                 </div>
             </LiquidGlassScrollBar>
@@ -167,13 +165,12 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
                     </div>
                     <div className="transcript-header-buttons">
                         {!showProcessed && isEditing && (
-                            <button
+                            <LiquidGlassTextButton
                                 onClick={handleFinishEditing}
-                                className="transcript-toggle-button"
                                 title="Save changes and exit edit mode"
                             >
                                 Finish
-                            </button>
+                            </LiquidGlassTextButton>
                         )}
                     </div>
                 </div>

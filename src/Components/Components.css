@@ -229,3 +229,28 @@ Utility Bar - Horizontal Glass Panel
 .util-bar--side .util-bar-nav {
     max-height: 500px;
 }
+
+/*
+=================================
+Liquid Glass Text Button
+=================================
+*/
+
+.liquid-glass-text-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-sm);
+  padding: 6px 12px;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: inherit;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  min-width: 85px;
+  text-align: center;
+}
+
+.liquid-glass-text-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
