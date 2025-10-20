@@ -3,16 +3,8 @@ import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
 import { updateTranscript } from "../../../Api/gateway.js";
 
-export default function TranscriptPanel({ workspaceId, transcript, processedTranscript }) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [editedTranscript, setEditedTranscript] = useState(transcript || 'No notes yet...');
+function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, setIsEditing }) {
     const [isDragging, setIsDragging] = useState(false);
-    const [isSyncing, setIsSyncing] = useState(false);
-    const [showProcessed, setShowProcessed] = useState(true);
-
-    useEffect(() => {
-        setEditedTranscript(transcript || 'No notes yet...');
-    }, [transcript]);
 
     const handleDragOver = (e) => {
         e.preventDefault();
@@ -43,18 +35,46 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
         }
     };
 
-    const handleFinishEditing = async () => {
-        setIsEditing(false);
-        setIsSyncing(true);
-        try {
-            await updateTranscript(workspaceId, editedTranscript);
-        } catch (error) {
-            console.error('Failed to sync transcript:', error);
-        } finally {
-            setIsSyncing(false);
-        }
-    };
+    if (isEditing) {
+        return (
+            <div className="transcript-edit-container">
+                <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`transcript-dropzone ${isDragging ? 'transcript-dropzone--dragging' : ''}`}
+                >
+                    Drop .txt file here
+                </div>
+                <LiquidGlassScrollBar className="transcript-edit-scrollbar">
+                    <textarea
+                        className="transcript-textarea-edit"
+                        value={editedTranscript}
+                        onChange={(e) => setEditedTranscript(e.target.value)}
+                        rows={20}
+                    />
+                </LiquidGlassScrollBar>
+            </div>
+        );
+    }
 
+    return (
+        <LiquidGlassScrollBar>
+            <div className="transcript-content-wrapper">
+                <p
+                    className="panel-content transcript-content-display transcript-content-editable"
+                    onClick={() => setIsEditing(true)}
+                    title="Click to edit transcript"
+                >
+                    {editedTranscript}
+                </p>
+            </div>
+        </LiquidGlassScrollBar>
+    );
+}
+
+
+function ProcessedTranscriptPanel({ workspaceId, processedTranscript }) {
     const formatProcessedTranscript = () => {
         return JSON.stringify(processedTranscript, null, 2);
     };
@@ -70,90 +90,107 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
         console.log('Start initial process for workspace:', workspaceId);
     };
 
-    const displayContent = showProcessed ? formatProcessedTranscript() : editedTranscript;
-
-    return <LiquidGlassDiv isButton={false}>
-        <div className="panel-container">
-            <div className="transcript-header">
-                <div className="transcript-header-column">
-                    <h2
-                        className="panel-title transcript-title-clickable"
-                        onClick={() => {
-                            setShowProcessed(!showProcessed);
-                            setIsEditing(false);
-                        }}
-                        title={showProcessed ? 'Click to view Raw Transcript' : 'Click to view Processed Transcript'}
-                    >
-                        {showProcessed ? 'Processed Transcript' : 'Raw Transcript'}
-                    </h2>
-                    <div className="transcript-edit-indicator">
-                        {showProcessed
-                            ? 'viewing processed (Click Title)'
-                            : isEditing
-                                ? 'editing'
-                                : 'viewing raw (Click Title)'
-                        }
-                        {isSyncing && <span className="transcript-sync-status"> (Syncing...)</span>}
+    if (isProcessedEmpty()) {
+        return (
+            <LiquidGlassScrollBar>
+                <div className="transcript-content-wrapper">
+                    <div className="transcript-empty-state">
+                        <button
+                            onClick={handleStartInitialProcess}
+                            className="transcript-toggle-button"
+                        >
+                            Start Initial Process
+                        </button>
                     </div>
                 </div>
-                <div className="transcript-header-buttons">
-                    {!showProcessed && isEditing && (
-                        <button
-                            onClick={handleFinishEditing}
-                            className="transcript-toggle-button"
-                            title="Save changes and exit edit mode"
-                        >
-                            Finish
-                        </button>
-                    )}
-                </div>
+            </LiquidGlassScrollBar>
+        );
+    }
+
+    return (
+        <LiquidGlassScrollBar>
+            <div className="transcript-content-wrapper">
+                <p className="panel-content transcript-content-display">
+                    {formatProcessedTranscript()}
+                </p>
             </div>
-            {isEditing ? (
-                <div className="transcript-edit-container">
-                    {!showProcessed && (
-                        <div
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                            className={`transcript-dropzone ${isDragging ? 'transcript-dropzone--dragging' : ''}`}
+        </LiquidGlassScrollBar>
+    );
+}
+
+export default function TranscriptPanel({ workspaceId, transcript, processedTranscript }) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedTranscript, setEditedTranscript] = useState(transcript || 'No notes yet...');
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [showProcessed, setShowProcessed] = useState(true);
+
+    useEffect(() => {
+        setEditedTranscript(transcript || 'No notes yet...');
+    }, [transcript]);
+
+    const handleFinishEditing = async () => {
+        setIsEditing(false);
+        setIsSyncing(true);
+        try {
+            await updateTranscript(workspaceId, editedTranscript);
+        } catch (error) {
+            console.error('Failed to sync transcript:', error);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    return (
+        <LiquidGlassDiv isButton={false}>
+            <div className="panel-container">
+                <div className="transcript-header">
+                    <div className="transcript-header-column">
+                        <h2
+                            className="panel-title transcript-title-clickable"
+                            onClick={() => {
+                                setShowProcessed(!showProcessed);
+                                setIsEditing(false);
+                            }}
+                            title={showProcessed ? 'Click to view Raw Transcript' : 'Click to view Processed Transcript'}
                         >
-                            Drop .txt file here
+                            {showProcessed ? 'Processed Transcript' : 'Raw Transcript'}
+                        </h2>
+                        <div className="transcript-edit-indicator">
+                            {showProcessed
+                                ? 'viewing processed (Click Title)'
+                                : isEditing
+                                    ? 'editing'
+                                    : 'viewing raw (Click Title)'
+                            }
+                            {isSyncing && <span className="transcript-sync-status"> (Syncing...)</span>}
                         </div>
-                    )}
-                    <LiquidGlassScrollBar className="transcript-edit-scrollbar">
-                        <textarea
-                            className="transcript-textarea-edit"
-                            value={editedTranscript}
-                            onChange={(e) => setEditedTranscript(e.target.value)}
-                            rows={20}
-                        />
-                    </LiquidGlassScrollBar>
-                </div>
-            ) : (
-                <LiquidGlassScrollBar>
-                    <div className="transcript-content-wrapper">
-                        {showProcessed && isProcessedEmpty() ? (
-                            <div className="transcript-empty-state">
-                                <button
-                                    onClick={handleStartInitialProcess}
-                                    className="transcript-toggle-button"
-                                >
-                                    Start Initial Process
-                                </button>
-                            </div>
-                        ) : (
-                            <p
-                                className={`panel-content transcript-content-display ${!showProcessed ? 'transcript-content-editable' : ''}`}
-                                onClick={() => !showProcessed && setIsEditing(true)}
-                                title={!showProcessed ? 'Click to edit transcript' : ''}
+                    </div>
+                    <div className="transcript-header-buttons">
+                        {!showProcessed && isEditing && (
+                            <button
+                                onClick={handleFinishEditing}
+                                className="transcript-toggle-button"
+                                title="Save changes and exit edit mode"
                             >
-                                {displayContent}
-                            </p>
+                                Finish
+                            </button>
                         )}
                     </div>
-                </LiquidGlassScrollBar>
-            )}
-        </div>
-    </LiquidGlassDiv>
-
+                </div>
+                {showProcessed ? (
+                    <ProcessedTranscriptPanel
+                        workspaceId={workspaceId}
+                        processedTranscript={processedTranscript}
+                    />
+                ) : (
+                    <RawTranscriptPanel
+                        editedTranscript={editedTranscript}
+                        setEditedTranscript={setEditedTranscript}
+                        isEditing={isEditing}
+                        setIsEditing={setIsEditing}
+                    />
+                )}
+            </div>
+        </LiquidGlassDiv>
+    );
 }
