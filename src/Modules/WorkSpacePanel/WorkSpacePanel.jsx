@@ -5,7 +5,7 @@ import { useUtilBar } from "../../Components/UtilBar/UtilBarProvider.jsx";
 import { getWorkspace } from "../../Api/gateway.js";
 
 export default function WorkSpacePanel({ workspaceId, onLeave }) {
-    const [workspaceData, setWorkspaceData] = useState({ note: '', transcript: '' });
+    const [workspaceData, setWorkspaceData] = useState({ note: '', transcript: '', processed_transcript: [] });
     const [chatHistory, setChatHistory] = useState([]);
     const [workspaceName, setWorkspaceName] = useState('');
     const { setOverride, clearOverride } = useUtilBar();
@@ -18,7 +18,8 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
 
                 setWorkspaceData({
                     note: data.note || '',
-                    transcript: data.transcript || ''
+                    transcript: data.transcript || '',
+                    processed_transcript: data.processed_transcript || []
                 });
                 setChatHistory(data.chat_history || []);
                 setWorkspaceName(data.workspace_name || 'Untitled Workspace');
@@ -59,7 +60,7 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
         <div className="workspace-main">
             {/*Workspace panel*/}
             <div className="layout-panel layout-panel--workspace">
-                <NoteTakingContent workspaceId={workspaceId} note={workspaceData.note} transcript={workspaceData.transcript} />
+                <NoteTakingContent workspaceId={workspaceId} note={workspaceData.note} transcript={workspaceData.transcript} processedTranscript={workspaceData.processed_transcript} />
             </div>
             {/*chatbox panel*/}
             <div className="layout-panel layout-panel--chat">

@@ -3,11 +3,12 @@ import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
 import { updateTranscript } from "../../../Api/gateway.js";
 
-export default function TranscriptPanel({ workspaceId, transcript }) {
+export default function TranscriptPanel({ workspaceId, transcript, processedTranscript }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTranscript, setEditedTranscript] = useState(transcript || 'No notes yet...');
     const [isDragging, setIsDragging] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [showProcessed, setShowProcessed] = useState(true);
 
     useEffect(() => {
         setEditedTranscript(transcript || 'No notes yet...');
@@ -54,25 +55,40 @@ export default function TranscriptPanel({ workspaceId, transcript }) {
         }
     };
 
+    const formatProcessedTranscript = () => {
+        return JSON.stringify(processedTranscript, null, 2);
+    };
+
+    const displayContent = showProcessed ? formatProcessedTranscript() : editedTranscript;
+
     return <LiquidGlassDiv isButton={false}>
         <div className="panel-container">
             <div className="transcript-header">
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <h2 className="panel-title">Transcript</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h2 className="panel-title">{showProcessed ? 'Processed Transcript' : 'Transcript'}</h2>
+                    {!showProcessed && (
+                        <button
+                            onClick={isEditing ? handleFinishEditing : () => setIsEditing(true)}
+                            className="transcript-toggle-button"
+                        >
+                            {isEditing ? 'Finish' : 'Edit'}
+                        </button>
+                    )}
                     {isSyncing && <span className="transcript-sync-status">(Syncing...)</span>}
                 </div>
-                <button
-                    onClick={isEditing ? handleFinishEditing : () => setIsEditing(true)}
-                    className={`transcript-edit-button ${isEditing ? 'transcript-edit-button--editing' : ''}`}
-                >
-                    <img
-                        src={isEditing ? '/icons/icon_note.png' : '/icons/icon_transcript.png'}
-                        alt="edit"
-                        className="transcript-edit-icon"
-                    />
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button
+                        onClick={() => {
+                            setShowProcessed(!showProcessed);
+                            setIsEditing(false);
+                        }}
+                        className="transcript-toggle-button"
+                    >
+                        {showProcessed ? 'Raw' : 'Processed'}
+                    </button>
+                </div>
             </div>
-            {isEditing && (
+            {(!showProcessed && isEditing) && (
                 <div
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -93,7 +109,7 @@ export default function TranscriptPanel({ workspaceId, transcript }) {
             ) : (
                 <LiquidGlassScrollBar>
                     <div className="transcript-content-wrapper">
-                        <p className="panel-content">{editedTranscript}</p>
+                        <p className="panel-content" style={{ whiteSpace: 'pre-wrap' }}>{displayContent}</p>
                     </div>
                 </LiquidGlassScrollBar>
             )}

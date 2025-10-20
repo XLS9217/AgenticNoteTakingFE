@@ -685,6 +685,25 @@ Transcript Panel Styles
   margin-left: var(--spacing-xs);
 }
 
+.transcript-toggle-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-sm);
+  padding: 6px 12px;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: inherit;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  min-width: 85px;
+  text-align: center;
+}
+
+.transcript-toggle-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
 .transcript-edit-button {
   background: rgba(0, 0, 0, 0.3);
   border: none;
