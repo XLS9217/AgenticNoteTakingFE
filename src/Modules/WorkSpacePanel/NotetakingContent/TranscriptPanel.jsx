@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
-import LiquidGlassTextButton from "../../../Components/LiquidGlassTextButton.jsx";
+import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInnerTextButton.jsx";
 import { updateTranscript } from "../../../Api/gateway.js";
 
 function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, setIsEditing }) {
@@ -96,9 +96,9 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript }) {
             <LiquidGlassScrollBar>
                 <div className="transcript-content-wrapper">
                     <div className="transcript-empty-state">
-                        <LiquidGlassTextButton onClick={handleStartInitialProcess}>
+                        <LiquidGlassInnerTextButton onClick={handleStartInitialProcess}>
                             Start Initial Process
-                        </LiquidGlassTextButton>
+                        </LiquidGlassInnerTextButton>
                     </div>
                 </div>
             </LiquidGlassScrollBar>
@@ -165,12 +165,12 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
                     </div>
                     <div className="transcript-header-buttons">
                         {!showProcessed && isEditing && (
-                            <LiquidGlassTextButton
+                            <LiquidGlassInnerTextButton
                                 onClick={handleFinishEditing}
                                 title="Save changes and exit edit mode"
                             >
                                 Finish
-                            </LiquidGlassTextButton>
+                            </LiquidGlassInnerTextButton>
                         )}
                     </div>
                 </div>
