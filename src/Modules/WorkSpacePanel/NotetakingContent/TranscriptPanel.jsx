@@ -64,52 +64,71 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
     return <LiquidGlassDiv isButton={false}>
         <div className="panel-container">
             <div className="transcript-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h2 className="panel-title">{showProcessed ? 'Processed Transcript' : 'Transcript'}</h2>
-                    {!showProcessed && (
-                        <button
-                            onClick={isEditing ? handleFinishEditing : () => setIsEditing(true)}
-                            className="transcript-toggle-button"
-                        >
-                            {isEditing ? 'Finish' : 'Edit'}
-                        </button>
-                    )}
-                    {isSyncing && <span className="transcript-sync-status">(Syncing...)</span>}
-                </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <button
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <h2
+                        className="panel-title transcript-title-clickable"
                         onClick={() => {
                             setShowProcessed(!showProcessed);
                             setIsEditing(false);
                         }}
-                        className="transcript-toggle-button"
+                        title={showProcessed ? 'Click to view Raw Transcript' : 'Click to view Processed Transcript'}
                     >
-                        {showProcessed ? 'Raw' : 'Processed'}
-                    </button>
+                        {showProcessed ? 'Processed Transcript' : 'Raw Transcript'}
+                    </h2>
+                    <div className="transcript-edit-indicator">
+                        {showProcessed
+                            ? 'viewing processed (Click Title to View Raw Transcript)'
+                            : isEditing
+                                ? 'editing'
+                                : 'viewing raw (Click Title to View Processed Transcript)'
+                        }
+                        {isSyncing && <span className="transcript-sync-status"> (Syncing...)</span>}
+                    </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {!showProcessed && isEditing && (
+                        <button
+                            onClick={handleFinishEditing}
+                            className="transcript-toggle-button"
+                            title="Save changes and exit edit mode"
+                        >
+                            Finish
+                        </button>
+                    )}
                 </div>
             </div>
-            {(!showProcessed && isEditing) && (
-                <div
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    className={`transcript-dropzone ${isDragging ? 'transcript-dropzone--dragging' : ''}`}
-                >
-                    Drop .txt file here
-                </div>
-            )}
             {isEditing ? (
-                <div className="chat-input-area transcript-edit-area">
-                    <textarea
-                        className="chat-textarea"
-                        value={editedTranscript}
-                        onChange={(e) => setEditedTranscript(e.target.value)}
-                    />
+                <div className="transcript-edit-container">
+                    {!showProcessed && (
+                        <div
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            className={`transcript-dropzone ${isDragging ? 'transcript-dropzone--dragging' : ''}`}
+                        >
+                            Drop .txt file here
+                        </div>
+                    )}
+                    <LiquidGlassScrollBar className="transcript-edit-scrollbar">
+                        <textarea
+                            className="transcript-textarea-edit"
+                            value={editedTranscript}
+                            onChange={(e) => setEditedTranscript(e.target.value)}
+                            rows={20}
+                        />
+                    </LiquidGlassScrollBar>
                 </div>
             ) : (
                 <LiquidGlassScrollBar>
                     <div className="transcript-content-wrapper">
-                        <p className="panel-content" style={{ whiteSpace: 'pre-wrap' }}>{displayContent}</p>
+                        <p
+                            className={`panel-content ${!showProcessed ? 'transcript-content-editable' : ''}`}
+                            style={{ whiteSpace: 'pre-wrap' }}
+                            onClick={() => !showProcessed && setIsEditing(true)}
+                            title={!showProcessed ? 'Click to edit transcript' : ''}
+                        >
+                            {displayContent}
+                        </p>
                     </div>
                 </LiquidGlassScrollBar>
             )}
