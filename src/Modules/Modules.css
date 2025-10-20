@@ -784,7 +784,7 @@ Transcript Panel Styles
 
 .transcript-textarea-edit {
   width: 100%;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.05);
   border: none;
   padding: var(--spacing-sm);
   color: rgba(255, 255, 255, 0.9);
@@ -797,6 +797,7 @@ Transcript Panel Styles
   display: block;
   overflow: visible;
   field-sizing: content;
+  border-radius: var(--border-radius-sm);
 }
 
 .transcript-textarea-edit::-webkit-scrollbar {
@@ -813,16 +814,36 @@ Transcript Panel Styles
 
 .transcript-content-wrapper {
   flex: 1;
-  padding: var(--spacing-xs);
 }
 
 .transcript-content-editable {
   cursor: pointer;
-  padding: var(--spacing-xs);
   border-radius: var(--border-radius-sm);
   transition: var(--transition-fast);
 }
 
 .transcript-content-editable:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+.transcript-header-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.transcript-header-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.transcript-content-display {
+  white-space: pre-wrap;
+  width: 100%;
+  box-sizing: border-box;
+  word-wrap: break-word;
+}
+
+.transcript-empty-state {
+  padding: var(--spacing-sm);
 }

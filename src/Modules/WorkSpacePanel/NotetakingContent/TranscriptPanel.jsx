@@ -59,12 +59,23 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
         return JSON.stringify(processedTranscript, null, 2);
     };
 
+    const isProcessedEmpty = () => {
+        return !processedTranscript ||
+               processedTranscript === '' ||
+               (Array.isArray(processedTranscript) && processedTranscript.length === 0);
+    };
+
+    const handleStartInitialProcess = () => {
+        // TODO: Call API to start initial processing
+        console.log('Start initial process for workspace:', workspaceId);
+    };
+
     const displayContent = showProcessed ? formatProcessedTranscript() : editedTranscript;
 
     return <LiquidGlassDiv isButton={false}>
         <div className="panel-container">
             <div className="transcript-header">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div className="transcript-header-column">
                     <h2
                         className="panel-title transcript-title-clickable"
                         onClick={() => {
@@ -77,15 +88,15 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
                     </h2>
                     <div className="transcript-edit-indicator">
                         {showProcessed
-                            ? 'viewing processed (Click Title to View Raw Transcript)'
+                            ? 'viewing processed (Click Title)'
                             : isEditing
                                 ? 'editing'
-                                : 'viewing raw (Click Title to View Processed Transcript)'
+                                : 'viewing raw (Click Title)'
                         }
                         {isSyncing && <span className="transcript-sync-status"> (Syncing...)</span>}
                     </div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div className="transcript-header-buttons">
                     {!showProcessed && isEditing && (
                         <button
                             onClick={handleFinishEditing}
@@ -121,14 +132,24 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
             ) : (
                 <LiquidGlassScrollBar>
                     <div className="transcript-content-wrapper">
-                        <p
-                            className={`panel-content ${!showProcessed ? 'transcript-content-editable' : ''}`}
-                            style={{ whiteSpace: 'pre-wrap' }}
-                            onClick={() => !showProcessed && setIsEditing(true)}
-                            title={!showProcessed ? 'Click to edit transcript' : ''}
-                        >
-                            {displayContent}
-                        </p>
+                        {showProcessed && isProcessedEmpty() ? (
+                            <div className="transcript-empty-state">
+                                <button
+                                    onClick={handleStartInitialProcess}
+                                    className="transcript-toggle-button"
+                                >
+                                    Start Initial Process
+                                </button>
+                            </div>
+                        ) : (
+                            <p
+                                className={`panel-content transcript-content-display ${!showProcessed ? 'transcript-content-editable' : ''}`}
+                                onClick={() => !showProcessed && setIsEditing(true)}
+                                title={!showProcessed ? 'Click to edit transcript' : ''}
+                            >
+                                {displayContent}
+                            </p>
+                        )}
                     </div>
                 </LiquidGlassScrollBar>
             )}
