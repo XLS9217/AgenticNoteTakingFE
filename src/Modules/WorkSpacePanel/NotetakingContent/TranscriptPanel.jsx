@@ -76,6 +76,8 @@ function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, 
 
 
 function ProcessedTranscriptPanel({ workspaceId, processedTranscript }) {
+    const [isProcessing, setIsProcessing] = useState(false);
+
     const formatProcessedTranscript = () => {
         return JSON.stringify(processedTranscript, null, 2);
     };
@@ -87,6 +89,7 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript }) {
     };
 
     const handleStartInitialProcess = () => {
+        setIsProcessing(true);
         // TODO: Call API to start initial processing
         console.log('Start initial process for workspace:', workspaceId);
     };
@@ -96,9 +99,15 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript }) {
             <LiquidGlassScrollBar>
                 <div className="transcript-content-wrapper">
                     <div className="transcript-empty-state">
-                        <LiquidGlassInnerTextButton onClick={handleStartInitialProcess}>
-                            Start Initial Process
-                        </LiquidGlassInnerTextButton>
+                        {isProcessing ? (
+                            <div className="processing-text-shimmer">
+                                Processing Transcript...
+                            </div>
+                        ) : (
+                            <LiquidGlassInnerTextButton onClick={handleStartInitialProcess}>
+                                Start Initial Process
+                            </LiquidGlassInnerTextButton>
+                        )}
                     </div>
                 </div>
             </LiquidGlassScrollBar>

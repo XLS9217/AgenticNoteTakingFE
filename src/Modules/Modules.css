@@ -828,3 +828,37 @@ Transcript Panel Styles
 .transcript-empty-state {
   padding: var(--spacing-sm);
 }
+
+/*
+==========================================
+Processing Shimmer Animation
+==========================================
+*/
+
+.processing-text-shimmer {
+  position: relative;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1em;
+  font-weight: 500;
+  padding: var(--spacing-sm);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(255, 255, 255, 0.3) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

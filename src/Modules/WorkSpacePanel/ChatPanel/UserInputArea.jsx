@@ -20,7 +20,7 @@ export default function UserInputArea({ onSendMessage }) {
     return (
         <div className="chat-input-area">
             <textarea
-                className="chat-textarea"
+                className="chat-textarea liquid-glass-scrollbar"
                 placeholder="Start with an idea or task."
                 rows={2}
                 value={messageText}
