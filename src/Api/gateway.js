@@ -199,3 +199,18 @@ export async function updateNote(workspaceId, note) {
         throw error;
     }
 }
+
+/**
+ * Get processed transcript for a workspace
+ * @param {string} workspaceId - The workspace ID
+ * @returns {Promise<Object>} Response from the backend containing processed_transcript
+ */
+export async function getProcessedTranscript(workspaceId) {
+    try {
+        const response = await request.get(`/note-taking/get-processed-transcript/${workspaceId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching processed transcript:', error);
+        throw error;
+    }
+}

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
 import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInnerTextButton.jsx";
-import { updateTranscript } from "../../../Api/gateway.js";
+import { updateTranscript, getProcessedTranscript } from "../../../Api/gateway.js";
 
 function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, setIsEditing }) {
     const [isDragging, setIsDragging] = useState(false);
@@ -77,19 +77,57 @@ function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, 
 
 function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, isConnected }) {
     const [isProcessing, setIsProcessing] = useState(false);
+    const [processStatus, setProcessStatus] = useState(null);
+    const [fetchedTranscript, setFetchedTranscript] = useState(null);
 
-    const formatProcessedTranscript = () => {
-        return JSON.stringify(processedTranscript, null, 2);
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleMessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'workspace_message' && data.sub_type === 'process_status') {
+                    const status = data.status;
+                    setProcessStatus(status);
+
+                    if (status === 'Done') {
+                        setIsProcessing(false);
+                        fetchProcessedTranscript();
+                    } else if (status === 'Error' || status === 'None') {
+                        setIsProcessing(false);
+                    } else {
+                        setIsProcessing(true);
+                    }
+                }
+            } catch (error) {
+                console.error('Error parsing message:', error);
+            }
+        };
+
+        socket.addEventListener('message', handleMessage);
+
+        return () => {
+            socket.removeEventListener('message', handleMessage);
+        };
+    }, [socket, workspaceId]);
+
+    const fetchProcessedTranscript = async () => {
+        try {
+            const response = await getProcessedTranscript(workspaceId);
+            setFetchedTranscript(response.processed_transcript);
+        } catch (error) {
+            console.error('Failed to fetch processed transcript:', error);
+        }
     };
 
-    const isProcessedEmpty = () => {
-        return !processedTranscript ||
-               processedTranscript === '' ||
-               (Array.isArray(processedTranscript) && processedTranscript.length === 0);
+    const formatProcessedTranscript = (transcript) => {
+        return JSON.stringify(transcript, null, 2);
     };
 
-    const handleStartInitialProcess = () => {
+    const handleProcess = () => {
         setIsProcessing(true);
+        setProcessStatus('Starting');
 
         if (socket && isConnected) {
             socket.send(JSON.stringify({
@@ -100,35 +138,84 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
         } else {
             console.error('WebSocket not connected');
             setIsProcessing(false);
+            setProcessStatus(null);
         }
     };
 
-    if (isProcessedEmpty()) {
+    // Show error state
+    if (processStatus === 'Error') {
         return (
             <LiquidGlassScrollBar>
                 <div className="transcript-content-wrapper">
                     <div className="transcript-empty-state">
-                        {isProcessing ? (
-                            <div className="processing-text-shimmer">
-                                Processing Transcript...
-                            </div>
-                        ) : (
-                            <LiquidGlassInnerTextButton onClick={handleStartInitialProcess}>
-                                Start Initial Process
-                            </LiquidGlassInnerTextButton>
-                        )}
+                        <p className="panel-content">There is an error</p>
+                        <LiquidGlassInnerTextButton onClick={handleProcess}>
+                            Process
+                        </LiquidGlassInnerTextButton>
                     </div>
                 </div>
             </LiquidGlassScrollBar>
         );
     }
 
+    // Show none state (empty transcript)
+    if (processStatus === 'None') {
+        return (
+            <LiquidGlassScrollBar>
+                <div className="transcript-content-wrapper">
+                    <div className="transcript-empty-state">
+                        <p className="panel-content">You need to fill the raw transcript</p>
+                        <LiquidGlassInnerTextButton onClick={handleProcess}>
+                            Process
+                        </LiquidGlassInnerTextButton>
+                    </div>
+                </div>
+            </LiquidGlassScrollBar>
+        );
+    }
+
+    // Show processing state
+    if (isProcessing) {
+        return (
+            <LiquidGlassScrollBar>
+                <div className="transcript-content-wrapper">
+                    <div className="transcript-empty-state">
+                        <div className="processing-text-shimmer">
+                            {processStatus || 'Processing'}...
+                        </div>
+                    </div>
+                </div>
+            </LiquidGlassScrollBar>
+        );
+    }
+
+    // Show completed transcript with Re-process button
+    if (fetchedTranscript) {
+        return (
+            <LiquidGlassScrollBar>
+                <div className="transcript-content-wrapper">
+                    <div className="transcript-header-buttons" style={{ marginBottom: '10px' }}>
+                        <LiquidGlassInnerTextButton onClick={handleProcess}>
+                            Re-process
+                        </LiquidGlassInnerTextButton>
+                    </div>
+                    <p className="panel-content transcript-content-display">
+                        {formatProcessedTranscript(fetchedTranscript)}
+                    </p>
+                </div>
+            </LiquidGlassScrollBar>
+        );
+    }
+
+    // Default: show initial process button
     return (
         <LiquidGlassScrollBar>
             <div className="transcript-content-wrapper">
-                <p className="panel-content transcript-content-display">
-                    {formatProcessedTranscript()}
-                </p>
+                <div className="transcript-empty-state">
+                    <LiquidGlassInnerTextButton onClick={handleProcess}>
+                        Process
+                    </LiquidGlassInnerTextButton>
+                </div>
             </div>
         </LiquidGlassScrollBar>
     );
