@@ -81,6 +81,16 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
     const [fetchedTranscript, setFetchedTranscript] = useState(null);
 
     useEffect(() => {
+        // Initialize with the processedTranscript prop
+        if (processedTranscript && processedTranscript !== '' &&
+            (!Array.isArray(processedTranscript) || processedTranscript.length > 0)) {
+            setFetchedTranscript(processedTranscript);
+        } else {
+            setFetchedTranscript(null);
+        }
+    }, [processedTranscript, workspaceId]);
+
+    useEffect(() => {
         if (!socket) return;
 
         const handleMessage = (event) => {
@@ -228,8 +238,11 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
     const [showProcessed, setShowProcessed] = useState(true);
 
     useEffect(() => {
+        const hasNoTranscript = !transcript || transcript === '' || transcript === 'No notes yet...';
         setEditedTranscript(transcript || 'No notes yet...');
-    }, [transcript]);
+        setIsEditing(hasNoTranscript);
+        setShowProcessed(!hasNoTranscript);
+    }, [transcript, workspaceId]);
 
     const handleFinishEditing = async () => {
         setIsEditing(false);
