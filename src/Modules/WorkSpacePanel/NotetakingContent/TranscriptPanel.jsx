@@ -75,7 +75,7 @@ function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, 
 }
 
 
-function ProcessedTranscriptPanel({ workspaceId, processedTranscript }) {
+function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, isConnected }) {
     const [isProcessing, setIsProcessing] = useState(false);
 
     const formatProcessedTranscript = () => {
@@ -90,8 +90,17 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript }) {
 
     const handleStartInitialProcess = () => {
         setIsProcessing(true);
-        // TODO: Call API to start initial processing
-        console.log('Start initial process for workspace:', workspaceId);
+
+        if (socket && isConnected) {
+            socket.send(JSON.stringify({
+                type: "workspace_message",
+                sub_type: "process_transcript"
+            }));
+            console.log('Sent process_transcript message for workspace:', workspaceId);
+        } else {
+            console.error('WebSocket not connected');
+            setIsProcessing(false);
+        }
     };
 
     if (isProcessedEmpty()) {
@@ -125,7 +134,7 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript }) {
     );
 }
 
-export default function TranscriptPanel({ workspaceId, transcript, processedTranscript }) {
+export default function TranscriptPanel({ workspaceId, transcript, processedTranscript, socket, isConnected }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTranscript, setEditedTranscript] = useState(transcript || 'No notes yet...');
     const [isSyncing, setIsSyncing] = useState(false);
@@ -187,6 +196,8 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
                     <ProcessedTranscriptPanel
                         workspaceId={workspaceId}
                         processedTranscript={processedTranscript}
+                        socket={socket}
+                        isConnected={isConnected}
                     />
                 ) : (
                     <RawTranscriptPanel

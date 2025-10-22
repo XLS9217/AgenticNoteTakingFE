@@ -3,7 +3,7 @@ import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
 import { UserMessage, AgentMessage, RunningMessage } from "./ChatBubble.jsx";
 import UserInputArea from "./UserInputArea.jsx";
-import { connectToChatSession, changeWorkspaceName } from "../../../Api/gateway.js";
+import { changeWorkspaceName } from "../../../Api/gateway.js";
 
 
 /* Only for testing layout do not use*/
@@ -22,11 +22,8 @@ const STATUS_DISPLAY = {
     disconnected: '🔴 Disconnected'
 };
 
-export default function ChatPanel({ workspaceId, chatHistory, workspaceName, onWorkspaceNameChange }) {
+export default function ChatPanel({ workspaceId, chatHistory, workspaceName, onWorkspaceNameChange, socket, isConnected }) {
     const [messages, setMessages] = useState([]);
-    const [socket, setSocket] = useState(null);
-    const [isConnected, setIsConnected] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const [currentChunk, setCurrentChunk] = useState(null);
     const [connectionStatus, setConnectionStatus] = useState('loading');
     const [isEditingName, setIsEditingName] = useState(false);
@@ -45,83 +42,38 @@ export default function ChatPanel({ workspaceId, chatHistory, workspaceName, onW
     }, [chatHistory]);
 
     useEffect(() => {
-        let ws = null;
+        if (!socket) return;
 
-        const connectWebSocket = () => {
-            setIsLoading(true);
-            setConnectionStatus('loading');
-
+        const handleMessage = (event) => {
             try {
-                // Connect to WebSocket
-                ws = connectToChatSession();
-                setSocket(ws);
+                const data = JSON.parse(event.data);
+                console.log('Received message:', data);
 
-                ws.onopen = () => {
-                    console.log('WebSocket connected successfully');
-                    setIsConnected(true);
-                    setConnectionStatus('connected');
-                    setIsLoading(false);
-
-                    // Send workspace_id to WebSocket for conversation
-                    ws.send(JSON.stringify({
-                        type: "workspace_switch",
-                        workspace_id: workspaceId
-                    }));
-                    console.log('Sent workspace_switch message:', workspaceId);
-                };
-
-                ws.onmessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                        console.log('Received message:', data);
-
-                        if (data.type === 'agent_message') {
-                            setMessages(prev => [...prev, {
-                                id: Date.now(),
-                                user: 'AI',
-                                text: data.text
-                            }]);
-                        }
-                        else if(data.type === "agent_chunk"){
-                            setCurrentChunk(data);
-                        }
-                        else if (data.error) {
-                            console.error('Error from server:', data.error);
-                        }
-                    } catch (error) {
-                        console.error('Error parsing message:', error);
-                    }
-                };
-
-                ws.onerror = (error) => {
-                    console.error('WebSocket error:', error);
-                    setIsConnected(false);
-                    setConnectionStatus('disconnected');
-                    setIsLoading(false);
-                };
-
-                ws.onclose = () => {
-                    console.log('WebSocket connection closed');
-                    setIsConnected(false);
-                    setConnectionStatus('disconnected');
-                };
-
+                if (data.type === 'agent_message') {
+                    setMessages(prev => [...prev, {
+                        id: Date.now(),
+                        user: 'AI',
+                        text: data.text
+                    }]);
+                }
+                else if(data.type === "agent_chunk"){
+                    setCurrentChunk(data);
+                }
+                else if (data.error) {
+                    console.error('Error from server:', data.error);
+                }
             } catch (error) {
-                console.error('Error connecting WebSocket:', error);
-                setIsLoading(false);
-                setConnectionStatus('disconnected');
+                console.error('Error parsing message:', error);
             }
         };
 
-        connectWebSocket();
+        socket.addEventListener('message', handleMessage);
+        setConnectionStatus(isConnected ? 'connected' : 'disconnected');
 
-        // Cleanup on component unmount
         return () => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.close();
-            }
+            socket.removeEventListener('message', handleMessage);
         };
-    }, [workspaceId]);
+    }, [socket, isConnected]);
 
     // Callback for when RunningMessage completes
     const handleMessageComplete = (completeText) => {

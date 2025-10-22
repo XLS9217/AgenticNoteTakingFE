@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import NoteTakingContent from "./NotetakingContent/NoteTakingContent.jsx";
 import ChatPanel from "./ChatPanel/ChatPanel.jsx";
 import { useUtilBar } from "../../Components/UtilBar/UtilBarProvider.jsx";
-import { getWorkspace } from "../../Api/gateway.js";
+import { getWorkspace, connectToChatSession } from "../../Api/gateway.js";
 
 export default function WorkSpacePanel({ workspaceId, onLeave }) {
     const [workspaceData, setWorkspaceData] = useState({ note: '', transcript: '', processed_transcript: [] });
     const [chatHistory, setChatHistory] = useState([]);
     const [workspaceName, setWorkspaceName] = useState('');
+    const [socket, setSocket] = useState(null);
+    const [isConnected, setIsConnected] = useState(false);
     const { setOverride, clearOverride } = useUtilBar();
 
     useEffect(() => {
@@ -29,6 +31,36 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
         };
 
         loadWorkspace();
+    }, [workspaceId]);
+
+    useEffect(() => {
+        const ws = connectToChatSession();
+        setSocket(ws);
+
+        ws.onopen = () => {
+            console.log('WebSocket connected');
+            setIsConnected(true);
+            ws.send(JSON.stringify({
+                type: "workspace_switch",
+                workspace_id: workspaceId
+            }));
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket closed');
+            setIsConnected(false);
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            setIsConnected(false);
+        };
+
+        return () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+            }
+        };
     }, [workspaceId]);
 
     useEffect(() => {
@@ -60,11 +92,11 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
         <div className="workspace-main">
             {/*Workspace panel*/}
             <div className="layout-panel layout-panel--workspace">
-                <NoteTakingContent workspaceId={workspaceId} note={workspaceData.note} transcript={workspaceData.transcript} processedTranscript={workspaceData.processed_transcript} />
+                <NoteTakingContent workspaceId={workspaceId} note={workspaceData.note} transcript={workspaceData.transcript} processedTranscript={workspaceData.processed_transcript} socket={socket} isConnected={isConnected} />
             </div>
             {/*chatbox panel*/}
             <div className="layout-panel layout-panel--chat">
-                <ChatPanel workspaceId={workspaceId} chatHistory={chatHistory} workspaceName={workspaceName} onWorkspaceNameChange={setWorkspaceName} />
+                <ChatPanel workspaceId={workspaceId} chatHistory={chatHistory} workspaceName={workspaceName} onWorkspaceNameChange={setWorkspaceName} socket={socket} isConnected={isConnected} />
             </div>
         </div>
     );
