@@ -685,6 +685,9 @@ Transcript Panel Styles
   margin: calc(var(--spacing-xs) * -1);
   border-radius: var(--border-radius-sm);
   transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .transcript-title-clickable:hover {
@@ -816,6 +819,22 @@ Transcript Panel Styles
 .transcript-header-buttons {
   display: flex;
   align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.transcript-swap-icon {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  filter: brightness(0) saturate(100%) invert(1);
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+.transcript-swap-icon:hover {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 .transcript-content-display {

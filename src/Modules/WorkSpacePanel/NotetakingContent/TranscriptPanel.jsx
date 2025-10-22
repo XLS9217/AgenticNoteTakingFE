@@ -257,6 +257,17 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
                             title={showProcessed ? 'Click to view Raw Transcript' : 'Click to view Processed Transcript'}
                         >
                             {showProcessed ? 'Processed Transcript' : 'Raw Transcript'}
+                            <img
+                                src="/icons/swap.png"
+                                alt="Swap view"
+                                className="transcript-swap-icon"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowProcessed(!showProcessed);
+                                    setIsEditing(false);
+                                }}
+                                title={showProcessed ? 'Switch to Raw Transcript' : 'Switch to Processed Transcript'}
+                            />
                         </h2>
                         <div className="transcript-edit-indicator">
                             {showProcessed
