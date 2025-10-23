@@ -1,19 +1,21 @@
 import { useState } from "react";
 import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
-import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInnerTextButton.jsx";
+import LiquidGlassInnerTabDiv from "../../../Components/LiquidGlassInnerTabDiv.jsx";
 
 export default function NotePanel({ note, metadata }) {
-    const [showMetadata, setShowMetadata] = useState(true);
+    const [activeTab, setActiveTab] = useState('Metadata');
 
     return <LiquidGlassDiv isButton={false}>
         <div className="panel-container">
             <h2 className="panel-title">Note</h2>
-            <div className="transcript-header-buttons" style={{ marginBottom: '8px' }}>
-                <LiquidGlassInnerTextButton onClick={() => setShowMetadata(!showMetadata)}>
-                    {showMetadata ? 'Show Empty' : 'Show Metadata'}
-                </LiquidGlassInnerTextButton>
+            <div style={{ marginBottom: '12px' }}>
+                <LiquidGlassInnerTabDiv
+                    tabs={['Metadata', 'Empty']}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                />
             </div>
-            {showMetadata ? (
+            {activeTab === 'Metadata' ? (
                 metadata ? (
                     <div className="panel-content" style={{ marginBottom: '16px' }}>
                         <pre style={{ whiteSpace: 'pre-wrap', fontSize: '0.9em', marginTop: '8px' }}>

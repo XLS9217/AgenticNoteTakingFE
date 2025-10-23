@@ -254,3 +254,40 @@ Liquid Glass Text Button
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
 }
+
+/*
+=================================
+Liquid Glass Tab Container
+=================================
+*/
+
+.liquid-glass-tab-container {
+  display: flex;
+  gap: 4px;
+  background: rgba(128, 128, 128, 0.15);
+  border-radius: 999px;
+  padding: 4px;
+  width: 100%;
+}
+
+.liquid-glass-tab {
+  padding: 6px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  color: rgba(255, 255, 255, 0.85);
+  font-family: inherit;
+  font-size: 0.85em;
+  text-align: center;
+  flex: 1;
+  background: transparent;
+}
+
+.liquid-glass-tab:hover {
+  background: rgba(160, 160, 160, 0.25);
+}
+
+.liquid-glass-tab--active {
+  background: rgba(200, 200, 200, 0.4);
+  color: rgba(255, 255, 255, 0.95);
+}
