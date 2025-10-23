@@ -214,3 +214,18 @@ export async function getProcessedTranscript(workspaceId) {
         throw error;
     }
 }
+
+/**
+ * Get metadata for a workspace
+ * @param {string} workspaceId - The workspace ID
+ * @returns {Promise<Object>} Response from the backend containing metadata
+ */
+export async function getMetadata(workspaceId) {
+    try {
+        const response = await request.get(`/note-taking/get-metadata/${workspaceId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching metadata:', error);
+        throw error;
+    }
+}

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
 import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInnerTextButton.jsx";
-import { updateTranscript, getProcessedTranscript } from "../../../Api/gateway.js";
+import { updateTranscript, getProcessedTranscript, getMetadata } from "../../../Api/gateway.js";
 
 function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, setIsEditing }) {
     const [isDragging, setIsDragging] = useState(false);
@@ -75,7 +75,7 @@ function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, 
 }
 
 
-function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, isConnected }) {
+function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, isConnected, onMetadataUpdate }) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [processStatus, setProcessStatus] = useState(null);
     const [fetchedTranscript, setFetchedTranscript] = useState(null);
@@ -105,6 +105,7 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
                     if (status === 'Done') {
                         setIsProcessing(false);
                         fetchProcessedTranscript();
+                        fetchMetadata();
                     } else if (status === 'Error' || status === 'None') {
                         setIsProcessing(false);
                     } else {
@@ -129,6 +130,17 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
             setFetchedTranscript(response.processed_transcript);
         } catch (error) {
             console.error('Failed to fetch processed transcript:', error);
+        }
+    };
+
+    const fetchMetadata = async () => {
+        try {
+            const response = await getMetadata(workspaceId);
+            if (onMetadataUpdate) {
+                onMetadataUpdate(response.metadata);
+            }
+        } catch (error) {
+            console.error('Failed to fetch metadata:', error);
         }
     };
 
@@ -210,7 +222,7 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
     );
 }
 
-export default function TranscriptPanel({ workspaceId, transcript, processedTranscript, socket, isConnected }) {
+export default function TranscriptPanel({ workspaceId, transcript, processedTranscript, socket, isConnected, onMetadataUpdate }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTranscript, setEditedTranscript] = useState(transcript || 'No notes yet...');
     const [isSyncing, setIsSyncing] = useState(false);
@@ -288,6 +300,7 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
                         processedTranscript={processedTranscript}
                         socket={socket}
                         isConnected={isConnected}
+                        onMetadataUpdate={onMetadataUpdate}
                     />
                 ) : (
                     <RawTranscriptPanel
