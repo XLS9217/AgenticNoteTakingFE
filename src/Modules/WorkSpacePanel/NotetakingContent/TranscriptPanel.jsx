@@ -165,7 +165,7 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
 
     return (
         <>
-            <div className="transcript-header-buttons" style={{ marginBottom: '10px' }}>
+            <div className="transcript-header-buttons" style={{ marginBottom: '0px' }}>
                 <LiquidGlassInnerTextButton onClick={handleProcess}>
                     Process
                 </LiquidGlassInnerTextButton>
@@ -201,7 +201,7 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
                         )
                     ) : (
                         <div className="transcript-empty-state">
-                            <p className="panel-content">Click Process</p>
+                            <p className="panel-content transcript-empty-hint">(Click Process)</p>
                         </div>
                     )}
                 </div>

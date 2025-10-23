@@ -848,6 +848,10 @@ Transcript Panel Styles
   padding: var(--spacing-sm);
 }
 
+.transcript-empty-hint {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 /*
 ==========================================
 Processed Transcript List Styles
