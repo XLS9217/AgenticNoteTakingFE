@@ -850,6 +850,58 @@ Transcript Panel Styles
 
 /*
 ==========================================
+Processed Transcript List Styles
+==========================================
+*/
+
+.transcript-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--spacing-xs);
+}
+
+.transcript-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius-md);
+  transition: var(--transition-fast);
+  cursor: pointer;
+}
+
+.transcript-entry:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.transcript-entry-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-xs);
+}
+
+.transcript-speaker {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.2em;
+  font-weight: 500;
+}
+
+.transcript-timestamp {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75em;
+  font-weight: 400;
+}
+
+.transcript-utterance {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95em;
+  line-height: 1.6;
+  padding-left: var(--spacing-xs);
+}
+
+/*
+==========================================
 Processing Shimmer Animation
 ==========================================
 */

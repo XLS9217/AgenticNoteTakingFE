@@ -79,6 +79,7 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
     const [isProcessing, setIsProcessing] = useState(false);
     const [processStatus, setProcessStatus] = useState(null);
     const [fetchedTranscript, setFetchedTranscript] = useState(null);
+    const [showRawJSON, setShowRawJSON] = useState(false);
 
     useEffect(() => {
         // Initialize with the processedTranscript prop
@@ -131,8 +132,18 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
         }
     };
 
-    const formatProcessedTranscript = (transcript) => {
-        return JSON.stringify(transcript, null, 2);
+    const renderProcessedTranscript = (transcript) => {
+        if (!Array.isArray(transcript)) return null;
+
+        return transcript.map((item, index) => (
+            <div key={index} className="transcript-entry">
+                <div className="transcript-entry-header">
+                    <span className="transcript-speaker">{item.speaker}</span>
+                    <span className="transcript-timestamp">[{item.timestamp}]</span>
+                </div>
+                <div className="transcript-utterance">{item.utterance}</div>
+            </div>
+        ));
     };
 
     const handleProcess = () => {
@@ -152,82 +163,50 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
         }
     };
 
-    // Show error state
-    if (processStatus === 'Error') {
-        return (
-            <LiquidGlassScrollBar>
-                <div className="transcript-content-wrapper">
-                    <div className="transcript-empty-state">
-                        <p className="panel-content">There is an error</p>
-                        <LiquidGlassInnerTextButton onClick={handleProcess}>
-                            Process
-                        </LiquidGlassInnerTextButton>
-                    </div>
-                </div>
-            </LiquidGlassScrollBar>
-        );
-    }
-
-    // Show none state (empty transcript)
-    if (processStatus === 'None') {
-        return (
-            <LiquidGlassScrollBar>
-                <div className="transcript-content-wrapper">
-                    <div className="transcript-empty-state">
-                        <p className="panel-content">You need to fill the raw transcript</p>
-                        <LiquidGlassInnerTextButton onClick={handleProcess}>
-                            Process
-                        </LiquidGlassInnerTextButton>
-                    </div>
-                </div>
-            </LiquidGlassScrollBar>
-        );
-    }
-
-    // Show processing state
-    if (isProcessing) {
-        return (
-            <LiquidGlassScrollBar>
-                <div className="transcript-content-wrapper">
-                    <div className="transcript-empty-state">
-                        <div className="processing-text-shimmer">
-                            {processStatus || 'Processing'}...
-                        </div>
-                    </div>
-                </div>
-            </LiquidGlassScrollBar>
-        );
-    }
-
-    // Show completed transcript with Re-process button
-    if (fetchedTranscript) {
-        return (
-            <LiquidGlassScrollBar>
-                <div className="transcript-content-wrapper">
-                    <div className="transcript-header-buttons" style={{ marginBottom: '10px' }}>
-                        <LiquidGlassInnerTextButton onClick={handleProcess}>
-                            Re-process
-                        </LiquidGlassInnerTextButton>
-                    </div>
-                    <p className="panel-content transcript-content-display">
-                        {formatProcessedTranscript(fetchedTranscript)}
-                    </p>
-                </div>
-            </LiquidGlassScrollBar>
-        );
-    }
-
-    // Default: show initial process button
     return (
-        <LiquidGlassScrollBar>
-            <div className="transcript-content-wrapper">
-                <div className="transcript-empty-state">
-                    <LiquidGlassInnerTextButton onClick={handleProcess}>
-                        Process
-                    </LiquidGlassInnerTextButton>
-                </div>
+        <>
+            <div className="transcript-header-buttons" style={{ marginBottom: '10px' }}>
+                <LiquidGlassInnerTextButton onClick={handleProcess}>
+                    Process
+                </LiquidGlassInnerTextButton>
+                <LiquidGlassInnerTextButton onClick={() => setShowRawJSON(!showRawJSON)}>
+                    {showRawJSON ? 'Show List' : 'Show Raw JSON'}
+                </LiquidGlassInnerTextButton>
             </div>
-        </LiquidGlassScrollBar>
+            <LiquidGlassScrollBar>
+                <div className="transcript-content-wrapper">
+                    {processStatus === 'Error' ? (
+                        <div className="transcript-empty-state">
+                            <p className="panel-content">There is an error</p>
+                        </div>
+                    ) : processStatus === 'None' ? (
+                        <div className="transcript-empty-state">
+                            <p className="panel-content">You need to fill the raw transcript</p>
+                        </div>
+                    ) : isProcessing ? (
+                        <div className="transcript-empty-state">
+                            <div className="processing-text-shimmer">
+                                {processStatus || 'Processing'}...
+                            </div>
+                        </div>
+                    ) : fetchedTranscript ? (
+                        showRawJSON ? (
+                            <p className="panel-content transcript-content-display">
+                                {JSON.stringify(fetchedTranscript, null, 2)}
+                            </p>
+                        ) : (
+                            <div className="transcript-list">
+                                {renderProcessedTranscript(fetchedTranscript)}
+                            </div>
+                        )
+                    ) : (
+                        <div className="transcript-empty-state">
+                            <p className="panel-content">Click Process</p>
+                        </div>
+                    )}
+                </div>
+            </LiquidGlassScrollBar>
+        </>
     );
 }
 
