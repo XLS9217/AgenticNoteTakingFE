@@ -262,6 +262,7 @@ Liquid Glass Tab Container
 */
 
 .liquid-glass-tab-container {
+  position: relative;
   display: flex;
   gap: 4px;
   background: rgba(128, 128, 128, 0.15);
@@ -270,11 +271,24 @@ Liquid Glass Tab Container
   width: 100%;
 }
 
+.liquid-glass-tab-slider {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  background: rgba(200, 200, 200, 0.4);
+  border-radius: 999px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+}
+
 .liquid-glass-tab {
+  position: relative;
+  z-index: 2;
   padding: 6px 16px;
   border-radius: 999px;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: color 0.3s ease;
   color: rgba(255, 255, 255, 0.85);
   font-family: inherit;
   font-size: 0.85em;
@@ -283,11 +297,11 @@ Liquid Glass Tab Container
   background: transparent;
 }
 
-.liquid-glass-tab:hover {
+.liquid-glass-tab:hover:not(.liquid-glass-tab--active) {
   background: rgba(160, 160, 160, 0.25);
 }
 
 .liquid-glass-tab--active {
-  background: rgba(200, 200, 200, 0.4);
+  background: transparent;
   color: rgba(255, 255, 255, 0.95);
 }
