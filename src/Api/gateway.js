@@ -229,3 +229,24 @@ export async function getMetadata(workspaceId) {
         throw error;
     }
 }
+
+/**
+ * Update speaker name in metadata and processed transcript
+ * @param {string} workspaceId - The workspace ID
+ * @param {string} oldSpeakerName - The old speaker name
+ * @param {string} newSpeakerName - The new speaker name
+ * @returns {Promise<Object>} Response from the backend
+ */
+export async function updateSpeakerName(workspaceId, oldSpeakerName, newSpeakerName) {
+    try {
+        const response = await request.put('/note-taking/update-speaker-name', {
+            workspace_id: workspaceId,
+            old_speaker_name: oldSpeakerName,
+            new_speaker_name: newSpeakerName
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating speaker name:', error);
+        throw error;
+    }
+}

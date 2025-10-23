@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle, useCallback } from "react";
 import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
 import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInnerTextButton.jsx";
@@ -75,11 +75,31 @@ function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, 
 }
 
 
-function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, isConnected, onMetadataUpdate }) {
+function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, isConnected, onMetadataUpdate, refreshTrigger }) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [processStatus, setProcessStatus] = useState(null);
     const [fetchedTranscript, setFetchedTranscript] = useState(null);
     const [showRawJSON, setShowRawJSON] = useState(false);
+
+    const fetchProcessedTranscript = useCallback(async () => {
+        try {
+            const response = await getProcessedTranscript(workspaceId);
+            setFetchedTranscript(response.processed_transcript);
+        } catch (error) {
+            console.error('Failed to fetch processed transcript:', error);
+        }
+    }, [workspaceId]);
+
+    const fetchMetadata = useCallback(async () => {
+        try {
+            const response = await getMetadata(workspaceId);
+            if (onMetadataUpdate) {
+                onMetadataUpdate(response.metadata);
+            }
+        } catch (error) {
+            console.error('Failed to fetch metadata:', error);
+        }
+    }, [workspaceId, onMetadataUpdate]);
 
     useEffect(() => {
         // Initialize with the processedTranscript prop
@@ -90,6 +110,13 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
             setFetchedTranscript(null);
         }
     }, [processedTranscript, workspaceId]);
+
+    useEffect(() => {
+        // Refetch when refreshTrigger changes
+        if (refreshTrigger > 0) {
+            fetchProcessedTranscript();
+        }
+    }, [refreshTrigger, fetchProcessedTranscript]);
 
     useEffect(() => {
         if (!socket) return;
@@ -122,27 +149,7 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
         return () => {
             socket.removeEventListener('message', handleMessage);
         };
-    }, [socket, workspaceId]);
-
-    const fetchProcessedTranscript = async () => {
-        try {
-            const response = await getProcessedTranscript(workspaceId);
-            setFetchedTranscript(response.processed_transcript);
-        } catch (error) {
-            console.error('Failed to fetch processed transcript:', error);
-        }
-    };
-
-    const fetchMetadata = async () => {
-        try {
-            const response = await getMetadata(workspaceId);
-            if (onMetadataUpdate) {
-                onMetadataUpdate(response.metadata);
-            }
-        } catch (error) {
-            console.error('Failed to fetch metadata:', error);
-        }
-    };
+    }, [socket, workspaceId, fetchProcessedTranscript, fetchMetadata]);
 
     const renderProcessedTranscript = (transcript) => {
         if (!Array.isArray(transcript)) return null;
@@ -222,11 +229,18 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
     );
 }
 
-export default function TranscriptPanel({ workspaceId, transcript, processedTranscript, socket, isConnected, onMetadataUpdate }) {
+const TranscriptPanel = forwardRef(function TranscriptPanel({ workspaceId, transcript, processedTranscript, socket, isConnected, onMetadataUpdate }, ref) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTranscript, setEditedTranscript] = useState(transcript || 'No notes yet...');
     const [isSyncing, setIsSyncing] = useState(false);
     const [showProcessed, setShowProcessed] = useState(true);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    useImperativeHandle(ref, () => ({
+        refetchProcessedTranscript: () => {
+            setRefreshTrigger(prev => prev + 1);
+        }
+    }));
 
     useEffect(() => {
         const hasNoTranscript = !transcript || transcript === '' || transcript === 'No notes yet...';
@@ -301,6 +315,7 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
                         socket={socket}
                         isConnected={isConnected}
                         onMetadataUpdate={onMetadataUpdate}
+                        refreshTrigger={refreshTrigger}
                     />
                 ) : (
                     <RawTranscriptPanel
@@ -313,4 +328,6 @@ export default function TranscriptPanel({ workspaceId, transcript, processedTran
             </div>
         </LiquidGlassDiv>
     );
-}
+});
+
+export default TranscriptPanel;
