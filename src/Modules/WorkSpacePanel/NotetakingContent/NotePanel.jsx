@@ -1,148 +1,252 @@
-import { useState, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
-import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
-import LiquidGlassInnerTabDiv from "../../../Components/LiquidGlassInnerTabDiv.jsx";
-import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
-import { updateSpeakerName, getMetadata } from "../../../Api/gateway.js";
+import { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import LiquidGlassDiv from '../../../Components/LiquidGlassDiv.jsx';
+import LiquidGlassInnerTabDiv from '../../../Components/LiquidGlassInnerTabDiv.jsx';
+import LiquidGlassScrollBar from '../../../Components/LiquidGlassScrollBar.jsx';
+import { getMetadata, updateSpeakerName } from '../../../Api/gateway.js';
 
-export default function NotePanel({ note, metadata, workspaceId, onMetadataUpdate, onRefreshProcessedTranscript, onNoteChange }) {
-    const [activeTab, setActiveTab] = useState('Note');
-    const [editingSpeaker, setEditingSpeaker] = useState(null);
-    const [editedName, setEditedName] = useState('');
-    const [isMarkdownMode, setIsMarkdownMode] = useState(true);
-    const [editedNote, setEditedNote] = useState(note || '');
+const NOTE_TAB = 'Note';
+const METADATA_TAB = 'Metadata';
 
-    const handleSpeakerClick = (speakerName) => {
-        setEditingSpeaker(speakerName);
-        setEditedName(speakerName);
-    };
+export default function NotePanel({
+  note,
+  metadata,
+  workspaceId,
+  onMetadataUpdate,
+  onRefreshProcessedTranscript,
+  onNoteChange
+}) {
+  const [activeTab, setActiveTab] = useState(NOTE_TAB);
+  const [isMarkdownMode, setIsMarkdownMode] = useState(true);
+  const [editedNote, setEditedNote] = useState(note || '');
+  const [editingSpeaker, setEditingSpeaker] = useState(null);
+  const [editedSpeakerName, setEditedSpeakerName] = useState('');
 
-    const handleSpeakerSave = async (oldName) => {
-        if (!editedName || editedName === oldName) {
-            setEditingSpeaker(null);
-            return;
-        }
+  useEffect(() => {
+    setEditedNote(note || '');
+  }, [note]);
 
-        try {
-            await updateSpeakerName(workspaceId, oldName, editedName);
-            const response = await getMetadata(workspaceId);
-            if (onMetadataUpdate) {
-                onMetadataUpdate(response.metadata);
-            }
-            if (onRefreshProcessedTranscript) {
-                onRefreshProcessedTranscript();
-            }
-            setEditingSpeaker(null);
-        } catch (error) {
-            console.error('Failed to update speaker name:', error);
-            setEditingSpeaker(null);
-        }
-    };
+  const handleNoteChange = (value) => {
+    setEditedNote(value);
+    if (onNoteChange) {
+      onNoteChange(value);
+    }
+  };
 
-    const handleKeyDown = (e, oldName) => {
-        if (e.key === 'Enter') {
-            handleSpeakerSave(oldName);
-        } else if (e.key === 'Escape') {
-            setEditingSpeaker(null);
-        }
-    };
+  const handleToggleMode = () => {
+    setIsMarkdownMode((prev) => !prev);
+  };
 
-    const handleNoteChange = (e) => {
-        const newNote = e.target.value;
-        setEditedNote(newNote);
-        if (onNoteChange) {
-            onNoteChange(newNote);
-        }
-    };
+  const handleSpeakerClick = (name) => {
+    setEditingSpeaker(name);
+    setEditedSpeakerName(name);
+  };
 
-    useEffect(() => {
-        setEditedNote(note || '');
-    }, [note]);
+  const handleSpeakerNameChange = (value) => {
+    setEditedSpeakerName(value);
+  };
 
-    return <LiquidGlassDiv isButton={false}>
-        <div className="panel-container">
-            <h2 className="panel-title">Note</h2>
-            <div style={{ marginBottom: '12px' }}>
-                <LiquidGlassInnerTabDiv
-                    tabs={['Note', 'Metadata']}
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                />
-            </div>
-            {activeTab === 'Note' ? (
-                <div className={`note-container ${!isMarkdownMode ? 'note-container--editing' : ''}`}>
-                    <button
-                        onClick={() => setIsMarkdownMode(!isMarkdownMode)}
-                        title={isMarkdownMode ? "Switch to plain text edit" : "Switch to markdown"}
-                        className="note-toggle-button"
-                    >
-                        {'</>'}
-                    </button>
-                    {isMarkdownMode ? (
-                        <LiquidGlassScrollBar>
-                            <div className="panel-content note-markdown-display">
-                                {editedNote ? (
-                                    <ReactMarkdown>{editedNote}</ReactMarkdown>
-                                ) : (
-                                    'No notes yet...'
-                                )}
-                            </div>
-                        </LiquidGlassScrollBar>
-                    ) : (
-                        <LiquidGlassScrollBar>
-                            <textarea
-                                className="note-textarea"
-                                value={editedNote}
-                                onChange={handleNoteChange}
-                                placeholder="No notes yet..."
-                            />
-                        </LiquidGlassScrollBar>
-                    )}
-                </div>
-            ) : (
-                metadata && metadata.speaker_list ? (
-                    <LiquidGlassScrollBar>
-                        <div className="panel-content" style={{ paddingRight: 'var(--spacing-xs)' }}>
-                            <h3 style={{ fontSize: '1.2em', marginBottom: '12px', color: 'rgba(255, 255, 255, 0.95)' }}>Speakers</h3>
-                            {metadata.speaker_list.map((speaker, index) => (
-                                <div
-                                    key={index}
-                                    className="speaker-card"
-                                >
-                                    <img
-                                        src="/icons/user.png"
-                                        alt="Speaker"
-                                        className="speaker-icon"
-                                    />
-                                    <div className="speaker-info">
-                                        {editingSpeaker === speaker.name ? (
-                                            <input
-                                                type="text"
-                                                className="speaker-name-input"
-                                                value={editedName}
-                                                onChange={(e) => setEditedName(e.target.value)}
-                                                onBlur={() => handleSpeakerSave(speaker.name)}
-                                                onKeyDown={(e) => handleKeyDown(e, speaker.name)}
-                                                autoFocus
-                                            />
-                                        ) : (
-                                            <div className="speaker-name" onClick={() => handleSpeakerClick(speaker.name)}>
-                                                {speaker.name}
-                                            </div>
-                                        )}
-                                        <div className="speaker-description">
-                                            {speaker.description || 'no description...'}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </LiquidGlassScrollBar>
-                ) : (
-                    <p className="panel-content">No metadata yet...</p>
-                )
-            )}
+  const resetSpeakerEditing = () => {
+    setEditingSpeaker(null);
+    setEditedSpeakerName('');
+  };
+
+  const handleSpeakerSave = async (originalName) => {
+    const nextName = editedSpeakerName.trim();
+
+    if (!nextName || nextName === originalName) {
+      resetSpeakerEditing();
+      return;
+    }
+
+    try {
+      await updateSpeakerName(workspaceId, originalName, nextName);
+      const response = await getMetadata(workspaceId);
+      if (onMetadataUpdate) {
+        onMetadataUpdate(response.metadata);
+      }
+      if (onRefreshProcessedTranscript) {
+        onRefreshProcessedTranscript();
+      }
+    } catch (error) {
+      console.error('Failed to update speaker name:', error);
+    } finally {
+      resetSpeakerEditing();
+    }
+  };
+
+  const handleSpeakerKeyDown = (event, originalName) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleSpeakerSave(originalName);
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      resetSpeakerEditing();
+    }
+  };
+
+  return (
+    <LiquidGlassDiv isButton={false}>
+      <div className="panel-container note-panel">
+        <h2 className="panel-title">Note</h2>
+        <div className="note-tabs">
+          <LiquidGlassInnerTabDiv
+            tabs={[NOTE_TAB, METADATA_TAB]}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
         </div>
+        {activeTab === NOTE_TAB ? (
+          <NoteTab
+            note={editedNote}
+            isMarkdownMode={isMarkdownMode}
+            onToggleMode={handleToggleMode}
+            onChange={handleNoteChange}
+          />
+        ) : (
+          <MetadataTab
+            metadata={metadata}
+            editingSpeaker={editingSpeaker}
+            editedName={editedSpeakerName}
+            onSpeakerClick={handleSpeakerClick}
+            onSpeakerChange={handleSpeakerNameChange}
+            onSpeakerSave={handleSpeakerSave}
+            onSpeakerKeyDown={handleSpeakerKeyDown}
+          />
+        )}
+      </div>
     </LiquidGlassDiv>
+  );
+}
 
+function NoteTab({ note, isMarkdownMode, onToggleMode, onChange }) {
+  const scrollClassName = isMarkdownMode
+    ? 'note-panel-scroll note-panel-scroll--markdown'
+    : 'note-panel-scroll note-panel-scroll--editor';
+
+  return (
+    <div className={`note-container ${!isMarkdownMode ? 'note-container--editing' : ''}`}>
+      <button
+        type="button"
+        onClick={onToggleMode}
+        title={isMarkdownMode ? 'Switch to plain text edit' : 'Switch to markdown'}
+        className="note-toggle-button"
+      >
+        {'</>'}
+      </button>
+      <LiquidGlassScrollBar className={scrollClassName}>
+        {isMarkdownMode ? (
+          <div className="panel-content note-markdown-display">
+            {note ? <ReactMarkdown>{note}</ReactMarkdown> : 'No notes yet...'}
+          </div>
+        ) : (
+          <textarea
+            className="note-textarea"
+            value={note}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder="No notes yet..."
+          />
+        )}
+      </LiquidGlassScrollBar>
+    </div>
+  );
+}
+
+function MetadataTab({
+  metadata,
+  editingSpeaker,
+  editedName,
+  onSpeakerClick,
+  onSpeakerChange,
+  onSpeakerSave,
+  onSpeakerKeyDown
+}) {
+  if (!metadata || !Array.isArray(metadata.speaker_list) || metadata.speaker_list.length === 0) {
+    return <p className="panel-content">No metadata yet...</p>;
+  }
+
+  return (
+    <LiquidGlassScrollBar className="note-panel-scroll note-panel-scroll--metadata">
+      <div className="panel-content note-metadata">
+        <h3 className="note-metadata-heading">Speakers</h3>
+        {metadata.speaker_list.map((speaker) => (
+          <SpeakerRow
+            key={speaker.name}
+            speaker={speaker}
+            isEditing={editingSpeaker === speaker.name}
+            editedName={editedName}
+            onSpeakerClick={onSpeakerClick}
+            onSpeakerChange={onSpeakerChange}
+            onSpeakerSave={onSpeakerSave}
+            onSpeakerKeyDown={onSpeakerKeyDown}
+          />
+        ))}
+      </div>
+    </LiquidGlassScrollBar>
+  );
+}
+
+function SpeakerRow({
+  speaker,
+  isEditing,
+  editedName,
+  onSpeakerClick,
+  onSpeakerChange,
+  onSpeakerSave,
+  onSpeakerKeyDown
+}) {
+  const handleClick = () => {
+    onSpeakerClick(speaker.name);
+  };
+
+  const handleChange = (event) => {
+    onSpeakerChange(event.target.value);
+  };
+
+  const handleBlur = () => {
+    onSpeakerSave(speaker.name);
+  };
+
+  const handleKeyDown = (event) => {
+    onSpeakerKeyDown(event, speaker.name);
+  };
+
+  return (
+    <div className="speaker-card">
+      <img src="/icons/user.png" alt="Speaker" className="speaker-icon" />
+      <div className="speaker-info">
+        {isEditing ? (
+          <input
+            type="text"
+            className="speaker-name-input"
+            value={editedName}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            autoFocus
+          />
+        ) : (
+          <div
+            className="speaker-name"
+            role="button"
+            tabIndex={0}
+            onClick={handleClick}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleClick();
+              }
+            }}
+          >
+            {speaker.name}
+          </div>
+        )}
+        <div className="speaker-description">
+          {speaker.description || 'no description...'}
+        </div>
+      </div>
+    </div>
+  );
 }

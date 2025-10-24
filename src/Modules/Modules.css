@@ -984,6 +984,11 @@ Speaker Card Styles
   background: rgba(255, 255, 255, 0.1);
 }
 
+.speaker-name:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 2px;
+}
+
 .speaker-description {
   font-size: 0.75em;
   color: rgba(255, 255, 255, 0.7);
@@ -1021,9 +1026,19 @@ Note Panel Styles
 ==========================================
 */
 
+.note-panel {
+  height: 100%;
+}
+
+.note-tabs {
+  margin-bottom: 12px;
+}
+
 .note-container {
   position: relative;
   flex: 1;
+  display: flex;
+  flex-direction: column;
   border-radius: var(--border-radius-md);
   overflow: hidden;
 }
@@ -1057,9 +1072,34 @@ Note Panel Styles
   border-color: rgba(255, 255, 255, 0.3);
 }
 
+.note-panel-scroll {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.note-panel-scroll--markdown {
+  padding: var(--spacing-sm);
+  padding-right: calc(var(--spacing-sm) + 6px);
+  box-sizing: border-box;
+}
+
+.note-panel-scroll--editor {
+  padding: var(--spacing-xs);
+  box-sizing: border-box;
+}
+
+.note-panel-scroll--metadata {
+  padding: var(--spacing-sm);
+  padding-right: calc(var(--spacing-sm) + 6px);
+  box-sizing: border-box;
+}
+
 .note-textarea {
+  flex: 1;
   width: 100%;
-  min-height: 100%;
+  height: 100%;
+  min-height: 0;
   background: transparent;
   border: none;
   padding: var(--spacing-sm);
@@ -1077,5 +1117,30 @@ Note Panel Styles
 }
 
 .note-markdown-display {
-  padding-right: var(--spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+}
+
+.note-markdown-display > * {
+  margin: 0;
+}
+
+.note-markdown-display > * + * {
+  margin-top: var(--spacing-xs);
+}
+
+.note-metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 0;
+}
+
+.note-metadata-heading {
+  font-size: 1.1em;
+  margin: 0 0 var(--spacing-xs);
+  color: rgba(255, 255, 255, 0.95);
 }
