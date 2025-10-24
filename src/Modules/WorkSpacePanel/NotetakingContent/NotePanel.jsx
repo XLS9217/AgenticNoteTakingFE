@@ -7,6 +7,7 @@ import { getMetadata, updateSpeakerName } from '../../../Api/gateway.js';
 
 const NOTE_TAB = 'Note';
 const METADATA_TAB = 'Metadata';
+const TABS = [NOTE_TAB, METADATA_TAB];
 
 export default function NotePanel({
   note,
@@ -93,7 +94,7 @@ export default function NotePanel({
         <h2 className="panel-title">Note</h2>
         <div className="note-tabs">
           <LiquidGlassInnerTabDiv
-            tabs={[NOTE_TAB, METADATA_TAB]}
+            tabs={TABS}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
           />

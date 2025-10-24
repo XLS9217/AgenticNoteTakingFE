@@ -13,10 +13,19 @@ function ApplicationContent({ activeWorkspace, setActiveWorkspace, currentView, 
     useEffect(() => {
         setDefault([
             {
+                key: 'workspace',
+                icon: '/icons/icon_ws.png',
+                label: 'Workspace',
+                action: () => {
+                    setActiveWorkspace('');
+                    setCurrentView('workspace');
+                }
+            },
+            {
                 key: 'user',
                 icon: '/icons/icon_user.png',
                 label: 'User',
-                action: () => setCurrentView('user')
+                action: () => setCurrentView(currentView === 'user' ? 'workspace' : 'user')
             },
             {
                 key: 'background',
@@ -37,7 +46,7 @@ function ApplicationContent({ activeWorkspace, setActiveWorkspace, currentView, 
                 action: () => setIsAuthenticated(false)
             }
         ]);
-    }, [setDefault, setCurrentView, setIsAuthenticated]);
+    }, [setDefault, setCurrentView, setIsAuthenticated, setActiveWorkspace]);
 
     const handleLeaveWorkspace = () => {
         setActiveWorkspace('');
