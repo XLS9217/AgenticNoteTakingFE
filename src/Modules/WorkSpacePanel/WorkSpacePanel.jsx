@@ -78,7 +78,8 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
                 key: 'refresh',
                 icon: '/icons/icon_refresh.png',
                 label: 'Refresh Workspace',
-                action: loadWorkspace
+                action: loadWorkspace,
+                hoverClass: 'util-bar-icon-circle--rotate'
             },
             {
                 key: 'import',

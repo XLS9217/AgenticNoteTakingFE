@@ -13,7 +13,8 @@ Application Layout
   width: 100%;
   top: 0;
   left: 0;
-  padding-left: 100px;
+  padding-left: 80px;
+  padding-right: var(--spacing-xs);
   box-sizing: border-box;
   z-index: 1;
 }
@@ -30,13 +31,15 @@ Application Layout
   box-sizing: border-box;
 }
 
-/* 3:1 ratio - workspace takes 75%, chat takes 25% */
+/* Workspace adapts to remaining space, chat has fixed width */
 .layout-panel--workspace {
-  flex: 3;
+  flex: 1;
+  min-width: 0;
 }
 
 .layout-panel--chat {
-  flex: 1;
+  flex-shrink: 0;
+  width: 320px;
 }
 
 /* Workspace internal layout */
@@ -413,7 +416,8 @@ Authentication Screens
   height: 100vh;
   width: 100vw;
   padding: var(--spacing-md);
-  padding-left: 100px;
+  padding-left: 80px;
+  padding-right: var(--spacing-xs);
   box-sizing: border-box;
 }
 

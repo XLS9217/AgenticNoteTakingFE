@@ -130,7 +130,7 @@ Utility Bar - Horizontal Glass Panel
 
 .util-bar {
     position: fixed;
-    left: var(--spacing-md);
+    left: var(--spacing-sm);
     z-index: 1000;
 }
 
@@ -211,6 +211,11 @@ Utility Bar - Horizontal Glass Panel
     width: 36px;
     height: 36px;
     object-fit: contain;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.util-bar-icon-circle--rotate .util-bar-icon-image {
+    transform: rotate(360deg);
 }
 
 .util-bar--top .liquid-glass-container {

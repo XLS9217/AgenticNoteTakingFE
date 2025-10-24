@@ -6,6 +6,7 @@ import '../Components.css';
 export default function UtilBar() {
   const { items } = useUtilBar();
   const [activeKey, setActiveKey] = useState('user');
+  const [hoveredKey, setHoveredKey] = useState(null);
 
   const handleClick = (item) => {
     setActiveKey(item.key);
@@ -23,11 +24,15 @@ export default function UtilBar() {
               key={item.key}
               className={`util-bar-item ${activeKey === item.key ? 'util-bar-item--active' : ''}`}
               onClick={() => handleClick(item)}
+              onMouseEnter={() => setHoveredKey(item.key)}
+              onMouseLeave={() => setHoveredKey(null)}
               type="button"
               title={item.label}
               aria-label={item.label}
             >
-              <span className="util-bar-icon-circle">
+              <span
+                className={`util-bar-icon-circle ${hoveredKey === item.key && item.hoverClass ? item.hoverClass : ''}`}
+              >
                 <img src={item.icon} alt="" className="util-bar-icon-image" />
               </span>
             </button>
