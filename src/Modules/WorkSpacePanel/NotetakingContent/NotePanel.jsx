@@ -3,7 +3,6 @@ import ReactMarkdown from 'react-markdown';
 import LiquidGlassDiv from '../../../Components/LiquidGlassDiv.jsx';
 import LiquidGlassInnerTabDiv from '../../../Components/LiquidGlassInnerTabDiv.jsx';
 import LiquidGlassScrollBar from '../../../Components/LiquidGlassScrollBar.jsx';
-import MinimalismToolTip from '../../../Components/MinimalismToolTip.jsx';
 import { getMetadata, updateSpeakerName } from '../../../Api/gateway.js';
 
 const NOTE_TAB = 'Note';
@@ -130,15 +129,14 @@ function NoteTab({ note, isMarkdownMode, onToggleMode, onChange }) {
 
   return (
     <div className={`note-container ${!isMarkdownMode ? 'note-container--editing' : ''}`}>
-      <MinimalismToolTip text={isMarkdownMode ? 'Switch to plain text edit' : 'Switch to markdown'}>
-        <button
-          type="button"
-          onClick={onToggleMode}
-          className="note-toggle-button"
-        >
-          {'</>'}
-        </button>
-      </MinimalismToolTip>
+      <button
+        type="button"
+        onClick={onToggleMode}
+        title={isMarkdownMode ? 'Switch to plain text edit' : 'Switch to markdown'}
+        className="note-toggle-button"
+      >
+        {'</>'}
+      </button>
       <LiquidGlassScrollBar className={scrollClassName}>
         {isMarkdownMode ? (
           <div className="panel-content note-markdown-display">

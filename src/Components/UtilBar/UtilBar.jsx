@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import LiquidGlassDiv from '../LiquidGlassDiv.jsx';
-import MinimalismToolTip from '../MinimalismToolTip.jsx';
 import { useUtilBar } from './UtilBarProvider.jsx';
 import '../Components.css';
 
@@ -21,22 +20,22 @@ export default function UtilBar() {
       <LiquidGlassDiv blurriness={0.5}>
         <nav className="util-bar-nav util-bar-nav--vertical">
           {items.map((item) => (
-            <MinimalismToolTip key={item.key} text={item.label}>
-              <button
-                className={`util-bar-item ${activeKey === item.key ? 'util-bar-item--active' : ''}`}
-                onClick={() => handleClick(item)}
-                onMouseEnter={() => setHoveredKey(item.key)}
-                onMouseLeave={() => setHoveredKey(null)}
-                type="button"
-                aria-label={item.label}
+            <button
+              key={item.key}
+              className={`util-bar-item ${activeKey === item.key ? 'util-bar-item--active' : ''}`}
+              onClick={() => handleClick(item)}
+              onMouseEnter={() => setHoveredKey(item.key)}
+              onMouseLeave={() => setHoveredKey(null)}
+              type="button"
+              title={item.label}
+              aria-label={item.label}
+            >
+              <span
+                className={`util-bar-icon-circle ${hoveredKey === item.key && item.hoverClass ? item.hoverClass : ''}`}
               >
-                <span
-                  className={`util-bar-icon-circle ${hoveredKey === item.key && item.hoverClass ? item.hoverClass : ''}`}
-                >
-                  <img src={item.icon} alt="" className="util-bar-icon-image" />
-                </span>
-              </button>
-            </MinimalismToolTip>
+                <img src={item.icon} alt="" className="util-bar-icon-image" />
+              </span>
+            </button>
           ))}
         </nav>
       </LiquidGlassDiv>
