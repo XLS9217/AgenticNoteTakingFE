@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassInnerTabDiv from "../../../Components/LiquidGlassInnerTabDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
 import { updateSpeakerName, getMetadata } from "../../../Api/gateway.js";
 
-export default function NotePanel({ note, metadata, workspaceId, onMetadataUpdate, onRefreshProcessedTranscript }) {
+export default function NotePanel({ note, metadata, workspaceId, onMetadataUpdate, onRefreshProcessedTranscript, onNoteChange }) {
     const [activeTab, setActiveTab] = useState('Note');
     const [editingSpeaker, setEditingSpeaker] = useState(null);
     const [editedName, setEditedName] = useState('');
+    const [isMarkdownMode, setIsMarkdownMode] = useState(true);
+    const [editedNote, setEditedNote] = useState(note || '');
 
     const handleSpeakerClick = (speakerName) => {
         setEditingSpeaker(speakerName);
@@ -44,6 +47,18 @@ export default function NotePanel({ note, metadata, workspaceId, onMetadataUpdat
         }
     };
 
+    const handleNoteChange = (e) => {
+        const newNote = e.target.value;
+        setEditedNote(newNote);
+        if (onNoteChange) {
+            onNoteChange(newNote);
+        }
+    };
+
+    useEffect(() => {
+        setEditedNote(note || '');
+    }, [note]);
+
     return <LiquidGlassDiv isButton={false}>
         <div className="panel-container">
             <h2 className="panel-title">Note</h2>
@@ -55,7 +70,35 @@ export default function NotePanel({ note, metadata, workspaceId, onMetadataUpdat
                 />
             </div>
             {activeTab === 'Note' ? (
-                <p className="panel-content">{note || 'No notes yet...'}</p>
+                <div className={`note-container ${!isMarkdownMode ? 'note-container--editing' : ''}`}>
+                    <button
+                        onClick={() => setIsMarkdownMode(!isMarkdownMode)}
+                        title={isMarkdownMode ? "Switch to plain text edit" : "Switch to markdown"}
+                        className="note-toggle-button"
+                    >
+                        {'</>'}
+                    </button>
+                    {isMarkdownMode ? (
+                        <LiquidGlassScrollBar>
+                            <div className="panel-content note-markdown-display">
+                                {editedNote ? (
+                                    <ReactMarkdown>{editedNote}</ReactMarkdown>
+                                ) : (
+                                    'No notes yet...'
+                                )}
+                            </div>
+                        </LiquidGlassScrollBar>
+                    ) : (
+                        <LiquidGlassScrollBar>
+                            <textarea
+                                className="note-textarea"
+                                value={editedNote}
+                                onChange={handleNoteChange}
+                                placeholder="No notes yet..."
+                            />
+                        </LiquidGlassScrollBar>
+                    )}
+                </div>
             ) : (
                 metadata && metadata.speaker_list ? (
                     <LiquidGlassScrollBar>

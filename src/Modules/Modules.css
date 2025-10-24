@@ -1014,3 +1014,68 @@ Speaker Card Styles
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.5);
 }
+
+/*
+==========================================
+Note Panel Styles
+==========================================
+*/
+
+.note-container {
+  position: relative;
+  flex: 1;
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+}
+
+.note-container--editing {
+  background: rgba(128, 128, 128, 0.15);
+}
+
+.note-toggle-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-sm);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.75em;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+}
+
+.note-toggle-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.note-textarea {
+  width: 100%;
+  min-height: 100%;
+  background: transparent;
+  border: none;
+  padding: var(--spacing-sm);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: inherit;
+  font-size: 0.95em;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.note-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.note-markdown-display {
+  padding-right: var(--spacing-xs);
+}
