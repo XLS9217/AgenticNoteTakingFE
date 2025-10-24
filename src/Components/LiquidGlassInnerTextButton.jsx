@@ -1,11 +1,10 @@
 import './Components.css'
 
-function LiquidGlassInnerTextButton({ children, onClick, title }) {
+function LiquidGlassInnerTextButton({ children, onClick }) {
   return (
     <button
       onClick={onClick}
       className="liquid-glass-text-button"
-      title={title}
     >
       {children}
     </button>

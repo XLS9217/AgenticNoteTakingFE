@@ -2,6 +2,7 @@ import { useState, useEffect, forwardRef, useImperativeHandle, useCallback } fro
 import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
 import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInnerTextButton.jsx";
+import MinimalismToolTip from "../../../Components/MinimalismToolTip.jsx";
 import { updateTranscript, getProcessedTranscript, getMetadata } from "../../../Api/gateway.js";
 
 function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, setIsEditing }) {
@@ -62,13 +63,14 @@ function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, 
     return (
         <LiquidGlassScrollBar>
             <div className="transcript-content-wrapper">
-                <p
-                    className="panel-content transcript-content-display transcript-content-editable"
-                    onClick={() => setIsEditing(true)}
-                    title="Click to edit transcript"
-                >
-                    {editedTranscript}
-                </p>
+                <MinimalismToolTip text="Click to edit transcript">
+                    <p
+                        className="panel-content transcript-content-display transcript-content-editable"
+                        onClick={() => setIsEditing(true)}
+                    >
+                        {editedTranscript}
+                    </p>
+                </MinimalismToolTip>
             </div>
         </LiquidGlassScrollBar>
     );
@@ -266,27 +268,29 @@ const TranscriptPanel = forwardRef(function TranscriptPanel({ workspaceId, trans
             <div className="panel-container">
                 <div className="transcript-header">
                     <div className="transcript-header-column">
-                        <h2
-                            className="panel-title transcript-title-clickable"
-                            onClick={() => {
-                                setShowProcessed(!showProcessed);
-                                setIsEditing(false);
-                            }}
-                            title={showProcessed ? 'Click to view Raw Transcript' : 'Click to view Processed Transcript'}
-                        >
-                            {showProcessed ? 'Processed Transcript' : 'Raw Transcript'}
-                            <img
-                                src="/icons/swap.png"
-                                alt="Swap view"
-                                className="transcript-swap-icon"
-                                onClick={(e) => {
-                                    e.stopPropagation();
+                        <MinimalismToolTip text={showProcessed ? 'Click to view Raw Transcript' : 'Click to view Processed Transcript'}>
+                            <h2
+                                className="panel-title transcript-title-clickable"
+                                onClick={() => {
                                     setShowProcessed(!showProcessed);
                                     setIsEditing(false);
                                 }}
-                                title={showProcessed ? 'Switch to Raw Transcript' : 'Switch to Processed Transcript'}
-                            />
-                        </h2>
+                            >
+                                {showProcessed ? 'Processed Transcript' : 'Raw Transcript'}
+                                <MinimalismToolTip text={showProcessed ? 'Switch to Raw Transcript' : 'Switch to Processed Transcript'}>
+                                    <img
+                                        src="/icons/swap.png"
+                                        alt="Swap view"
+                                        className="transcript-swap-icon"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowProcessed(!showProcessed);
+                                            setIsEditing(false);
+                                        }}
+                                    />
+                                </MinimalismToolTip>
+                            </h2>
+                        </MinimalismToolTip>
                         <div className="transcript-edit-indicator">
                             {showProcessed
                                 ? 'viewing processed (Click Title)'
@@ -299,12 +303,13 @@ const TranscriptPanel = forwardRef(function TranscriptPanel({ workspaceId, trans
                     </div>
                     <div className="transcript-header-buttons">
                         {!showProcessed && isEditing && (
-                            <LiquidGlassInnerTextButton
-                                onClick={handleFinishEditing}
-                                title="Save changes and exit edit mode"
-                            >
-                                Finish
-                            </LiquidGlassInnerTextButton>
+                            <MinimalismToolTip text="Save changes and exit edit mode">
+                                <LiquidGlassInnerTextButton
+                                    onClick={handleFinishEditing}
+                                >
+                                    Finish
+                                </LiquidGlassInnerTextButton>
+                            </MinimalismToolTip>
                         )}
                     </div>
                 </div>
