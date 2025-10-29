@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
-import LiquidGlassScrollBar from "../../Components/LiquidGlassScrollBar.jsx";
+import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
+import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import { createWorkspace, getWorkspacesByOwner, deleteWorkspace } from "../../Api/gateway.js";
 
 export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {

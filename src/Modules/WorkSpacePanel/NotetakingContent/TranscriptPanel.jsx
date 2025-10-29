@@ -1,7 +1,7 @@
 import { useState, useEffect, forwardRef, useImperativeHandle, useCallback } from "react";
-import LiquidGlassDiv from "../../../Components/LiquidGlassDiv.jsx";
-import LiquidGlassScrollBar from "../../../Components/LiquidGlassScrollBar.jsx";
-import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInnerTextButton.jsx";
+import LiquidGlassDiv from "../../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
+import LiquidGlassScrollBar from "../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
+import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInner/LiquidGlassInnerTextButton.jsx";
 import { updateTranscript, getProcessedTranscript, getMetadata } from "../../../Api/gateway.js";
 
 function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, setIsEditing }) {

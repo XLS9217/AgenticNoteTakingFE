@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
+import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 import { authUser, createUser, getUserInfo } from '../../Api/gateway.js';
 
 export default function LoginScreen({ onAuthenticated, onUserInfoFetched }) {

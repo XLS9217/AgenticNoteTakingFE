@@ -1,5 +1,5 @@
 import { useRef, useLayoutEffect, useState } from 'react'
-import './Components.css'
+import '../Components.css'
 
 function LiquidGlassInnerTabDiv({ tabs, activeTab, setActiveTab }) {
   const containerRef = useRef(null)

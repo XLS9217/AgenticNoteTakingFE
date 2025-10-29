@@ -1,4 +1,4 @@
-import LiquidGlassDiv from "../../Components/LiquidGlassDiv.jsx";
+import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 
 export default function UserPanel({ userInfo }) {
     const username = userInfo?.username || 'User';

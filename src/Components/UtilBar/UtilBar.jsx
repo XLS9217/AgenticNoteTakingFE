@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import LiquidGlassDiv from '../LiquidGlassDiv.jsx'
+import LiquidGlassDiv from '../LiquidGlassOutter/LiquidGlassDiv.jsx'
 import { useUtilBar } from './UtilBarProvider.jsx'
 import '../Components.css'
-import {InjectableTooltip} from "../InjectableTooltip .jsx";
+import {InjectableTooltip} from "../LiquidGlassGlobal/InjectableTooltip .jsx";
 
 export default function UtilBar() {
     const { items } = useUtilBar()

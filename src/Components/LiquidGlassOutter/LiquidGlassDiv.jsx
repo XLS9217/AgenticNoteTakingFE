@@ -1,4 +1,4 @@
-import './Components.css'
+import '../Components.css'
 
 function LiquidGlassDiv({ children, blurriness = 0.0, isButton = false, variant = null }) {
   const lerp = (start, end, t) => start + (end - start) * t;

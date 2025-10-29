@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import LiquidGlassDiv from '../../../Components/LiquidGlassDiv.jsx';
-import LiquidGlassInnerTabDiv from '../../../Components/LiquidGlassInnerTabDiv.jsx';
-import LiquidGlassScrollBar from '../../../Components/LiquidGlassScrollBar.jsx';
+import LiquidGlassDiv from '../../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx';
+import LiquidGlassInnerTabDiv from '../../../Components/LiquidGlassInner/LiquidGlassInnerTabDiv.jsx';
+import LiquidGlassScrollBar from '../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx';
 import { getMetadata, updateSpeakerName } from '../../../Api/gateway.js';
 
 const NOTE_TAB = 'Note';
