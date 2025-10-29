@@ -5,6 +5,7 @@ const PanelLayoutBarContext = createContext();
 export function PanelLayoutBarProvider({ children }) {
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+    const [layoutPresets, setLayoutPresets] = useState([]);
 
     const startDragging = (position) => {
         setIsDragging(true);
@@ -19,13 +20,19 @@ export function PanelLayoutBarProvider({ children }) {
         setIsDragging(false);
     };
 
+    const registerLayoutPresets = (presets) => {
+        setLayoutPresets(presets);
+    };
+
     return (
         <PanelLayoutBarContext.Provider value={{
             isDragging,
             dragPosition,
+            layoutPresets,
             startDragging,
             updateDragPosition,
-            stopDragging
+            stopDragging,
+            registerLayoutPresets
         }}>
             {children}
         </PanelLayoutBarContext.Provider>

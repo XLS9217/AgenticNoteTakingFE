@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import TranscriptPanel from "./TranscriptPanel.jsx";
 import NotePanel from "./NotePanel.jsx";
 import ChatPanel from "../ChatPanel/ChatPanel.jsx";
+import NoteTakingLayoutPresets from "./NoteTakingLayoutPresets.jsx";
 
 export default function NoteTakingContent({ workspaceId, note, transcript, processedTranscript, initialMetadata, socket, isConnected, chatHistory, workspaceName, onWorkspaceNameChange }) {
     const [metadata, setMetadata] = useState(initialMetadata);
@@ -22,7 +23,9 @@ export default function NoteTakingContent({ workspaceId, note, transcript, proce
     };
 
     return (
-        <div className="workspace-container">
+        <>
+            <NoteTakingLayoutPresets />
+            <div className="workspace-container">
             <div className="workspace-panel workspace-panel--transcript">
                 <TranscriptPanel
                     ref={transcriptPanelRef}
@@ -54,5 +57,6 @@ export default function NoteTakingContent({ workspaceId, note, transcript, proce
                 />
             </div>
         </div>
+        </>
     );
 }
