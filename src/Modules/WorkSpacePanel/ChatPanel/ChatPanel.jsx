@@ -144,7 +144,7 @@ export default function ChatPanel({ workspaceId, chatHistory, workspaceName, onW
     };
 
     return (
-        <LiquidGlassFlexibleDiv blurriness={0.75} isButton={false}>
+        <LiquidGlassFlexibleDiv blurriness={0.75} isButton={false} variant="chat">
             <div className="chat-panel-container">
                 <div className="chat-header">
                     {isEditingName ? (
