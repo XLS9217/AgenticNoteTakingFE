@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import LiquidGlassDiv from "../../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
+import LiquidGlassFlexibleDiv from "../../../Components/LiquidGlassOutter/LiquidGlassFlexibleDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import { UserMessage, AgentMessage, RunningMessage } from "./ChatBubble.jsx";
 import UserInputArea from "./UserInputArea.jsx";
@@ -144,7 +144,7 @@ export default function ChatPanel({ workspaceId, chatHistory, workspaceName, onW
     };
 
     return (
-        <LiquidGlassDiv blurriness={0.75} isButton={false} variant="chat">
+        <LiquidGlassFlexibleDiv blurriness={0.75} isButton={false}>
             <div className="chat-panel-container">
                 <div className="chat-header">
                     {isEditingName ? (
@@ -182,6 +182,6 @@ export default function ChatPanel({ workspaceId, chatHistory, workspaceName, onW
 
                 <UserInputArea onSendMessage={handleSendMessage} />
             </div>
-        </LiquidGlassDiv>
+        </LiquidGlassFlexibleDiv>
     );
 }

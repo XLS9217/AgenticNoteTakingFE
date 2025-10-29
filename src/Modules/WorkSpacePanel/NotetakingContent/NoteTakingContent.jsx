@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import TranscriptPanel from "./TranscriptPanel.jsx";
 import NotePanel from "./NotePanel.jsx";
+import ChatPanel from "../ChatPanel/ChatPanel.jsx";
 
-export default function NoteTakingContent({ workspaceId, note, transcript, processedTranscript, initialMetadata, socket, isConnected }) {
+export default function NoteTakingContent({ workspaceId, note, transcript, processedTranscript, initialMetadata, socket, isConnected, chatHistory, workspaceName, onWorkspaceNameChange }) {
     const [metadata, setMetadata] = useState(initialMetadata);
     const transcriptPanelRef = useRef(null);
 
@@ -40,6 +41,16 @@ export default function NoteTakingContent({ workspaceId, note, transcript, proce
                     workspaceId={workspaceId}
                     onMetadataUpdate={handleMetadataUpdate}
                     onRefreshProcessedTranscript={handleRefreshProcessedTranscript}
+                />
+            </div>
+            <div className="workspace-panel workspace-panel--chat">
+                <ChatPanel
+                    workspaceId={workspaceId}
+                    chatHistory={chatHistory}
+                    workspaceName={workspaceName}
+                    onWorkspaceNameChange={onWorkspaceNameChange}
+                    socket={socket}
+                    isConnected={isConnected}
                 />
             </div>
         </div>

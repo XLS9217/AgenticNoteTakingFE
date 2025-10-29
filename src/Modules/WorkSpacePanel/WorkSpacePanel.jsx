@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import NoteTakingContent from "./NotetakingContent/NoteTakingContent.jsx";
-import ChatPanel from "./ChatPanel/ChatPanel.jsx";
 import { useUtilBar } from "../../Components/UtilBar/UtilBarProvider.jsx";
 import { getWorkspace, connectToChatSession } from "../../Api/gateway.js";
+import PanelLayoutBar from "../../Components/PanelLayoutBar/PanelLayoutBar.jsx";
+import { PanelLayoutBarProvider } from "../../Components/PanelLayoutBar/PanelLayoutBarProvider.jsx";
 
 
 
@@ -100,9 +101,9 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
     }, []);
 
     return (
-        <div className="workspace-main">
-            {/*Workspace panel*/}
-            <div className="layout-panel layout-panel--workspace">
+        <PanelLayoutBarProvider>
+            <div className="workspace-main">
+                <PanelLayoutBar />
                 <NoteTakingContent
                     workspaceId={workspaceId}
                     note={workspaceData.note}
@@ -111,19 +112,11 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
                     initialMetadata={workspaceData.meta_data}
                     socket={socket}
                     isConnected={isConnected}
-                />
-            </div>
-            {/*chatbox panel*/}
-            <div className="layout-panel layout-panel--chat">
-                <ChatPanel
-                    workspaceId={workspaceId}
                     chatHistory={chatHistory}
                     workspaceName={workspaceName}
                     onWorkspaceNameChange={setWorkspaceName}
-                    socket={socket}
-                    isConnected={isConnected}
                 />
             </div>
-        </div>
+        </PanelLayoutBarProvider>
     );
 }

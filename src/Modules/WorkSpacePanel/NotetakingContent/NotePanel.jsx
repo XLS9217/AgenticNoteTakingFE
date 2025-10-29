@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import LiquidGlassDiv from '../../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx';
+import LiquidGlassFlexibleDiv from '../../../Components/LiquidGlassOutter/LiquidGlassFlexibleDiv.jsx';
 import LiquidGlassInnerTabDiv from '../../../Components/LiquidGlassInner/LiquidGlassInnerTabDiv.jsx';
 import LiquidGlassScrollBar from '../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx';
 import { getMetadata, updateSpeakerName } from '../../../Api/gateway.js';
@@ -89,7 +89,7 @@ export default function NotePanel({
   };
 
   return (
-    <LiquidGlassDiv isButton={false}>
+    <LiquidGlassFlexibleDiv isButton={false}>
       <div className="panel-container note-panel">
         <h2 className="panel-title">Note</h2>
         <div className="note-tabs">
@@ -118,7 +118,7 @@ export default function NotePanel({
           />
         )}
       </div>
-    </LiquidGlassDiv>
+    </LiquidGlassFlexibleDiv>
   );
 }
 

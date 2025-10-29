@@ -310,3 +310,75 @@ Liquid Glass Tab Container
   background: transparent;
   color: rgba(255, 255, 255, 0.95);
 }
+
+/*
+=================================
+Panel Layout Bar
+=================================
+*/
+
+.panel-layout-bar {
+  position: fixed;
+  top: var(--spacing-xs);
+  left: 50%;
+  transform: translate(-50%, -120%);
+  min-width: 200px;
+  height: 60px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--border-radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 999;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--spacing-md);
+}
+
+.panel-layout-bar--visible {
+  transform: translate(-50%, 0);
+}
+
+/*
+=================================
+Liquid Glass Flexible Div - Drag Handle
+=================================
+*/
+
+.liquid-glass-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  cursor: grab;
+  z-index: 10;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.liquid-glass-drag-handle:active {
+  cursor: grabbing;
+}
+
+.liquid-glass-container--flexible {
+  position: relative;
+}
+
+.liquid-glass-container--dragging {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  pointer-events: auto;
+}
+
+.liquid-glass-container--dragging * {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect, forwardRef, useImperativeHandle, useCallback } from "react";
-import LiquidGlassDiv from "../../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
+import LiquidGlassFlexibleDiv from "../../../Components/LiquidGlassOutter/LiquidGlassFlexibleDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInner/LiquidGlassInnerTextButton.jsx";
 import { updateTranscript, getProcessedTranscript, getMetadata } from "../../../Api/gateway.js";
@@ -262,7 +262,7 @@ const TranscriptPanel = forwardRef(function TranscriptPanel({ workspaceId, trans
     };
 
     return (
-        <LiquidGlassDiv isButton={false}>
+        <LiquidGlassFlexibleDiv isButton={false}>
             <div className="panel-container">
                 <div className="transcript-header">
                     <div className="transcript-header-column">
@@ -326,7 +326,7 @@ const TranscriptPanel = forwardRef(function TranscriptPanel({ workspaceId, trans
                     />
                 )}
             </div>
-        </LiquidGlassDiv>
+        </LiquidGlassFlexibleDiv>
     );
 });
 

@@ -83,6 +83,7 @@ Chat Panel Layout
   flex-direction: column;
   height: 100%;
   gap: var(--spacing-sm);
+  padding: 0;
 }
 
 .chat-header {
