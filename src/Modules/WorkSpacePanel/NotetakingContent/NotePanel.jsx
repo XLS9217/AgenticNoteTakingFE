@@ -4,6 +4,7 @@ import LiquidGlassFlexibleDiv from '../../../Components/LiquidGlassOutter/Liquid
 import LiquidGlassInnerTabDiv from '../../../Components/LiquidGlassInner/LiquidGlassInnerTabDiv.jsx';
 import LiquidGlassScrollBar from '../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx';
 import { getMetadata, updateSpeakerName } from '../../../Api/gateway.js';
+import { PanelType } from '../../../Components/PanelLayoutBar/PanelLayoutBarProvider.jsx';
 
 const NOTE_TAB = 'Note';
 const METADATA_TAB = 'Metadata';
@@ -89,7 +90,7 @@ export default function NotePanel({
   };
 
   return (
-    <LiquidGlassFlexibleDiv isButton={false}>
+    <LiquidGlassFlexibleDiv isButton={false} variant={PanelType.NOTE_PANEL}>
       <div className="panel-container note-panel">
         <h2 className="panel-title">Note</h2>
         <div className="note-tabs">

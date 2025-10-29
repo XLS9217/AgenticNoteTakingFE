@@ -3,6 +3,7 @@ import LiquidGlassFlexibleDiv from "../../../Components/LiquidGlassOutter/Liquid
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInner/LiquidGlassInnerTextButton.jsx";
 import { updateTranscript, getProcessedTranscript, getMetadata } from "../../../Api/gateway.js";
+import { PanelType } from "../../../Components/PanelLayoutBar/PanelLayoutBarProvider.jsx";
 
 function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, setIsEditing }) {
     const [isDragging, setIsDragging] = useState(false);
@@ -262,7 +263,7 @@ const TranscriptPanel = forwardRef(function TranscriptPanel({ workspaceId, trans
     };
 
     return (
-        <LiquidGlassFlexibleDiv isButton={false}>
+        <LiquidGlassFlexibleDiv isButton={false} variant={PanelType.SOURCE}>
             <div className="panel-container">
                 <div className="transcript-header">
                     <div className="transcript-header-column">

@@ -2,6 +2,13 @@ import { createContext, useContext, useState } from "react";
 
 const PanelLayoutBarContext = createContext();
 
+// Panel type enum
+export const PanelType = {
+    CHAT_BOX: 'chat',
+    NOTE_PANEL: 'note',
+    SOURCE: 'source'
+};
+
 // Preset holder components
 export function PresetGroupBox({ children }) {
     return (
@@ -44,14 +51,24 @@ export function PresetHorizontalHolder({ height, children }) {
     );
 }
 
-export function PresetUnitHolder() {
+export function PresetUnitHolder({ canChatBox, canNotePanel, canSourcePanel }) {
+    const { draggedPanelType } = usePanelLayoutBar();
+
+    const canAcceptDrag = !draggedPanelType ||
+        (draggedPanelType === PanelType.CHAT_BOX && canChatBox) ||
+        (draggedPanelType === PanelType.NOTE_PANEL && canNotePanel) ||
+        (draggedPanelType === PanelType.SOURCE && canSourcePanel);
+
     return (
         <div
             className="preset-panel"
             style={{
                 flex: 1,
-                background: 'rgba(128, 128, 128, 0.8)',
-                borderRadius: '10%'
+                background: canAcceptDrag ? 'rgba(128, 128, 128, 0.8)' : 'rgba(64, 64, 64, 0.6)',
+                borderRadius: '10%',
+                transform: canAcceptDrag ? 'scale(1)' : 'scale(0.9)',
+                opacity: canAcceptDrag ? 1 : 0.5,
+                transition: 'all 0.2s ease'
             }}
         />
     );
@@ -60,11 +77,13 @@ export function PresetUnitHolder() {
 export function PanelLayoutBarProvider({ children }) {
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+    const [draggedPanelType, setDraggedPanelType] = useState(null);
     const [layoutPresets, setLayoutPresets] = useState([]);
 
-    const startDragging = (position) => {
+    const startDragging = (position, panelType) => {
         setIsDragging(true);
         setDragPosition(position);
+        setDraggedPanelType(panelType);
     };
 
     const updateDragPosition = (position) => {
@@ -73,6 +92,7 @@ export function PanelLayoutBarProvider({ children }) {
 
     const stopDragging = () => {
         setIsDragging(false);
+        setDraggedPanelType(null);
     };
 
     const registerLayoutPresets = (presets) => {
@@ -83,6 +103,7 @@ export function PanelLayoutBarProvider({ children }) {
         <PanelLayoutBarContext.Provider value={{
             isDragging,
             dragPosition,
+            draggedPanelType,
             layoutPresets,
             startDragging,
             updateDragPosition,

@@ -16,13 +16,13 @@ export default function NoteTakingLayoutPresets() {
             <PresetGroupBox>
                 <PresetHorizontalHolder>
                     <PresetVerticalHolder width="30%">
-                        <PresetUnitHolder />
+                        <PresetUnitHolder canSourcePanel canNotePanel />
                     </PresetVerticalHolder>
                     <PresetVerticalHolder width="30%">
-                        <PresetUnitHolder />
+                        <PresetUnitHolder canSourcePanel canNotePanel canChatBox />
                     </PresetVerticalHolder>
                     <PresetVerticalHolder width="30%">
-                        <PresetUnitHolder />
+                        <PresetUnitHolder canSourcePanel canNotePanel canChatBox />
                     </PresetVerticalHolder>
                 </PresetHorizontalHolder>
             </PresetGroupBox>,
@@ -31,11 +31,11 @@ export default function NoteTakingLayoutPresets() {
             <PresetGroupBox>
                 <PresetHorizontalHolder>
                     <PresetVerticalHolder width="47.5%">
-                        <PresetUnitHolder />
-                        <PresetUnitHolder />
+                        <PresetUnitHolder canSourcePanel canNotePanel />
+                        <PresetUnitHolder canSourcePanel canNotePanel />
                     </PresetVerticalHolder>
                     <PresetVerticalHolder width="47.5%">
-                        <PresetUnitHolder />
+                        <PresetUnitHolder canSourcePanel canNotePanel canChatBox />
                     </PresetVerticalHolder>
                 </PresetHorizontalHolder>
             </PresetGroupBox>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { usePanelLayoutBar } from '../PanelLayoutBar/PanelLayoutBarProvider.jsx';
+import { usePanelLayoutBar, PanelType } from '../PanelLayoutBar/PanelLayoutBarProvider.jsx';
 import '../Components.css';
 
 function LiquidGlassFlexibleDiv({ children, blurriness = 0.0, isButton = false, variant = null }) {
@@ -44,7 +44,7 @@ function LiquidGlassFlexibleDiv({ children, blurriness = 0.0, isButton = false, 
     startMousePos.current = { x: e.clientX, y: e.clientY };
 
     setIsDragging(true);
-    startDragging({ x: e.clientX, y: e.clientY });
+    startDragging({ x: e.clientX, y: e.clientY }, variant);
   };
 
   const handleMouseMove = (e) => {
