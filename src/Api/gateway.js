@@ -21,7 +21,7 @@ export async function sendChatMessage(message) {
 
 /**
  * Establishes a WebSocket connection to the chat session endpoint
- * @returns {WebSocket} The WebSocket instance
+ * @returns {WebSocket} The WebSocket instances
  */
 export function connectToChatSession() {
     if (socket && socket.readyState === WebSocket.OPEN) {

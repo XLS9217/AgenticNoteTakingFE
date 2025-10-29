@@ -3,7 +3,8 @@
     "allow": [
       "Bash(find:*)",
       "Bash(npm run lint)",
-      "Read(//e/Project/_MeetingNoteTaking/AgenticNoteTakingBE/**)"
+      "Read(//e/Project/_MeetingNoteTaking/AgenticNoteTakingBE/**)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
