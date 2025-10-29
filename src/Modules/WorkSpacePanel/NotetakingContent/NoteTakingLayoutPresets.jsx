@@ -15,20 +15,28 @@ export default function NoteTakingLayoutPresets() {
             // Preset 1 - Three columns
             <PresetGroupBox>
                 <PresetHorizontalHolder>
-                    <PresetUnitHolder />
-                    <PresetUnitHolder />
-                    <PresetUnitHolder />
+                    <PresetVerticalHolder width="30%">
+                        <PresetUnitHolder />
+                    </PresetVerticalHolder>
+                    <PresetVerticalHolder width="30%">
+                        <PresetUnitHolder />
+                    </PresetVerticalHolder>
+                    <PresetVerticalHolder width="30%">
+                        <PresetUnitHolder />
+                    </PresetVerticalHolder>
                 </PresetHorizontalHolder>
             </PresetGroupBox>,
 
             // Preset 2 - Left: two stacked boxes, Right: one column
             <PresetGroupBox>
                 <PresetHorizontalHolder>
-                    <PresetVerticalHolder>
+                    <PresetVerticalHolder width="47.5%">
                         <PresetUnitHolder />
                         <PresetUnitHolder />
                     </PresetVerticalHolder>
-                    <PresetUnitHolder />
+                    <PresetVerticalHolder width="47.5%">
+                        <PresetUnitHolder />
+                    </PresetVerticalHolder>
                 </PresetHorizontalHolder>
             </PresetGroupBox>
         ];

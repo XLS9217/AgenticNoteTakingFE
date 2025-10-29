@@ -44,14 +44,12 @@ export function PresetHorizontalHolder({ height, children }) {
     );
 }
 
-export function PresetUnitHolder({ width, height }) {
+export function PresetUnitHolder() {
     return (
         <div
             className="preset-panel"
             style={{
-                width: width || 'auto',
-                height: height || 'auto',
-                flex: width || height ? 'none' : 1,
+                flex: 1,
                 background: 'rgba(128, 128, 128, 0.8)',
                 borderRadius: '10%'
             }}
