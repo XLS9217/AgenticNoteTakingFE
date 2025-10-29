@@ -16,7 +16,7 @@ Application Layout
   padding-left: 80px;
   padding-right: var(--spacing-xs);
   box-sizing: border-box;
-  z-index: 1;
+  z-index: var(--z-index-base);
 }
 
 .workspace-main {
@@ -179,7 +179,7 @@ Chat Panel Layout
     rgba(255, 255, 255, 0) 100%
   );
   pointer-events: none;
-  z-index: 1;
+  z-index: var(--z-index-base);
 }
 
 .user-message {
@@ -198,13 +198,13 @@ Chat Panel Layout
   position: relative;
   display: flex;
   flex-direction: column;
-  z-index: 2;
+  z-index: var(--z-index-content);
 }
 
 .message-text {
   position: relative;
   color: rgba(255, 255, 255, 0.95);
-  z-index: 2;
+  z-index: var(--z-index-content);
 }
 
 .chat-input-area {
@@ -234,7 +234,7 @@ Chat Panel Layout
     rgba(255, 255, 255, 0) 100%
   );
   pointer-events: none;
-  z-index: 1;
+  z-index: var(--z-index-base);
 }
 
 .chat-textarea {
@@ -248,7 +248,7 @@ Chat Panel Layout
   font-size: 0.9em;
   resize: none;
   outline: none;
-  z-index: 2;
+  z-index: var(--z-index-content);
 }
 
 .chat-textarea::placeholder {
@@ -261,7 +261,7 @@ Chat Panel Layout
   justify-content: space-between;
   align-items: center;
   padding-top: var(--spacing-xs);
-  z-index: 2;
+  z-index: var(--z-index-content);
 }
 
 .input-buttons {
@@ -625,7 +625,7 @@ Workspace Selection - Grid Layout
   cursor: pointer;
   opacity: 0;
   transition: var(--transition-fast);
-  z-index: 10;
+  z-index: var(--z-index-elevated);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1084,7 +1084,7 @@ Note Panel Styles
   font-size: 0.75em;
   cursor: pointer;
   transition: var(--transition-fast);
-  z-index: 10;
+  z-index: var(--z-index-elevated);
   display: flex;
   align-items: center;
   justify-content: center;

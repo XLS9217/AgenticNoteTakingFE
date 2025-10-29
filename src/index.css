@@ -38,6 +38,19 @@
   --transition-base: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-fast: all 0.25s ease;
 
+  /* Z-index layers */
+  --z-index-background: -1;
+  --z-index-base: 1;
+  --z-index-content: 2;
+  --z-index-elevated: 10;
+  --z-index-ui: 100;
+  --z-index-util-bar: 500;
+  --z-index-floating: 700;
+  --z-index-dragging: 800;
+  --z-index-panel-bar: 850;
+  --z-index-modal: 900;
+  --z-index-top: 1000;
+
   /* Apply base styles */
   font-family: var(--font-family-primary);
   line-height: var(--line-height-base);

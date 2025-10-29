@@ -52,7 +52,7 @@ Liquid Glass Section
   );
   border-radius: inherit;
   pointer-events: none;
-  z-index: 1;
+  z-index: var(--z-index-base);
 }
 
 /* Button variant - with hover effects and transitions */
@@ -115,11 +115,11 @@ Background Section
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: -1;
+  z-index: var(--z-index-background);
 }
 
 .background-content {
-  z-index: 1;
+  z-index: var(--z-index-base);
 }
 
 
@@ -133,7 +133,7 @@ Utility Bar - Horizontal Glass Panel
 .util-bar {
     position: fixed;
     left: var(--spacing-sm);
-    z-index: 1000;
+    z-index: var(--z-index-util-bar);
 }
 
 .util-bar--side {
@@ -286,12 +286,12 @@ Liquid Glass Tab Container
   background: rgba(200, 200, 200, 0.4);
   border-radius: 999px;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1;
+  z-index: var(--z-index-base);
 }
 
 .liquid-glass-tab {
   position: relative;
-  z-index: 2;
+  z-index: var(--z-index-content);
   padding: 6px 16px;
   border-radius: 999px;
   cursor: pointer;
@@ -328,8 +328,8 @@ Panel Layout Bar
   height: 60px;
   background: rgba(0, 0, 0, 0.25);
   border-radius: var(--border-radius-lg);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  z-index: 999;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: var(--z-index-panel-bar);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
@@ -354,7 +354,7 @@ Liquid Glass Flexible Div - Drag Handle
   right: 0;
   height: 20px;
   cursor: grab;
-  z-index: 10;
+  z-index: var(--z-index-elevated);
   background: transparent;
   user-select: none;
   -webkit-user-select: none;
@@ -376,6 +376,7 @@ Liquid Glass Flexible Div - Drag Handle
   -moz-user-select: none;
   -ms-user-select: none;
   pointer-events: auto;
+  z-index: var(--z-index-dragging);
 }
 
 .liquid-glass-container--dragging * {

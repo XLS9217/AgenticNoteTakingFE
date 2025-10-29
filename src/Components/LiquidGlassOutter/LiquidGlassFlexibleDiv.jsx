@@ -92,11 +92,10 @@ function LiquidGlassFlexibleDiv({ children, blurriness = 0.0, isButton = false, 
       inset 0 -1px 0 rgba(0, 0, 0, ${0.05 + (0.03 * blurriness)})
     `,
     transform: isDragging ? `translate(${position.x}px, ${position.y}px)` : 'translate(0, 0)',
-    transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    transition: isDragging ? 'transform 0.08s ease-out' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     cursor: isDragging ? 'grabbing' : 'default',
     userSelect: isDragging ? 'none' : 'auto',
-    WebkitUserSelect: isDragging ? 'none' : 'auto',
-    zIndex: isDragging ? 9999 : 'auto'
+    WebkitUserSelect: isDragging ? 'none' : 'auto'
   };
 
   return (
