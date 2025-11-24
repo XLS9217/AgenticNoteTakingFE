@@ -231,6 +231,21 @@ export async function getMetadata(workspaceId) {
 }
 
 /**
+ * Get chat history for a workspace
+ * @param {string} workspaceId - The workspace ID
+ * @returns {Promise<Object|Array>} Response from the backend containing chat_history or an array
+ */
+export async function getChatHistory(workspaceId) {
+    try {
+        const response = await request.get(`/note-taking/get-chat-history/${workspaceId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching chat history:', error);
+        throw error;
+    }
+}
+
+/**
  * Update speaker name in metadata and processed transcript
  * @param {string} workspaceId - The workspace ID
  * @param {string} oldSpeakerName - The old speaker name

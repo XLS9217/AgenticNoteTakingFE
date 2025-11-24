@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import NoteTakingContent from "./NotetakingContent/NoteTakingContent.jsx";
 import { useUtilBar } from "../../Components/UtilBar/UtilBarProvider.jsx";
-import { getWorkspace, connectToChatSession } from "../../Api/gateway.js";
+import { getWorkspace, getChatHistory, getProcessedTranscript, connectToChatSession } from "../../Api/gateway.js";
 import PanelLayoutBar from "../../Components/PanelLayoutBar/PanelLayoutBar.jsx";
 import { PanelLayoutBarProvider } from "../../Components/PanelLayoutBar/PanelLayoutBarProvider.jsx";
 
@@ -17,17 +17,40 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
 
     const loadWorkspace = useCallback(async () => {
         try {
+            // 1) Load basic workspace info
             const data = await getWorkspace(workspaceId);
             console.log('Workspace data loaded:', data);
 
             setWorkspaceData({
                 note: data.note || '',
                 transcript: data.transcript || '',
-                processed_transcript: data.processed_transcript || [],
+                processed_transcript: [], // will be loaded separately
                 meta_data: data.meta_data || null
             });
-            setChatHistory(data.chat_history || []);
             setWorkspaceName(data.workspace_name || 'Untitled Workspace');
+
+            // 2) Load chat history
+            try {
+                const chatResp = await getChatHistory(workspaceId);
+                const chats = Array.isArray(chatResp) ? chatResp : (chatResp?.chat_history || []);
+                setChatHistory(chats);
+            } catch (chatErr) {
+                console.error('Error loading chat history:', chatErr);
+                setChatHistory([]);
+            }
+
+            // 3) Load processed transcript (process script)
+            try {
+                const procResp = await getProcessedTranscript(workspaceId);
+                const processed = Array.isArray(procResp) ? procResp : (procResp?.processed_transcript ?? []);
+                setWorkspaceData(prev => ({
+                    ...prev,
+                    processed_transcript: processed
+                }));
+            } catch (procErr) {
+                console.error('Error loading processed transcript:', procErr);
+                // keep processed_transcript as empty array
+            }
         } catch (error) {
             console.error('Error loading workspace:', error);
         }
