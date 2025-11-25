@@ -8,6 +8,10 @@ export default function NoteTakingContent({ workspaceId, note, transcript, proce
     const [metadata, setMetadata] = useState(initialMetadata);
     const transcriptPanelRef = useRef(null);
 
+    useEffect(() => {
+        setMetadata(initialMetadata);
+    }, [initialMetadata]);
+
     const handleMetadataUpdate = (newMetadata) => {
         setMetadata(newMetadata);
     };
@@ -17,7 +21,6 @@ export default function NoteTakingContent({ workspaceId, note, transcript, proce
             transcriptPanelRef.current.refetchProcessedTranscript();
         }
     };
-
     return (
         <>
             <NoteTakingLayoutPresets />

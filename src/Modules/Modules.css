@@ -1168,3 +1168,49 @@ Note Panel Styles
   margin: 0 0 var(--spacing-xs);
   color: rgba(255, 255, 255, 0.95);
 }
+
+.topic-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--spacing-md);
+}
+
+.topic-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px;
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-fast);
+}
+
+.topic-card:hover {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.topic-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topic-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  filter: brightness(0) invert(1);
+}
+
+.topic-title {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.95em;
+}
+
+.topic-summary {
+  font-size: 0.85em;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+}

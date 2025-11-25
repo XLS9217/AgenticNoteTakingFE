@@ -88,7 +88,6 @@ export default function NotePanel({
       resetSpeakerEditing();
     }
   };
-
   return (
     <LiquidGlassFlexibleDiv isButton={false} variant={PanelType.NOTE_PANEL}>
       <div className="panel-container note-panel">
@@ -165,26 +164,50 @@ function MetadataTab({
   onSpeakerSave,
   onSpeakerKeyDown
 }) {
-  if (!metadata || !Array.isArray(metadata.speaker_list) || metadata.speaker_list.length === 0) {
-    return <p className="panel-content">No metadata yet...</p>;
-  }
+    console.log("metadata", metadata);
+  const topicList = metadata?.topics_list || [];
+  console.log("topicList", topicList);
+  const speakerList = metadata?.speaker_list || [];
+  const hasTopics = Array.isArray(topicList) && topicList.length > 0;
+  const hasSpeakers = Array.isArray(speakerList) && speakerList.length > 0;
 
   return (
     <LiquidGlassScrollBar className="note-panel-scroll note-panel-scroll--metadata">
       <div className="panel-content note-metadata">
+        <h3 className="note-metadata-heading">Topics</h3>
+        {hasTopics ? (
+          <div className="topic-list">
+            {topicList.map((topic, index) => (
+            <div key={index} className="topic-card">
+              <div className="topic-header">
+                <img src="/icons/topics.png" alt="Topic" className="topic-icon" />
+                <div className="topic-title">{topic.title}</div>
+              </div>
+              <div className="topic-summary">{topic.summary}</div>
+            </div>
+            ))}
+          </div>
+        ) : (
+          <p className="panel-content">No topics yet...</p>
+        )}
+
         <h3 className="note-metadata-heading">Speakers</h3>
-        {metadata.speaker_list.map((speaker) => (
-          <SpeakerRow
-            key={speaker.name}
-            speaker={speaker}
-            isEditing={editingSpeaker === speaker.name}
-            editedName={editedName}
-            onSpeakerClick={onSpeakerClick}
-            onSpeakerChange={onSpeakerChange}
-            onSpeakerSave={onSpeakerSave}
-            onSpeakerKeyDown={onSpeakerKeyDown}
-          />
-        ))}
+        {hasSpeakers ? (
+          speakerList.map((speaker) => (
+            <SpeakerRow
+              key={speaker.name}
+              speaker={speaker}
+              isEditing={editingSpeaker === speaker.name}
+              editedName={editedName}
+              onSpeakerClick={onSpeakerClick}
+              onSpeakerChange={onSpeakerChange}
+              onSpeakerSave={onSpeakerSave}
+              onSpeakerKeyDown={onSpeakerKeyDown}
+            />
+          ))
+        ) : (
+          <p className="panel-content">No speakers yet...</p>
+        )}
       </div>
     </LiquidGlassScrollBar>
   );
