@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 
 const PanelLayoutBarContext = createContext();
 
@@ -80,24 +80,24 @@ export function PanelLayoutBarProvider({ children }) {
     const [draggedPanelType, setDraggedPanelType] = useState(null);
     const [layoutPresets, setLayoutPresets] = useState([]);
 
-    const startDragging = (position, panelType) => {
+    const startDragging = useCallback((position, panelType) => {
         setIsDragging(true);
         setDragPosition(position);
         setDraggedPanelType(panelType);
-    };
+    }, []);
 
-    const updateDragPosition = (position) => {
+    const updateDragPosition = useCallback((position) => {
         setDragPosition(position);
-    };
+    }, []);
 
-    const stopDragging = () => {
+    const stopDragging = useCallback(() => {
         setIsDragging(false);
         setDraggedPanelType(null);
-    };
+    }, []);
 
-    const registerLayoutPresets = (presets) => {
+    const registerLayoutPresets = useCallback((presets) => {
         setLayoutPresets(presets);
-    };
+    }, []);
 
     return (
         <PanelLayoutBarContext.Provider value={{
