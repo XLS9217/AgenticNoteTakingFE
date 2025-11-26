@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import NoteTakingContent from "./NotetakingContent/NoteTakingContent.jsx";
 import { useUtilBar } from "../../Components/UtilBar/UtilBarProvider.jsx";
 import { getWorkspace, getChatHistory, getProcessedTranscript, connectToChatSession } from "../../Api/gateway.js";
-import PanelLayoutBar from "../../Components/PanelLayoutBar/PanelLayoutBar.jsx";
-import { PanelLayoutBarProvider } from "../../Components/PanelLayoutBar/PanelLayoutBarProvider.jsx";
 
 
 
@@ -124,22 +122,19 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
     }, []);
 
     return (
-        <PanelLayoutBarProvider>
-            <div className="workspace-main">
-                <PanelLayoutBar />
-                <NoteTakingContent
-                    workspaceId={workspaceId}
-                    note={workspaceData.note}
-                    transcript={workspaceData.transcript}
-                    processedTranscript={workspaceData.processed_transcript}
-                    initialMetadata={workspaceData.meta_data}
-                    socket={socket}
-                    isConnected={isConnected}
-                    chatHistory={chatHistory}
-                    workspaceName={workspaceName}
-                    onWorkspaceNameChange={setWorkspaceName}
-                />
-            </div>
-        </PanelLayoutBarProvider>
+        <div className="workspace-main">
+            <NoteTakingContent
+                workspaceId={workspaceId}
+                note={workspaceData.note}
+                transcript={workspaceData.transcript}
+                processedTranscript={workspaceData.processed_transcript}
+                initialMetadata={workspaceData.meta_data}
+                socket={socket}
+                isConnected={isConnected}
+                chatHistory={chatHistory}
+                workspaceName={workspaceName}
+                onWorkspaceNameChange={setWorkspaceName}
+            />
+        </div>
     );
 }

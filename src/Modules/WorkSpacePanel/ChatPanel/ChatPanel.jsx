@@ -4,18 +4,8 @@ import LiquidGlassScrollBar from "../../../Components/LiquidGlassGlobal/LiquidGl
 import { UserMessage, AgentMessage, RunningMessage } from "./ChatBubble.jsx";
 import UserInputArea from "./UserInputArea.jsx";
 import { changeWorkspaceName } from "../../../Api/gateway.js";
-import { PanelType } from "../../../Components/PanelLayoutBar/PanelLayoutBarProvider.jsx";
 
 
-/* Only for testing layout do not use*/
-const mock_data = [
-    { id: 1, user: "You", text: "Can you help me analyze the meeting transcript?" },
-    { id: 2, user: "AI", text: "Of course! I can help you extract key points, action items, and create summaries from your meeting transcript." },
-    { id: 3, user: "You", text: "What are the main topics discussed?" },
-    { id: 4, user: "AI", text: "Based on the transcript, the main topics include project timeline, budget allocation, team responsibilities, and upcoming milestones." },
-    { id: 5, user: "You", text: "Can you create action items?" },
-    { id: 6, user: "AI", text: "Sure! I'll extract actionable tasks with assigned owners and deadlines from the discussion." }
-];
 
 const STATUS_DISPLAY = {
     loading: '🟡 Loading...',
@@ -145,7 +135,7 @@ export default function ChatPanel({ workspaceId, chatHistory, workspaceName, onW
     };
 
     return (
-        <LiquidGlassFlexibleDiv blurriness={0.75} isButton={false} variant={PanelType.CHAT_BOX}>
+        <LiquidGlassFlexibleDiv blurriness={0.75} isButton={false} variant="chat">
             <div className="chat-panel-container">
                 <div className="chat-header">
                     {isEditingName ? (

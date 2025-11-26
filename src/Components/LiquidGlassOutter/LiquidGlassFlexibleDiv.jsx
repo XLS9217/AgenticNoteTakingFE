@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { usePanelLayoutBar, PanelType } from '../PanelLayoutBar/PanelLayoutBarProvider.jsx';
 import '../Components.css';
 
 function LiquidGlassFlexibleDiv({ children, blurriness = 0.0, isButton = false, variant = null }) {
-  const { startDragging, updateDragPosition, stopDragging } = usePanelLayoutBar();
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
@@ -40,31 +38,23 @@ function LiquidGlassFlexibleDiv({ children, blurriness = 0.0, isButton = false, 
     e.preventDefault();
     if (!containerRef.current) return;
 
-    // Record starting mouse position
     startMousePos.current = { x: e.clientX, y: e.clientY };
-
     setIsDragging(true);
-    startDragging({ x: e.clientX, y: e.clientY }, variant);
   };
 
   const handleMouseMove = (e) => {
     if (!isDragging) return;
 
-    // Calculate delta from starting position
     const deltaX = e.clientX - startMousePos.current.x;
     const deltaY = e.clientY - startMousePos.current.y;
 
     setPosition({ x: deltaX, y: deltaY });
-    updateDragPosition({ x: e.clientX, y: e.clientY });
   };
 
   const handleMouseUp = () => {
     if (!isDragging) return;
 
     setIsDragging(false);
-    stopDragging();
-
-    // Animate back to original position
     setPosition({ x: 0, y: 0 });
   };
 
