@@ -164,11 +164,9 @@ function MetadataTab({
   onSpeakerSave,
   onSpeakerKeyDown
 }) {
-    console.log("metadata", metadata);
-  const topicList = metadata?.topics_list || [];
-  console.log("topicList", topicList);
+  const topicsList = metadata?.topics_list || [];
   const speakerList = metadata?.speaker_list || [];
-  const hasTopics = Array.isArray(topicList) && topicList.length > 0;
+  const hasTopics = Array.isArray(topicsList) && topicsList.length > 0;
   const hasSpeakers = Array.isArray(speakerList) && speakerList.length > 0;
 
   return (
@@ -177,7 +175,7 @@ function MetadataTab({
         <h3 className="note-metadata-heading">Topics</h3>
         {hasTopics ? (
           <div className="topic-list">
-            {topicList.map((topic, index) => (
+            {topicsList.map((topic, index) => (
             <div key={index} className="topic-card">
               <div className="topic-header">
                 <img src="/icons/topics.png" alt="Topic" className="topic-icon" />
