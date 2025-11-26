@@ -5,6 +5,7 @@ import LiquidGlassInnerTabDiv from '../../../Components/LiquidGlassInner/LiquidG
 import LiquidGlassScrollBar from '../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx';
 import { getMetadata, updateSpeakerName } from '../../../Api/gateway.js';
 import { PanelType } from '../../../Components/PanelLayoutBar/PanelLayoutBarProvider.jsx';
+import CommendDispatcher, { ChannelEnum } from '../../../Util/CommendDispatcher.js';
 
 const NOTE_TAB = 'Note';
 const METADATA_TAB = 'Metadata';
@@ -88,6 +89,41 @@ export default function NotePanel({
       resetSpeakerEditing();
     }
   };
+
+  const handleScrollToTopic = (topicTitle) => {
+    if (activeTab !== METADATA_TAB) return;
+
+    const topicElements = document.querySelectorAll('.topic-card .topic-title');
+    const targetElement = Array.from(topicElements).find(
+      el => el.textContent === topicTitle
+    );
+
+    if (targetElement) {
+      const topicCard = targetElement.closest('.topic-card');
+
+      topicCard.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+
+      topicCard.classList.add('topic-card--highlighted');
+      setTimeout(() => {
+        topicCard.classList.remove('topic-card--highlighted');
+      }, 1500);
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = CommendDispatcher.Subscribe2Channel(
+      ChannelEnum.DISPLAY_CONTROL,
+      (payload) => {
+        if (payload.action === 'scroll-to-topic' && payload.topic) {
+          handleScrollToTopic(payload.topic);
+        }
+      }
+    );
+    return unsubscribe;
+  }, [activeTab, metadata]);
   return (
     <LiquidGlassFlexibleDiv isButton={false} variant={PanelType.NOTE_PANEL}>
       <div className="panel-container note-panel">

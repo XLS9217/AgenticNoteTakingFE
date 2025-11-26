@@ -1,9 +1,62 @@
 
-// Simple channel-based pub/sub dispatcher
-// Usage:
-//   import CommendDispatcher, { ChannelEnum } from './CommendDispatcher';
-//   const unsubscribe = CommendDispatcher.Subscribe2Channel(ChannelEnum.DISPLAY_CONTROL, (value) => { ... });
-//   CommendDispatcher.Publish2Channel(ChannelEnum.DISPLAY_CONTROL, payload);
+// ============================================================================
+// CommendDispatcher - Channel-based Pub/Sub Event System
+// ============================================================================
+//
+// Purpose: Reduce React prop drilling by allowing components to communicate
+// via events without direct parent-child relationships.
+//
+// ============================================================================
+// BASIC USAGE
+// ============================================================================
+//
+// 1. Import the dispatcher and channel enum:
+//    import CommendDispatcher, { ChannelEnum } from './CommendDispatcher';
+//
+// 2. Publishing an event (sender component):
+//    CommendDispatcher.Publish2Channel(ChannelEnum.DISPLAY_CONTROL, {
+//      action: 'scroll-to-topic',
+//      topic: 'Topic Name'
+//    });
+//
+// 3. Subscribing to events (receiver component):
+//    useEffect(() => {
+//      const unsubscribe = CommendDispatcher.Subscribe2Channel(
+//        ChannelEnum.DISPLAY_CONTROL,
+//        (payload) => {
+//          console.log('Received:', payload);
+//          // Handle the event
+//        }
+//      );
+//      return unsubscribe; // Cleanup on unmount
+//    }, []);
+//
+// ============================================================================
+// AVAILABLE CHANNELS
+// ============================================================================
+//
+// DISPLAY_CONTROL - UI display and scroll actions
+//   Payloads:
+//   - { action: 'scroll-to-topic', topic: 'Topic Title' }
+//
+// REFRESH_CONTROL - Data refresh triggers
+//
+// ============================================================================
+// BEST PRACTICES
+// ============================================================================
+//
+// ✅ DO:
+// - Use for cross-cutting concerns (auth, notifications, global UI state)
+// - Always return the unsubscribe function in useEffect cleanup
+// - Define clear payload contracts for each action
+// - Check payload structure before using
+//
+// ❌ DON'T:
+// - Use for direct parent-child communication (use props instead)
+// - Publish in response to the same channel (avoid circular dependencies)
+// - Forget to unsubscribe (causes memory leaks)
+//
+// ============================================================================
 
 export const ChannelEnum = Object.freeze({
     DISPLAY_CONTROL: 'DISPLAY_CONTROL',

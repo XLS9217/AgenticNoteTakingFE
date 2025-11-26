@@ -903,6 +903,14 @@ Processed Transcript List Styles
   background: rgba(0, 0, 0, 0.3);
 }
 
+.transcript-entry--clickable {
+  cursor: pointer;
+}
+
+.transcript-entry--clickable:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 .transcript-entry-header {
   display: flex;
   align-items: baseline;
@@ -1203,6 +1211,21 @@ Note Panel Styles
 
 .topic-card:hover {
   background: rgba(0, 0, 0, 0.35);
+}
+
+@keyframes topic-highlight {
+  0% {
+    background: rgba(100, 200, 255, 0.3);
+    box-shadow: 0 0 20px rgba(100, 200, 255, 0.4);
+  }
+  100% {
+    background: rgba(0, 0, 0, 0.25);
+    box-shadow: none;
+  }
+}
+
+.topic-card--highlighted {
+  animation: topic-highlight 1.5s ease-out;
 }
 
 .topic-header {

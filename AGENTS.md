@@ -1,221 +1,258 @@
-# Implementation Plan: Click-to-Scroll Between Transcript and Note Metadata
+# Plan: Scroll-to-Topic Feature
 
-## Task Overview
-Implement click-to-scroll functionality where:
-- Clicking an utterance in the processed transcript scrolls to the corresponding topic in the note metadata section
-- Clicking a topic in the note metadata section scrolls to the corresponding utterance in the transcript
+## Goal
+Click an utterance in the processed transcript → emit `DISPLAY_CONTROL` event → scroll to corresponding topic in metadata panel (if open)
 
-## Current Code Structure
-- **TranscriptPanel**: `src/Modules/WorkSpacePanel/NotetakingContent/TranscriptPanel.jsx`
-  - `ProcessedTranscriptPanel` component (lines 79-235)
-  - `renderProcessedTranscript` function (lines 156-171)
-  - Each entry has: `speaker`, `utterance`, `timestamp`, `id`, `topic`
+---
 
-- **NotePanel**: `src/Modules/WorkSpacePanel/NotetakingContent/NotePanel.jsx`
-  - Displays metadata topics
-  - Renders topic cards
+## Architecture Analysis
 
-- **Parent Component**: `src/Modules/WorkSpacePanel/NotetakingContent/NoteTakingContent.jsx`
-  - Manages both panels
-  - Handles WebSocket and data loading
+### Current Structure
+
+**TranscriptPanel.jsx** (Lines 156-171)
+- Renders processed transcript as array of entries
+- Each entry has: `speaker`, `timestamp`, `topic`, `utterance`
+- Topic tag rendered at line 165-167: `<span className="transcript-topic-tag">`
+- Utterance at line 168: `<div className="transcript-utterance">`
+
+**NotePanel.jsx** (Lines 158-212)
+- Has two tabs: Note and Metadata
+- Metadata tab shows topics at lines 177-187
+- Topics rendered as `<div className="topic-card">` with `topic.title`
+- Scrollable container: `LiquidGlassScrollBar` with class `note-panel-scroll--metadata`
+
+**CommendDispatcher.js**
+- Already has `ChannelEnum.DISPLAY_CONTROL`
+- Pub/sub ready to use
+
+---
 
 ## Implementation Plan
 
-### Step 1: Add State Management in Parent Component
-**File**: `NoteTakingContent.jsx`
-
-Add state to track selected items:
-```jsx
-const [selectedTopicId, setSelectedTopicId] = useState(null);
-const [selectedUtteranceId, setSelectedUtteranceId] = useState(null);
-```
-
-### Step 2: Make Transcript Entries Clickable
-**File**: `TranscriptPanel.jsx` - `renderProcessedTranscript` function
-
-1. Add `onClick` handler to transcript entries
-2. Pass callback prop `onUtteranceClick` from parent
-3. Store utterance topic for matching
-
-```jsx
-const renderProcessedTranscript = (transcript) => {
-    if (!Array.isArray(transcript)) return null;
-
-    return transcript.map((item, index) => (
-        <div
-            key={index}
-            className="transcript-entry transcript-entry-clickable"
-            onClick={() => onUtteranceClick?.(item.topic, item.id)}
-            title="Click to view in notes"
-        >
-            <div className="transcript-entry-header">
-                <span className="transcript-speaker">{item.speaker}</span>
-                <span className="transcript-timestamp">[{item.timestamp}]</span>
-            </div>
-            {item.topic && (
-                <span className="transcript-topic-tag" title={item.topic}>{item.topic}</span>
-            )}
-            <div className="transcript-utterance">{item.utterance}</div>
-        </div>
-    ));
-};
-```
-
-Add prop to `ProcessedTranscriptPanel`:
-```jsx
-function ProcessedTranscriptPanel({
-    workspaceId,
-    processedTranscript,
-    socket,
-    isConnected,
-    onMetadataUpdate,
-    refreshTrigger,
-    onUtteranceClick // new prop
-})
-```
-
-### Step 3: Add Refs to Note Metadata Topics
-**File**: `NotePanel.jsx`
-
-1. Create refs for each topic section
-2. Use `useRef` and `useEffect` to scroll when topic is selected
-3. Add `scrollIntoView` logic
-
-```jsx
-const topicRefs = useRef({});
-
-useEffect(() => {
-    if (selectedTopic && topicRefs.current[selectedTopic]) {
-        topicRefs.current[selectedTopic].scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-        });
-    }
-}, [selectedTopic]);
-
-// In render, add ref to each topic
-<div
-    ref={(el) => topicRefs.current[topic] = el}
-    className="topic-card"
-    onClick={() => onTopicClick?.(topic)}
->
-    {/* topic content */}
-</div>
-```
-
-### Step 4: Add Refs to Transcript Entries
+### Step 1: Add Click Handler to Utterances
 **File**: `TranscriptPanel.jsx`
+**Location**: Lines 156-171 (`renderProcessedTranscript` function)
 
-1. Create refs for each transcript entry
-2. Scroll to entry when utterance ID is selected
+**Changes**:
+1. Import `CommendDispatcher` and `ChannelEnum`
+2. Add `onClick` handler to `.transcript-entry` div (or `.transcript-utterance`)
+3. Emit event with topic from `item.topic`
 
-```jsx
-const transcriptRefs = useRef({});
+**Code**:
+```javascript
+import CommendDispatcher, { ChannelEnum } from '../../../Util/CommendDispatcher';
 
-useEffect(() => {
-    if (selectedUtteranceId && transcriptRefs.current[selectedUtteranceId]) {
-        transcriptRefs.current[selectedUtteranceId].scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-        });
-    }
-}, [selectedUtteranceId]);
+const handleUtteranceClick = (topic) => {
+  if (!topic) return; // Only emit if topic exists
+  CommendDispatcher.Publish2Channel(ChannelEnum.DISPLAY_CONTROL, {
+    action: 'scroll-to-topic',
+    topic: topic
+  });
+};
 
-// In renderProcessedTranscript
-<div
+// Update renderProcessedTranscript
+return transcript.map((item, index) => (
+  <div
     key={index}
-    ref={(el) => transcriptRefs.current[item.id] = el}
-    className="transcript-entry transcript-entry-clickable"
-    onClick={() => onUtteranceClick?.(item.topic, item.id)}
->
+    className="transcript-entry transcript-entry--clickable"
+    onClick={() => handleUtteranceClick(item.topic)}
+    title={item.topic ? `Click to scroll to topic: ${item.topic}` : ''}
+  >
+    {/* rest of the content */}
+  </div>
+));
 ```
 
-### Step 5: Connect Parent Component Callbacks
-**File**: `NoteTakingContent.jsx`
+---
 
-```jsx
-const handleUtteranceClick = (topic, utteranceId) => {
-    setSelectedTopicId(topic);
-    // Notify NotePanel to scroll to this topic
-};
+### Step 2: Subscribe to Events in NotePanel
+**File**: `NotePanel.jsx`
+**Location**: Main component (lines 13-123)
 
-const handleTopicClick = (topic) => {
-    // Find first utterance with this topic and scroll to it
-    const firstUtterance = processedTranscript?.find(item => item.topic === topic);
-    if (firstUtterance) {
-        setSelectedUtteranceId(firstUtterance.id);
+**Changes**:
+1. Import `CommendDispatcher` and `ChannelEnum`
+2. Add `useEffect` to subscribe to `DISPLAY_CONTROL`
+3. Check if metadata tab is active (`activeTab === METADATA_TAB`)
+4. Find matching topic element by title
+5. Scroll to it with smooth animation
+
+**Code**:
+```javascript
+import { useEffect, useState, useRef } from 'react';
+import CommendDispatcher, { ChannelEnum } from '../../../Util/CommendDispatcher';
+
+export default function NotePanel({ ... }) {
+  const [activeTab, setActiveTab] = useState(NOTE_TAB);
+  const metadataScrollRef = useRef(null);
+
+  // Subscribe to scroll events
+  useEffect(() => {
+    const unsubscribe = CommendDispatcher.Subscribe2Channel(
+      ChannelEnum.DISPLAY_CONTROL,
+      (payload) => {
+        if (payload.action === 'scroll-to-topic' && payload.topic) {
+          handleScrollToTopic(payload.topic);
+        }
+      }
+    );
+    return unsubscribe;
+  }, [activeTab, metadata]);
+
+  const handleScrollToTopic = (topicTitle) => {
+    // Only scroll if metadata tab is active
+    if (activeTab !== METADATA_TAB) return;
+
+    // Find the topic element
+    const topicElements = document.querySelectorAll('.topic-card .topic-title');
+    const targetElement = Array.from(topicElements).find(
+      el => el.textContent === topicTitle
+    );
+
+    if (targetElement) {
+      targetElement.closest('.topic-card').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
     }
-};
+  };
 
-// Pass props to panels
-<TranscriptPanel
-    onUtteranceClick={handleUtteranceClick}
-    selectedUtteranceId={selectedUtteranceId}
-    // ... other props
-/>
-
-<NotePanel
-    onTopicClick={handleTopicClick}
-    selectedTopic={selectedTopicId}
-    // ... other props
-/>
+  // ... rest of component
+}
 ```
 
-### Step 6: Add CSS for Clickable States
+---
+
+### Step 3: Add CSS for Visual Feedback
 **File**: `Modules.css`
+**Location**: Transcript section
 
+**Changes**:
+1. Add hover cursor for clickable utterances
+2. Add highlight animation for scrolled-to topic
+
+**Code**:
 ```css
-.transcript-entry-clickable {
-    cursor: pointer;
-    transition: var(--transition-fast);
+/* Transcript clickable entries */
+.transcript-entry--clickable {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-.transcript-entry-clickable:hover {
-    background: rgba(255, 255, 255, 0.05);
-    transform: translateX(2px);
+.transcript-entry--clickable:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
-.topic-card-clickable {
-    cursor: pointer;
-    transition: var(--transition-fast);
+/* Topic scroll highlight */
+@keyframes topic-highlight {
+  0% { background-color: rgba(100, 200, 255, 0.2); }
+  100% { background-color: transparent; }
 }
 
-.topic-card-clickable:hover {
-    background: rgba(255, 255, 255, 0.05);
-    transform: translateY(-2px);
+.topic-card--highlighted {
+  animation: topic-highlight 1.5s ease-out;
 }
 ```
 
-## Design Decisions
+---
 
-1. **Bidirectional scrolling**: Both transcript → notes and notes → transcript
-2. **Topic-based matching**: Use the `topic` field to link utterances to metadata
-3. **Smooth scrolling**: Use `scrollIntoView({ behavior: 'smooth', block: 'center' })`
-4. **Visual feedback**: Hover effects to show items are clickable
-5. **Refs management**: Use object-based refs to handle dynamic lists
-6. **First match for topic-to-transcript**: When clicking a topic, scroll to the first utterance with that topic
+### Step 4: Enhanced Scroll with Highlight (Optional)
+**Improvement**: Add temporary highlight to scrolled-to topic
+
+**Update `handleScrollToTopic`**:
+```javascript
+const handleScrollToTopic = (topicTitle) => {
+  if (activeTab !== METADATA_TAB) return;
+
+  const topicElements = document.querySelectorAll('.topic-card .topic-title');
+  const targetElement = Array.from(topicElements).find(
+    el => el.textContent === topicTitle
+  );
+
+  if (targetElement) {
+    const topicCard = targetElement.closest('.topic-card');
+
+    // Scroll to element
+    topicCard.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+
+    // Add highlight class
+    topicCard.classList.add('topic-card--highlighted');
+    setTimeout(() => {
+      topicCard.classList.remove('topic-card--highlighted');
+    }, 1500);
+  }
+};
+```
+
+---
 
 ## Files to Modify
 
-1. `NoteTakingContent.jsx` - Add state and coordination logic
-2. `TranscriptPanel.jsx` - Add clickable entries and refs
-3. `NotePanel.jsx` - Add clickable topics and refs
-4. `Modules.css` - Add hover styles for clickable elements
+1. **TranscriptPanel.jsx** (src/Modules/WorkSpacePanel/NotetakingContent/)
+   - Import CommendDispatcher
+   - Add click handler to utterances
+   - Publish scroll-to-topic event
 
-## Props to Add
+2. **NotePanel.jsx** (src/Modules/WorkSpacePanel/NotetakingContent/)
+   - Import CommendDispatcher
+   - Subscribe to DISPLAY_CONTROL events
+   - Implement scroll animation logic
+   - Check metadata tab visibility
 
-**TranscriptPanel**:
-- `onUtteranceClick?: (topic: string, utteranceId: string) => void`
-- `selectedUtteranceId?: string`
+3. **Modules.css** (src/Modules/)
+   - Add hover styles for clickable utterances
+   - Add highlight animation for topics
 
-**NotePanel**:
-- `onTopicClick?: (topic: string) => void`
-- `selectedTopic?: string`
+---
 
-## Testing Considerations
+## Event Contract
 
-- Verify smooth scrolling works in both directions
-- Test with long transcripts and many topics
-- Ensure refs are properly set for all items
-- Check that scrolling positions items in center of viewport
-- Verify hover states provide clear visual feedback
+**Channel**: `ChannelEnum.DISPLAY_CONTROL`
+
+**Payload**:
+```javascript
+{
+  action: 'scroll-to-topic',
+  topic: 'Topic Title String'  // matches metadata.topics_list[].title
+}
+```
+
+---
+
+## Edge Cases Handled
+
+1. **No topic on utterance**: Don't emit event (check `if (!topic) return`)
+2. **Metadata tab not active**: Don't scroll (check `activeTab !== METADATA_TAB`)
+3. **Topic not found**: Silently fail (no error)
+4. **Multiple clicks**: Animation will restart naturally
+
+---
+
+## Testing Steps
+
+1. Open workspace with processed transcript
+2. Ensure metadata tab has topics
+3. Click an utterance in processed transcript
+4. Verify:
+   - If metadata tab is open → smooth scroll to topic
+   - If note tab is open → no action (expected)
+   - Hover shows cursor pointer on utterances
+   - Scrolled topic briefly highlights
+
+---
+
+## Summary
+
+**Minimal changes**:
+- 1 function in TranscriptPanel (publish event)
+- 1 useEffect + 1 function in NotePanel (subscribe + scroll)
+- 3-4 CSS rules for visual polish
+
+**Follows project guidelines**:
+- ✅ No npm commands
+- ✅ Minimal work, no overcomplication
+- ✅ Uses existing CommendDispatcher
+- ✅ CSS in Modules.css
+- ✅ Liquid glass aesthetic preserved

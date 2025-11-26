@@ -4,6 +4,7 @@ import LiquidGlassScrollBar from "../../../Components/LiquidGlassGlobal/LiquidGl
 import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInner/LiquidGlassInnerTextButton.jsx";
 import { updateTranscript, getProcessedTranscript, getMetadata } from "../../../Api/gateway.js";
 import { PanelType } from "../../../Components/PanelLayoutBar/PanelLayoutBarProvider.jsx";
+import CommendDispatcher, { ChannelEnum } from "../../../Util/CommendDispatcher.js";
 
 function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, setIsEditing }) {
     const [isDragging, setIsDragging] = useState(false);
@@ -153,11 +154,24 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
         };
     }, [socket, workspaceId, fetchProcessedTranscript, fetchMetadata]);
 
+    const handleUtteranceClick = (topic) => {
+        if (!topic) return;
+        CommendDispatcher.Publish2Channel(ChannelEnum.DISPLAY_CONTROL, {
+            action: 'scroll-to-topic',
+            topic: topic
+        });
+    };
+
     const renderProcessedTranscript = (transcript) => {
         if (!Array.isArray(transcript)) return null;
 
         return transcript.map((item, index) => (
-            <div key={index} className="transcript-entry">
+            <div
+                key={index}
+                className={`transcript-entry ${item.topic ? 'transcript-entry--clickable' : ''}`}
+                onClick={() => handleUtteranceClick(item.topic)}
+                title={item.topic ? `Click to scroll to topic: ${item.topic}` : ''}
+            >
                 <div className="transcript-entry-header">
                     <span className="transcript-speaker">{item.speaker}</span>
                     <span className="transcript-timestamp">[{item.timestamp}]</span>
