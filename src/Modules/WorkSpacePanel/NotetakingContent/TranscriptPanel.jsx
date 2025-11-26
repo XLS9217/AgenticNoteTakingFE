@@ -102,6 +102,7 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
         }
     }, [workspaceId, onMetadataUpdate]);
 
+    console.log('Fetched processed transcript:', fetchedTranscript);
     useEffect(() => {
         // Initialize with the processedTranscript prop
         if (processedTranscript && processedTranscript !== '' &&
@@ -161,6 +162,9 @@ function ProcessedTranscriptPanel({ workspaceId, processedTranscript, socket, is
                     <span className="transcript-speaker">{item.speaker}</span>
                     <span className="transcript-timestamp">[{item.timestamp}]</span>
                 </div>
+                {item.topic && (
+                    <span className="transcript-topic-tag" title={item.topic}>{item.topic}</span>
+                )}
                 <div className="transcript-utterance">{item.utterance}</div>
             </div>
         ));
