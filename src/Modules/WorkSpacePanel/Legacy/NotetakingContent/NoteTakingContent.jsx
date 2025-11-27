@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import SourcePanel from "../SourcePanel.jsx";
-import NotePanel from "../NotePanel.jsx";
-import ChatBox from "../ChatBox.jsx";
+import SourcePanel from "../../SourcePanel.jsx";
+import NotePanel from "../../NotePanel.jsx";
+import ChatBox from "../../ChatBox.jsx";
 import "../../WorkspaceLayout.css";
 
 export default function NoteTakingContent({ workspaceId, note, transcript, processedTranscript, initialMetadata, socket, isConnected, chatHistory, workspaceName, onWorkspaceNameChange }) {

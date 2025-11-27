@@ -124,14 +124,13 @@ Chat Panel Layout
   flex-direction: column;
   height: 100%;
   gap: var(--spacing-xs);
-  padding: 0;
+  padding: 0px;
 }
 
 .chat-header {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .workspace-name-display {
