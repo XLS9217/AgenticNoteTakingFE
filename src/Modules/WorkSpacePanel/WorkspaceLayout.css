@@ -1,0 +1,46 @@
+/*
+==========================================
+IDE-Style Workspace Layout
+==========================================
+*/
+
+.ide-layout {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+  gap: 0px;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+.ide-left-panel {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ide-center-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ide-right-panel {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make LiquidGlassDiv fill panel height */
+.ide-left-panel > *,
+.ide-center-panel > *,
+.ide-right-panel > * {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
