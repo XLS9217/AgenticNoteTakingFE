@@ -1,9 +1,9 @@
 import { useState, useEffect, forwardRef, useImperativeHandle, useCallback } from "react";
-import LiquidGlassFlexibleDiv from "../../../Components/LiquidGlassOutter/LiquidGlassFlexibleDiv.jsx";
-import LiquidGlassScrollBar from "../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
-import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInner/LiquidGlassInnerTextButton.jsx";
-import { updateTranscript, getProcessedTranscript, getMetadata } from "../../../Api/gateway.js";
-import CommendDispatcher, { ChannelEnum } from "../../../Util/CommendDispatcher.js";
+import LiquidGlassFlexibleDiv from "../../../../Components/LiquidGlassOutter/LiquidGlassFlexibleDiv.jsx";
+import LiquidGlassScrollBar from "../../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
+import LiquidGlassInnerTextButton from "../../../../Components/LiquidGlassInner/LiquidGlassInnerTextButton.jsx";
+import { updateTranscript, getProcessedTranscript, getMetadata } from "../../../../Api/gateway.js";
+import CommendDispatcher, { ChannelEnum } from "../../../../Util/CommendDispatcher.js";
 
 function RawTranscriptPanel({ editedTranscript, setEditedTranscript, isEditing, setIsEditing }) {
     const [isDragging, setIsDragging] = useState(false);

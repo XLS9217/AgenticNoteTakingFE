@@ -53,10 +53,12 @@ function ApplicationContent({ activeWorkspace, setActiveWorkspace, currentView, 
         setCurrentView('workspace');
     };
 
+    const isInWorkspace = !!activeWorkspace;
+
     return (
         <>
-            <UtilBar />
-            <div className="application-container">
+            {!isInWorkspace && <UtilBar />}
+            <div className={isInWorkspace ? "application-container application-container--fullscreen" : "application-container"}>
                 {currentView === 'user' ? (
                     <UserPanel userInfo={userInfo} />
                 ) : activeWorkspace ? (

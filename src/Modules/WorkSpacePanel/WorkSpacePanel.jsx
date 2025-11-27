@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import NoteTakingContent from "./NotetakingContent/NoteTakingContent.jsx";
+import NoteTakingContent from "./Legacy/NotetakingContent/NoteTakingContent.jsx";
 import { useUtilBar } from "../../Components/UtilBar/UtilBarProvider.jsx";
 import { getWorkspace, getChatHistory, getProcessedTranscript, connectToChatSession } from "../../Api/gateway.js";
 

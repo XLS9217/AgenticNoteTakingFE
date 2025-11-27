@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import LiquidGlassFlexibleDiv from "../../../Components/LiquidGlassOutter/LiquidGlassFlexibleDiv.jsx";
-import LiquidGlassScrollBar from "../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
+import LiquidGlassFlexibleDiv from "../../../../Components/LiquidGlassOutter/LiquidGlassFlexibleDiv.jsx";
+import LiquidGlassScrollBar from "../../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import { UserMessage, AgentMessage, RunningMessage } from "./ChatBubble.jsx";
 import UserInputArea from "./UserInputArea.jsx";
-import { changeWorkspaceName } from "../../../Api/gateway.js";
+import { changeWorkspaceName } from "../../../../Api/gateway.js";
 
 
 

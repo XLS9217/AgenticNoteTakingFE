@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import LiquidGlassFlexibleDiv from '../../../Components/LiquidGlassOutter/LiquidGlassFlexibleDiv.jsx';
-import LiquidGlassInnerTabDiv from '../../../Components/LiquidGlassInner/LiquidGlassInnerTabDiv.jsx';
-import LiquidGlassScrollBar from '../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx';
-import { getMetadata, updateSpeakerName } from '../../../Api/gateway.js';
-import CommendDispatcher, { ChannelEnum } from '../../../Util/CommendDispatcher.js';
+import LiquidGlassFlexibleDiv from '../../../../Components/LiquidGlassOutter/LiquidGlassFlexibleDiv.jsx';
+import LiquidGlassInnerTabDiv from '../../../../Components/LiquidGlassInner/LiquidGlassInnerTabDiv.jsx';
+import LiquidGlassScrollBar from '../../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx';
+import { getMetadata, updateSpeakerName } from '../../../../Api/gateway.js';
+import CommendDispatcher, { ChannelEnum } from '../../../../Util/CommendDispatcher.js';
 
 const NOTE_TAB = 'Note';
 const METADATA_TAB = 'Metadata';
