@@ -394,6 +394,98 @@ Streaming Message Animation
 
 /*
 ==========================================
+Source Panel Layout
+==========================================
+*/
+
+.source-panel-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 4px;
+  padding: 0px;
+}
+
+.source-header {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs);
+}
+
+.source-title {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.2em;
+  font-weight: 500;
+  margin: 0;
+}
+
+.source-filename {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85em;
+  font-weight: 400;
+}
+
+.source-transcript-section {
+  flex: 1 1 50%;
+  min-height: 0;
+  padding: var(--spacing-xs);
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: var(--border-radius-md);
+}
+
+.source-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  margin: 4px 0;
+}
+
+.source-topics-section {
+  flex: 1 1 50%;
+  min-height: 0;
+  padding: var(--spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.source-topic-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-fast);
+}
+
+.source-topic-card:hover {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.source-empty-state {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9em;
+  text-align: center;
+  padding: var(--spacing-md);
+}
+
+.speaker-icon-small {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  filter: brightness(0) invert(1);
+}
+
+/*
+==========================================
 Panel Common Styles
 ==========================================
 */
@@ -953,8 +1045,8 @@ Processed Transcript List Styles
 
 .transcript-utterance {
   color: rgba(255, 255, 255, 0.85);
-  font-size: 0.79em;
-  line-height: 1.6;
+  font-size: 0.7em;
+  line-height: 1.5;
   padding-left: var(--spacing-xs);
 }
 
@@ -1266,11 +1358,11 @@ Note Panel Styles
 .topic-title {
   font-weight: 500;
   color: rgba(255, 255, 255, 0.95);
-  font-size: 0.95em;
+  font-size: 0.85em;
 }
 
 .topic-summary {
-  font-size: 0.85em;
+  font-size: 0.75em;
   color: rgba(255, 255, 255, 0.7);
   line-height: 1.4;
 }

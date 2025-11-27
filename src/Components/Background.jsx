@@ -4,7 +4,7 @@ function Background({ children }) {
   return (
     <div className="background-container">
       {children}
-      <img src="/2koffice.png" alt="Background" className="background-image" />
+      <img src="/lgwp.jpg" alt="Background" className="background-image" />
     </div>
   )
 }
