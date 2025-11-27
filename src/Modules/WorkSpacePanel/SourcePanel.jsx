@@ -101,7 +101,7 @@ export default function SourcePanel({ processedTranscript, metadata, fileName })
     const topics = metadata?.topics_list || [];
 
     return (
-        <LiquidGlassDiv blurriness={0.5} variant="chat">
+        <LiquidGlassDiv blurriness={0.5} variant="workspace">
             <div className="source-panel-container">
                 {/* Header Section */}
                 <div className="source-header">

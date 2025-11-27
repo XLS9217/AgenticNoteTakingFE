@@ -183,7 +183,7 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
     const status = getConnectionStatus();
 
     return (
-        <LiquidGlassDiv blurriness={0.5} variant="chat">
+        <LiquidGlassDiv blurriness={0.5} variant="workspace">
             <div className="chat-panel-container">
                 <div className="chat-header">
                     <div className="workspace-name-display">

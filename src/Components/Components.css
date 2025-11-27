@@ -79,10 +79,10 @@ Liquid Glass Section
   /* No transitions or hover effects */
 }
 
-/* Chat variant - minimal padding */
-.liquid-glass-container--chat {
+/* Workspace variant - minimal padding with margin */
+.liquid-glass-container--workspace {
   padding: var(--spacing-xs) var(--spacing-sm);
-  margin: 0;
+  margin: 5px;
   height: 100%;
 }
 
