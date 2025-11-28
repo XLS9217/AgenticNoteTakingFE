@@ -1,47 +1,54 @@
-use my aesthetic design
+# Introduction of slate
 
+## How Slate.js Saves and Loads Data
 
-E:\Project\_MeetingNoteTaking\AgenticNoteTakingFE\src\Modules\WorkSpacePanel\SourcePanel.jsx
-for source panel, look at Legacy folder (you are not allow to edit it or import from it, just learn from it)
+Slate.js uses **plain JSON** for its data structure, making serialization and deserialization straightforward.
 
-In my old user interaction flow, I have somewhere to import a raw transcript file and send to backend for processing.
-And there are processing status
+### Basic Approach
 
-now I want this also. For source panel. if there are no transcript. Put two area inside, one for drop txt one for copy and paste in transcript.
-Just like the old one
+**Saving (Serialization):**
+- Use `JSON.stringify(value)` to convert the editor value to JSON string
+- Store it in localStorage, database, or any storage solution
 
-# Plan in short steps
+**Loading (Deserialization):**
+- Use `JSON.parse()` to retrieve and parse the saved JSON
+- Pass it as `initialValue` to the Slate component
 
-## Step 1: Add transcript upload state management
-- Add useState for transcript text, isDragging, isProcessing, processStatus
-- Add state to track if we're in upload mode vs viewing mode
+### Example Implementation
 
-## Step 2: Create RawTranscriptUpload component
-- Drag and drop zone for .txt files
-- Textarea for copy-paste
-- Similar to Legacy TranscriptPanel RawTranscriptPanel (lines 8-76)
+```javascript
+const initialValue = useMemo(
+  () => JSON.parse(localStorage.getItem('content')) || [
+    { type: 'paragraph', children: [{ text: 'A line of text in a paragraph.' }] }
+  ],
+  []
+)
 
-## Step 3: Add process button and websocket integration
-- Add Process button (using LiquidGlassInnerTextButton)
-- Listen to websocket for process_status messages
-- Send process_transcript message when button clicked
-- Display processing status (Starting, Processing, Done, Error, None)
+return (
+  <Slate
+    editor={editor}
+    initialValue={initialValue}
+    onChange={value => {
+      const isAstChange = editor.operations.some(
+        op => 'set_selection' !== op.type
+      )
+      if (isAstChange) {
+        const content = JSON.stringify(value)
+        localStorage.setItem('content', content)
+      }
+    }}
+  >
+    <Editable />
+  </Slate>
+)
+```
 
-## Step 4: Conditional rendering in SourcePanel
-- If no transcript: show RawTranscriptUpload component
-- If has transcript: show current ProcessedTranscriptSection and TopicsSection
+### Key Points
 
-## Step 5: Add API calls
-- Import updateTranscript, getProcessedTranscript, getMetadata from gateway.js
-- Call updateTranscript when user finishes inputting raw transcript
-- Fetch processed transcript after processing completes
+- **JSON Format**: Slate's native format is JSON, no special serialization library needed
+- **onChange Optimization**: Check if operations are actual content changes (not just selection changes) before saving
+- **Other Formats**: You can serialize to HTML, Markdown, or plain text if needed, but JSON is recommended for preserving full document structure
 
-# Files to change
-
-## E:\Project\_MeetingNoteTaking\AgenticNoteTakingFE\src\Modules\WorkSpacePanel\SourcePanel.jsx
-- Add imports: useState, useCallback, LiquidGlassInnerTextButton, API functions
-- Add RawTranscriptUpload component with drag-drop and textarea
-- Add state management for upload, processing, and status
-- Add websocket message listener for process_status
-- Add conditional rendering based on transcript existence
-- Add Process button functionality
+### Sources
+- [Serializing | Slate](https://docs.slatejs.org/concepts/10-serializing)
+- [Saving to a Database | Slate](https://docs.slatejs.org/walkthroughs/06-saving-to-a-database)
