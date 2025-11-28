@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { createEditor } from "slate";
+import { createEditor, Editor, Transforms, Text } from "slate";
 import { Slate, Editable, withReact } from "slate-react";
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 // Removed custom LiquidGlassScrollBar due to clipping issues in Slate editor
@@ -20,23 +20,95 @@ function SlatePanel({ workspaceId, note }) {
         return [{ type: 'paragraph', children: [{ text: 'Start typing your notes...' }] }];
     };
 
+    const saveNote = useCallback(() => {
+        const noteString = JSON.stringify(editor.children);
+        updateNote(workspaceId, noteString).catch(error => {
+            console.error('Error saving note:', error);
+        });
+    }, [editor, workspaceId]);
+
     const handleChange = useCallback((newValue) => {
         const isAstChange = editor.operations.some(op => op.type !== 'set_selection');
         if (isAstChange) {
-            const noteString = JSON.stringify(newValue);
-            updateNote(workspaceId, noteString).catch(error => {
-                console.error('Error saving note:', error);
-            });
+            saveNote();
         }
-    }, [editor, workspaceId]);
+    }, [editor, saveNote]);
+
+    const handleKeyDown = useCallback((event) => {
+        if (event.ctrlKey && event.key === 's') {
+            event.preventDefault();
+            saveNote();
+        }
+    }, [saveNote]);
+
+    const toggleMark = (format) => {
+        const isActive = isMarkActive(editor, format);
+        if (isActive) {
+            Editor.removeMark(editor, format);
+        } else {
+            Editor.addMark(editor, format, true);
+        }
+    };
+
+    const isMarkActive = (editor, format) => {
+        const marks = Editor.marks(editor);
+        return marks ? marks[format] === true : false;
+    };
+
+    const renderLeaf = useCallback((props) => {
+        let { attributes, children, leaf } = props;
+        if (leaf.bold) {
+            children = <strong>{children}</strong>;
+        }
+        if (leaf.italic) {
+            children = <em>{children}</em>;
+        }
+        if (leaf.underline) {
+            children = <u>{children}</u>;
+        }
+        return <span {...attributes}>{children}</span>;
+    }, []);
 
     return (
-        <Slate key={`${workspaceId}-${note}`} editor={editor} initialValue={getInitialValue()} onChange={handleChange}>
-            <Editable
-                className="slate-editor native-scrollbar"
-                placeholder="Start typing your notes..."
-            />
-        </Slate>
+        <>
+            <div className="note-toolbar">
+                <button
+                    className="format-button"
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        toggleMark('bold');
+                    }}
+                >
+                    B
+                </button>
+                <button
+                    className="format-button"
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        toggleMark('italic');
+                    }}
+                >
+                    I
+                </button>
+                <button
+                    className="format-button"
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        toggleMark('underline');
+                    }}
+                >
+                    U
+                </button>
+            </div>
+            <Slate key={`${workspaceId}-${note}`} editor={editor} initialValue={getInitialValue()} onChange={handleChange}>
+                <Editable
+                    className="slate-editor native-scrollbar"
+                    placeholder="Start typing your notes..."
+                    onKeyDown={handleKeyDown}
+                    renderLeaf={renderLeaf}
+                />
+            </Slate>
+        </>
     );
 }
 
@@ -95,6 +167,8 @@ export default function NotePanel({ workspaceId, note, workspaceName, onWorkspac
                         </div>
                     )}
                 </div>
+
+                <div className="note-divider"></div>
 
                 <div className="note-content">
                     <SlatePanel workspaceId={workspaceId} note={note} />

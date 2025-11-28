@@ -59,6 +59,17 @@ Note Panel Styles
 }
 
 .note-header {
+  margin-bottom: var(--spacing-xs);
+}
+
+.note-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
   margin-bottom: var(--spacing-sm);
 }
 
@@ -68,6 +79,32 @@ Note Panel Styles
   flex-direction: column;
   position: relative;
   min-height: 0;
+}
+
+.note-toolbar {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-xs);
+}
+
+.format-button {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.format-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .note-toggle-button {
