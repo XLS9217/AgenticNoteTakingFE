@@ -1,4 +1,5 @@
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
+import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import {useEffect, useState} from "react";
 import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
 
@@ -219,7 +220,7 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
                     </div>
                 </div>
 
-                <div className="chat-history">
+                <LiquidGlassScrollBar className="chat-history">
                     {messages.map(message => (
                         message.user === 'You'
                             ? <UserMessage key={message.id} text={message.text} />
@@ -230,7 +231,7 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
                         onMessageComplete={handleMessageComplete}
                         debugForceShow={false}
                     />
-                </div>
+                </LiquidGlassScrollBar>
 
                 <UserInputArea
                     onSendMessage={handleSendMessage}
