@@ -14,7 +14,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
-    "react-tooltip": "^5.30.0"
+    "react-tooltip": "^5.30.0",
+    "slate": "^0.118.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",

@@ -32,7 +32,16 @@ export default function NoteTakingContent({ workspaceId, note, transcript, proce
                 />
             </div>
             <div className="ide-center-panel">
-                <NotePanel />
+                <NotePanel
+                    workspaceId={workspaceId}
+                    note={note}
+                    workspaceName={workspaceName}
+                    onWorkspaceNameChange={onWorkspaceNameChange}
+                    onNoteChange={(newNote) => {
+                        // Handle note change if needed
+                        console.log('Note updated:', newNote);
+                    }}
+                />
             </div>
             <div className="ide-right-panel">
                 <ChatBox
