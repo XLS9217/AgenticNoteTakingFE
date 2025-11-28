@@ -1342,8 +1342,8 @@ Note Panel Styles
 
 @keyframes topic-highlight {
   0% {
-    background: rgba(100, 200, 255, 0.3);
-    box-shadow: 0 0 20px rgba(100, 200, 255, 0.4);
+    background: rgba(200, 200, 200, 0.3);
+    box-shadow: none;
   }
   100% {
     background: rgba(0, 0, 0, 0.25);
