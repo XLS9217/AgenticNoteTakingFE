@@ -26,9 +26,12 @@ export default function NoteTakingContent({ workspaceId, note, transcript, proce
         <div className="ide-layout">
             <div className="ide-left-panel">
                 <SourcePanel
+                    workspaceId={workspaceId}
                     processedTranscript={processedTranscript}
                     metadata={metadata}
                     fileName={workspaceName}
+                    socket={socket}
+                    isConnected={isConnected}
                 />
             </div>
             <div className="ide-center-panel">

@@ -1,7 +1,70 @@
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
+import LiquidGlassInnerTextButton from "../../Components/LiquidGlassInner/LiquidGlassInnerTextButton.jsx";
 import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
+import { updateTranscript, getProcessedTranscript, getMetadata } from "../../Api/gateway.js";
+
+// Raw Transcript Upload Component
+function RawTranscriptUpload({ rawTranscript, setRawTranscript, onSave }) {
+    const [isDragging, setIsDragging] = useState(false);
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    setRawTranscript(event.target.result);
+                };
+                reader.readAsText(file);
+            } else {
+                alert('Please drop a .txt file');
+            }
+        }
+    };
+
+    return (
+        <div className="transcript-edit-container">
+            <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`transcript-dropzone ${isDragging ? 'transcript-dropzone--dragging' : ''}`}
+            >
+                Drop .txt file here
+            </div>
+            <LiquidGlassScrollBar className="transcript-edit-scrollbar">
+                <textarea
+                    className="transcript-textarea-edit"
+                    value={rawTranscript}
+                    onChange={(e) => setRawTranscript(e.target.value)}
+                    placeholder="Paste your transcript here..."
+                    rows={20}
+                />
+            </LiquidGlassScrollBar>
+            <div className="transcript-header-buttons">
+                <LiquidGlassInnerTextButton onClick={onSave}>
+                    Save Transcript
+                </LiquidGlassInnerTextButton>
+            </div>
+        </div>
+    );
+}
 
 // Processed Transcript Section Component
 function ProcessedTranscriptSection({ utterances }) {
@@ -96,9 +159,108 @@ function TopicsSection({ topics }) {
 }
 
 // Main SourcePanel Component
-export default function SourcePanel({ processedTranscript, metadata, fileName }) {
-    const utterances = processedTranscript || [];
-    const topics = metadata?.topics_list || [];
+export default function SourcePanel({ workspaceId, processedTranscript, metadata, fileName, socket, isConnected }) {
+    const [rawTranscript, setRawTranscript] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [processStatus, setProcessStatus] = useState(null);
+    const [fetchedTranscript, setFetchedTranscript] = useState(null);
+    const [fetchedMetadata, setFetchedMetadata] = useState(null);
+
+    const utterances = fetchedTranscript || processedTranscript || [];
+    const topics = fetchedMetadata?.topics_list || metadata?.topics_list || [];
+    const hasTranscript = utterances && utterances.length > 0;
+
+    const fetchProcessedTranscript = useCallback(async () => {
+        try {
+            const response = await getProcessedTranscript(workspaceId);
+            setFetchedTranscript(response.processed_transcript);
+        } catch (error) {
+            console.error('Failed to fetch processed transcript:', error);
+        }
+    }, [workspaceId]);
+
+    const fetchMetadata = useCallback(async () => {
+        try {
+            const response = await getMetadata(workspaceId);
+            setFetchedMetadata(response.metadata);
+        } catch (error) {
+            console.error('Failed to fetch metadata:', error);
+        }
+    }, [workspaceId]);
+
+    const handleSaveTranscript = async () => {
+        if (!workspaceId) {
+            console.error('No workspace ID provided');
+            return;
+        }
+        try {
+            await updateTranscript(workspaceId, rawTranscript);
+            console.log('Transcript saved successfully');
+        } catch (error) {
+            console.error('Failed to save transcript:', error);
+        }
+    };
+
+    const handleProcess = () => {
+        setIsProcessing(true);
+        setProcessStatus('Starting');
+
+        if (socket && isConnected) {
+            socket.send(JSON.stringify({
+                type: "workspace_message",
+                sub_type: "process_transcript"
+            }));
+        } else {
+            console.error('WebSocket not connected');
+            setIsProcessing(false);
+            setProcessStatus(null);
+        }
+    };
+
+    useEffect(() => {
+        if (processedTranscript && processedTranscript.length > 0) {
+            setFetchedTranscript(processedTranscript);
+        }
+    }, [processedTranscript]);
+
+    useEffect(() => {
+        if (metadata) {
+            setFetchedMetadata(metadata);
+        }
+    }, [metadata]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleMessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'workspace_message' && data.sub_type === 'process_status') {
+                    const status = data.status;
+                    setProcessStatus(status);
+
+                    if (status === 'Done') {
+                        setIsProcessing(false);
+                        fetchProcessedTranscript();
+                        fetchMetadata();
+                    } else if (status === 'Error' || status === 'None') {
+                        setIsProcessing(false);
+                    } else {
+                        setIsProcessing(true);
+                    }
+                }
+            } catch (error) {
+                console.error('Error parsing message:', error);
+            }
+        };
+
+        socket.addEventListener('message', handleMessage);
+
+        return () => {
+            socket.removeEventListener('message', handleMessage);
+        };
+    }, [socket, fetchProcessedTranscript, fetchMetadata]);
 
     return (
         <LiquidGlassDiv blurriness={0.5} variant="workspace">
@@ -109,14 +271,48 @@ export default function SourcePanel({ processedTranscript, metadata, fileName })
                     <div className="source-filename">{fileName || 'No file'}</div>
                 </div>
 
-                {/* Processed Transcript Section */}
-                <ProcessedTranscriptSection utterances={utterances} />
+                {!hasTranscript ? (
+                    <>
+                        <RawTranscriptUpload
+                            rawTranscript={rawTranscript}
+                            setRawTranscript={setRawTranscript}
+                            onSave={handleSaveTranscript}
+                        />
+                        <div className="transcript-header-buttons" style={{ marginTop: '8px' }}>
+                            <LiquidGlassInnerTextButton onClick={handleProcess}>
+                                Process
+                            </LiquidGlassInnerTextButton>
+                        </div>
+                        {isProcessing && (
+                            <div className="transcript-empty-state">
+                                <div className="processing-text-shimmer">
+                                    {processStatus || 'Processing'}...
+                                </div>
+                            </div>
+                        )}
+                        {processStatus === 'Error' && (
+                            <div className="transcript-empty-state">
+                                <p className="panel-content">There is an error</p>
+                            </div>
+                        )}
+                        {processStatus === 'None' && (
+                            <div className="transcript-empty-state">
+                                <p className="panel-content">You need to fill the raw transcript</p>
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        {/* Processed Transcript Section */}
+                        <ProcessedTranscriptSection utterances={utterances} />
 
-                {/* Divider */}
-                <div className="source-divider"></div>
+                        {/* Divider */}
+                        <div className="source-divider"></div>
 
-                {/* Topics Section */}
-                <TopicsSection topics={topics} />
+                        {/* Topics Section */}
+                        <TopicsSection topics={topics} />
+                    </>
+                )}
             </div>
         </LiquidGlassDiv>
     );
