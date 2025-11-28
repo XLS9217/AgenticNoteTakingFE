@@ -1,54 +1,37 @@
-# Introduction of slate
+# Text Selection Feature Plan
 
-## How Slate.js Saves and Loads Data
+## Goal
+When user selects text in the Slate editor:
+1. Show a subtle preview above the editor (few words from selection)
+2. Console log the selected text as JSON
 
-Slate.js uses **plain JSON** for its data structure, making serialization and deserialization straightforward.
+## Implementation Plan
 
-### Basic Approach
+### 1. Capture Text Selection in SlatePanel
+- Add `onSelect` handler to Slate `<Editable>` component
+- Extract selected text from editor using Slate's Editor API
+- Get the JSON fragment of the selected nodes
 
-**Saving (Serialization):**
-- Use `JSON.stringify(value)` to convert the editor value to JSON string
-- Store it in localStorage, database, or any storage solution
+### 2. Publish Selection via CommendDispatcher
+- Use existing `TEXT_SELECT` channel (already defined in CommendDispatcher.js:64)
+- Publish payload with:
+  - `text`: plain text preview (first few words)
+  - `json`: full JSON structure of selection
+- Console.log the JSON in the publish handler
 
-**Loading (Deserialization):**
-- Use `JSON.parse()` to retrieve and parse the saved JSON
-- Pass it as `initialValue` to the Slate component
+### 3. Subscribe to Selection in NotePanel
+- Add subscription to `TEXT_SELECT` channel in parent NotePanel component
+- Store selected text preview in state
+- Display above the editor area
 
-### Example Implementation
+### 4. UI for Selection Preview
+- Add subtle text element above slate editor (inside `.note-content`)
+- Style: small, low opacity, liquid glass aesthetic
+- Show only when there's a selection
+- Clear when selection is removed
+- Make it clickable - onClick console.log the full JSON selection
 
-```javascript
-const initialValue = useMemo(
-  () => JSON.parse(localStorage.getItem('content')) || [
-    { type: 'paragraph', children: [{ text: 'A line of text in a paragraph.' }] }
-  ],
-  []
-)
-
-return (
-  <Slate
-    editor={editor}
-    initialValue={initialValue}
-    onChange={value => {
-      const isAstChange = editor.operations.some(
-        op => 'set_selection' !== op.type
-      )
-      if (isAstChange) {
-        const content = JSON.stringify(value)
-        localStorage.setItem('content', content)
-      }
-    }}
-  >
-    <Editable />
-  </Slate>
-)
-```
-
-### Key Points
-
-- **JSON Format**: Slate's native format is JSON, no special serialization library needed
-- **onChange Optimization**: Check if operations are actual content changes (not just selection changes) before saving
-- **Other Formats**: You can serialize to HTML, Markdown, or plain text if needed, but JSON is recommended for preserving full document structure
-
-### Sources
-- [Serializing | Slate](https://docs.slatejs.org/concepts/10-serializing)
-- [Saving to a Database | Slate](https://docs.slatejs.org/walkthroughs/06-saving-to-a-database)
+### 5. CSS Updates in WorkspaceLayout.css
+- Add `.selection-preview` class
+- Subtle styling: small font, low opacity (0.5-0.6)
+- Position above editor with minimal spacing

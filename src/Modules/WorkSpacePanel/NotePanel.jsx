@@ -5,11 +5,12 @@ import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.js
 // Removed custom LiquidGlassScrollBar due to clipping issues in Slate editor
 // import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import { changeWorkspaceName, updateNote } from "../../Api/gateway.js";
+import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
 
 function SlatePanel({ workspaceId, note, onSave }) {
     const editor = useMemo(() => withReact(createEditor()), []);
     const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, underline: false, heading1: false, heading2: false });
-    console.log('Note:', note);
+    // console.log('Note:', note);
     const getInitialValue = () => {
         if (note) {
             try {
@@ -52,6 +53,26 @@ function SlatePanel({ workspaceId, note, onSave }) {
             saveNote();
         }
     }, [saveNote]);
+
+    const handleSelect = useCallback(() => {
+        const { selection } = editor;
+        if (selection && selection.anchor && selection.focus) {
+            const selectedText = Editor.string(editor, selection);
+            if (selectedText.trim()) {
+                const selectedFragment = Editor.fragment(editor, selection);
+                const previewText = selectedText.slice(0, 30) + (selectedText.length > 30 ? '...' : '');
+
+                console.log('Selected JSON:', JSON.stringify(selectedFragment, null, 2));
+
+                CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, {
+                    text: previewText,
+                    json: selectedFragment
+                });
+            } else {
+                CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, null);
+            }
+        }
+    }, [editor]);
 
     const toggleMark = (format) => {
         const isActive = isMarkActive(editor, format);
@@ -151,6 +172,7 @@ function SlatePanel({ workspaceId, note, onSave }) {
                     className="slate-editor native-scrollbar"
                     placeholder="Start typing your notes..."
                     onKeyDown={handleKeyDown}
+                    onSelect={handleSelect}
                     renderLeaf={renderLeaf}
                 />
             </Slate>

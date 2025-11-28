@@ -1,5 +1,6 @@
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 import {useEffect, useState} from "react";
+import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
 
 
 export function UserMessage({ text }) {
@@ -56,7 +57,7 @@ export function RunningMessage({ chunkData, onMessageComplete, debugForceShow = 
     );
 }
 
-function UserInputArea({ onSendMessage }) {
+function UserInputArea({ onSendMessage, selectionData, onPreviewClick }) {
     const [messageText, setMessageText] = useState('');
 
     const handleSend = () => {
@@ -74,34 +75,58 @@ function UserInputArea({ onSendMessage }) {
     };
 
     return (
-        <div className="chat-input-area">
-            <textarea
-                className="chat-textarea liquid-glass-scrollbar"
-                placeholder="Start with an idea or task."
-                rows={2}
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyPress={handleKeyPress}
-            />
-            <div className="input-controls">
-                <div className="input-buttons">
-                    <button className="control-button">+</button>
+        <>
+            {selectionData && (
+                <div className="selection-preview" onClick={onPreviewClick}>
+                    {selectionData.text}
                 </div>
-                <button
-                    className="send-button"
-                    onClick={handleSend}
-                    disabled={!messageText.trim()}
-                >
-                    ↑
-                </button>
+            )}
+            <div className="chat-input-area">
+                <textarea
+                    className="chat-textarea liquid-glass-scrollbar"
+                    placeholder="Start with an idea or task."
+                    rows={2}
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                />
+                <div className="input-controls">
+                    <div className="input-buttons">
+                        <button className="control-button">+</button>
+                    </div>
+                    <button
+                        className="send-button"
+                        onClick={handleSend}
+                        disabled={!messageText.trim()}
+                    >
+                        ↑
+                    </button>
+                </div>
             </div>
-        </div>
+        </>
     );
 }
 
 export default function ChatBox({ chatHistory, socket, isConnected }) {
     const [messages, setMessages] = useState([]);
     const [currentChunk, setCurrentChunk] = useState(null);
+    const [selectionData, setSelectionData] = useState(null);
+
+    useEffect(() => {
+        const unsubscribe = CommendDispatcher.Subscribe2Channel(
+            ChannelEnum.TEXT_SELECT,
+            (payload) => {
+                setSelectionData(payload);
+            }
+        );
+        return unsubscribe;
+    }, []);
+
+    const handlePreviewClick = () => {
+        if (selectionData?.json) {
+            console.log('Selection JSON:', JSON.stringify(selectionData.json, null, 2));
+        }
+    };
 
     const getConnectionStatus = () => {
         if (!socket) return { color: '🟡', text: 'Loading...' };
@@ -207,7 +232,11 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
                     />
                 </div>
 
-                <UserInputArea onSendMessage={handleSendMessage} />
+                <UserInputArea
+                    onSendMessage={handleSendMessage}
+                    selectionData={selectionData}
+                    onPreviewClick={handlePreviewClick}
+                />
             </div>
         </LiquidGlassDiv>
     );

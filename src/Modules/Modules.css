@@ -229,6 +229,19 @@ Chat Panel Layout
   z-index: var(--z-index-content);
 }
 
+.chat-panel-container .selection-preview {
+  font-size: 0.75em;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  padding: 2px 4px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.chat-panel-container .selection-preview:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
 .chat-input-area {
   position: relative;
   overflow: hidden;

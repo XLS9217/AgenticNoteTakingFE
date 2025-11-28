@@ -61,6 +61,7 @@
 export const ChannelEnum = Object.freeze({
     DISPLAY_CONTROL: 'DISPLAY_CONTROL',
     REFRESH_CONTROL: 'REFRESH_CONTROL',
+    TEXT_SELECT: 'TEXT_SELECT',
 });
 
 class CommendDispatcher {
