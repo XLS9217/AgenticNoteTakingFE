@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { createEditor } from "slate";
 import { Slate, Editable, withReact } from "slate-react";
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
-import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
+// Removed custom LiquidGlassScrollBar due to clipping issues in Slate editor
+// import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import { changeWorkspaceName, updateNote } from "../../Api/gateway.js";
 
 function SlatePanel({ workspaceId, note }) {
@@ -30,14 +31,12 @@ function SlatePanel({ workspaceId, note }) {
     }, [editor, workspaceId]);
 
     return (
-        <LiquidGlassScrollBar className="note-scroll">
-            <Slate key={`${workspaceId}-${note}`} editor={editor} initialValue={getInitialValue()} onChange={handleChange}>
-                <Editable
-                    className="slate-editor"
-                    placeholder="Start typing your notes..."
-                />
-            </Slate>
-        </LiquidGlassScrollBar>
+        <Slate key={`${workspaceId}-${note}`} editor={editor} initialValue={getInitialValue()} onChange={handleChange}>
+            <Editable
+                className="slate-editor native-scrollbar"
+                placeholder="Start typing your notes..."
+            />
+        </Slate>
     );
 }
 

@@ -238,9 +238,9 @@ Chat Panel Layout
   flex-direction: column;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs);
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
   border-radius: var(--border-radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .chat-input-area::before {
@@ -252,7 +252,7 @@ Chat Panel Layout
   height: 40%;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 0%,
     rgba(255, 255, 255, 0) 100%
   );
   pointer-events: none;
