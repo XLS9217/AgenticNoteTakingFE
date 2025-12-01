@@ -64,6 +64,7 @@ function SlatePanel({ workspaceId, note, onSave }) {
                 const markdown = richTextConvertor.slate2md(selectedFragment);
 
                 console.log('Selected Markdown:', markdown);
+                console.log('Selection Range:', { from: selection.anchor, to: selection.focus });
 
                 CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, {
                     text: previewText,
