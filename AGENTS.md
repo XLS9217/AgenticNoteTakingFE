@@ -1,48 +1,60 @@
-# Agent Task Plan: Markdown Integration for NotePanel
+# Plan: Send Selected Markdown with Chat Message
 
-## Objective
-Update NotePanel.jsx to save notes as markdown to the backend and print markdown for selected logs using the RichTextConvertor singleton.
+## Current Flow
+1. User selects text in Slate editor → `handleSelect` in `NotePanel.jsx:58-77`
+2. Slate fragment is converted to markdown via `richTextConvertor.slate2md()`
+3. Markdown is logged: `console.log('Selected Markdown:', markdown)` at line 67
+4. `CommendDispatcher` publishes to `TEXT_SELECT` channel with `{text: previewText, json: selectedFragment}`
+5. ChatBox subscribes to `TEXT_SELECT` and stores in `selectionData` state (line 114-124)
+6. When user sends message, only the text is sent via WebSocket (line 199-203)
 
-## Current State Analysis
-- RichTextConvertor.js provides `slate2md()` and `md2slate()` methods
-- RichTextConvertor now exports a singleton instance (default export)
-- NotePanel.jsx currently saves Slate JSON format via `updateNote()`
-- Need to convert Slate JSON to markdown before saving
-- Need to print markdown as plain text (not preview) when logs are selected
+## Problem
+The markdown is only logged to console - it's NOT included in the payload published to ChatBox, and NOT sent with the chat message.
 
-## Implementation Plan
+## Solution
 
-### Task 1: Update RichTextConvertor to Singleton
-✓ COMPLETED
-- Changed export from class to singleton instance
-- Now exports: `export default new RichTextConvertor()`
+### Step 1: Include markdown in the TEXT_SELECT payload
+**File:** `NotePanel.jsx:69-72`
 
-### Task 2: Add Markdown Save Functionality
-- Import RichTextConvertor singleton into NotePanel.jsx
-- Modify `saveNote()` in SlatePanel to:
-  - Convert `editor.children` to markdown using `slate2md()`
-  - Save markdown to backend via existing `updateNote()` gateway call
-  - Keep backward compatibility with JSON format for loading
+Change the publish payload to include markdown:
+```js
+CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, {
+    text: previewText,
+    json: selectedFragment,
+    markdown: markdown  // ADD THIS
+});
+```
 
-### Task 3: Add Print Markdown for Selected Log
-- When text is selected in Slate editor, convert the selected JSON fragment to markdown
-- Console.log the markdown as plain text (not preview)
-- Use existing `handleSelect()` callback to capture selection
+### Step 2: Send markdown with the chat message
+**File:** `ChatBox.jsx:188-207`
 
-### Task 4: Gateway Update (if needed)
-- Check if `updateNote()` needs modification for markdown
-- Add new gateway function if backend has separate endpoint for markdown
-- Follow instruction #4: any new API call should be added to gateway.js
+Modify `handleSendMessage` to include the selected markdown in the WebSocket payload:
+```js
+const handleSendMessage = async (text) => {
+    if (!text.trim()) return;
 
-## Files Modified
-1. ✓ `E:\Project\_MeetingNoteTaking\AgenticNoteTakingFE\src\Util\RichTextConvertor.js` - Converted to singleton
+    const userMessage = {
+        id: Date.now(),
+        user: 'You',
+        text: text
+    };
+    setMessages(prev => [...prev, userMessage]);
+
+    if (socket && isConnected) {
+        socket.send(JSON.stringify({
+            type: "user_message",
+            user: "default",
+            text: text,
+            context: selectionData?.markdown || null  // ADD context field with markdown
+        }))
+        // Clear selection after sending
+        setSelectionData(null);
+    } else {
+        console.error('WebSocket not connected');
+    }
+};
+```
 
 ## Files to Modify
-1. `E:\Project\_MeetingNoteTaking\AgenticNoteTakingFE\src\Modules\WorkSpacePanel\NotePanel.jsx`
-2. `E:\Project\_MeetingNoteTaking\AgenticNoteTakingFE\src\Api\gateway.js` (if needed)
-
-## Notes
-- Follow CLAUDE.md instruction #1: do not run npm commands, only edit code
-- Follow CLAUDE.md instruction #2: do minimum work, don't overcomplicate
-- Follow CLAUDE.md instruction #6: one task at a time
-- Display markdown as plain text in console, not as preview UI
+1. `src/Modules/WorkSpacePanel/NotePanel.jsx` - Add markdown to publish payload
+2. `src/Modules/WorkSpacePanel/ChatBox.jsx` - Send markdown with message, clear selection after send

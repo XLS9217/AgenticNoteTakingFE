@@ -14,10 +14,9 @@ function SlatePanel({ workspaceId, note, onSave }) {
     // console.log('Note:', note);
     const getInitialValue = () => {
         if (note) {
-            try {
-                return JSON.parse(note);
-            } catch (e) {
-                console.error('Error parsing note:', e);
+            const slateNodes = richTextConvertor.md2slate(note);
+            if (slateNodes.length > 0) {
+                return slateNodes;
             }
         }
         return [{ type: 'paragraph', children: [{ text: 'Start typing your notes...' }] }];
