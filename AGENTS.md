@@ -1,37 +1,48 @@
-# Text Selection Feature Plan
+# Agent Task Plan: Markdown Integration for NotePanel
 
-## Goal
-When user selects text in the Slate editor:
-1. Show a subtle preview above the editor (few words from selection)
-2. Console log the selected text as JSON
+## Objective
+Update NotePanel.jsx to save notes as markdown to the backend and print markdown for selected logs using the RichTextConvertor singleton.
+
+## Current State Analysis
+- RichTextConvertor.js provides `slate2md()` and `md2slate()` methods
+- RichTextConvertor now exports a singleton instance (default export)
+- NotePanel.jsx currently saves Slate JSON format via `updateNote()`
+- Need to convert Slate JSON to markdown before saving
+- Need to print markdown as plain text (not preview) when logs are selected
 
 ## Implementation Plan
 
-### 1. Capture Text Selection in SlatePanel
-- Add `onSelect` handler to Slate `<Editable>` component
-- Extract selected text from editor using Slate's Editor API
-- Get the JSON fragment of the selected nodes
+### Task 1: Update RichTextConvertor to Singleton
+✓ COMPLETED
+- Changed export from class to singleton instance
+- Now exports: `export default new RichTextConvertor()`
 
-### 2. Publish Selection via CommendDispatcher
-- Use existing `TEXT_SELECT` channel (already defined in CommendDispatcher.js:64)
-- Publish payload with:
-  - `text`: plain text preview (first few words)
-  - `json`: full JSON structure of selection
-- Console.log the JSON in the publish handler
+### Task 2: Add Markdown Save Functionality
+- Import RichTextConvertor singleton into NotePanel.jsx
+- Modify `saveNote()` in SlatePanel to:
+  - Convert `editor.children` to markdown using `slate2md()`
+  - Save markdown to backend via existing `updateNote()` gateway call
+  - Keep backward compatibility with JSON format for loading
 
-### 3. Subscribe to Selection in NotePanel
-- Add subscription to `TEXT_SELECT` channel in parent NotePanel component
-- Store selected text preview in state
-- Display above the editor area
+### Task 3: Add Print Markdown for Selected Log
+- When text is selected in Slate editor, convert the selected JSON fragment to markdown
+- Console.log the markdown as plain text (not preview)
+- Use existing `handleSelect()` callback to capture selection
 
-### 4. UI for Selection Preview
-- Add subtle text element above slate editor (inside `.note-content`)
-- Style: small, low opacity, liquid glass aesthetic
-- Show only when there's a selection
-- Clear when selection is removed
-- Make it clickable - onClick console.log the full JSON selection
+### Task 4: Gateway Update (if needed)
+- Check if `updateNote()` needs modification for markdown
+- Add new gateway function if backend has separate endpoint for markdown
+- Follow instruction #4: any new API call should be added to gateway.js
 
-### 5. CSS Updates in WorkspaceLayout.css
-- Add `.selection-preview` class
-- Subtle styling: small font, low opacity (0.5-0.6)
-- Position above editor with minimal spacing
+## Files Modified
+1. ✓ `E:\Project\_MeetingNoteTaking\AgenticNoteTakingFE\src\Util\RichTextConvertor.js` - Converted to singleton
+
+## Files to Modify
+1. `E:\Project\_MeetingNoteTaking\AgenticNoteTakingFE\src\Modules\WorkSpacePanel\NotePanel.jsx`
+2. `E:\Project\_MeetingNoteTaking\AgenticNoteTakingFE\src\Api\gateway.js` (if needed)
+
+## Notes
+- Follow CLAUDE.md instruction #1: do not run npm commands, only edit code
+- Follow CLAUDE.md instruction #2: do minimum work, don't overcomplicate
+- Follow CLAUDE.md instruction #6: one task at a time
+- Display markdown as plain text in console, not as preview UI

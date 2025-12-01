@@ -6,6 +6,7 @@ import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.js
 // import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import { changeWorkspaceName, updateNote } from "../../Api/gateway.js";
 import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
+import richTextConvertor from "../../Util/RichTextConvertor.js";
 
 function SlatePanel({ workspaceId, note, onSave }) {
     const editor = useMemo(() => withReact(createEditor()), []);
@@ -23,9 +24,9 @@ function SlatePanel({ workspaceId, note, onSave }) {
     };
 
     const saveNote = useCallback(() => {
-        const noteString = JSON.stringify(editor.children);
+        const markdown = richTextConvertor.slate2md(editor.children);
         onSave();
-        updateNote(workspaceId, noteString).catch(error => {
+        updateNote(workspaceId, markdown).catch(error => {
             console.error('Error saving note:', error);
         });
     }, [editor, workspaceId, onSave]);
@@ -61,8 +62,9 @@ function SlatePanel({ workspaceId, note, onSave }) {
             if (selectedText.trim()) {
                 const selectedFragment = Editor.fragment(editor, selection);
                 const previewText = selectedText.slice(0, 30) + (selectedText.length > 30 ? '...' : '');
+                const markdown = richTextConvertor.slate2md(selectedFragment);
 
-                console.log('Selected JSON:', JSON.stringify(selectedFragment, null, 2));
+                console.log('Selected Markdown:', markdown);
 
                 CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, {
                     text: previewText,
