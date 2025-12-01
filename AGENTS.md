@@ -25,18 +25,24 @@ CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, {
 });
 ```
 
-### Step 2: Send markdown with the chat message
+### Step 2: Append selection to message text
 **File:** `ChatBox.jsx:188-207`
 
-Modify `handleSendMessage` to include the selected markdown in the WebSocket payload:
+Modify `handleSendMessage` to append selected markdown to the text field:
 ```js
 const handleSendMessage = async (text) => {
     if (!text.trim()) return;
 
+    // Build message text: append selection if present
+    let messageText = text;
+    if (selectionData?.markdown) {
+        messageText = "<Query>" + text + "</Query>\n<Selected>" + selectionData.markdown + "</Selected>";
+    }
+
     const userMessage = {
         id: Date.now(),
         user: 'You',
-        text: text
+        text: text  // Display original text to user
     };
     setMessages(prev => [...prev, userMessage]);
 
@@ -44,11 +50,9 @@ const handleSendMessage = async (text) => {
         socket.send(JSON.stringify({
             type: "user_message",
             user: "default",
-            text: text,
-            context: selectionData?.markdown || null  // ADD context field with markdown
-        }))
-        // Clear selection after sending
-        setSelectionData(null);
+            text: messageText  // Send combined text with selection
+        }));
+        setSelectionData(null);  // Clear selection after sending
     } else {
         console.error('WebSocket not connected');
     }
@@ -57,4 +61,4 @@ const handleSendMessage = async (text) => {
 
 ## Files to Modify
 1. `src/Modules/WorkSpacePanel/NotePanel.jsx` - Add markdown to publish payload
-2. `src/Modules/WorkSpacePanel/ChatBox.jsx` - Send markdown with message, clear selection after send
+2. `src/Modules/WorkSpacePanel/ChatBox.jsx` - Append selection markdown to text field, clear selection after send

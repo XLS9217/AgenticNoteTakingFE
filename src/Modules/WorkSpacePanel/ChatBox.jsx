@@ -188,6 +188,12 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
     const handleSendMessage = async (text) => {
         if (!text.trim()) return;
 
+        // Build message text: append selection if present
+        let messageText = text;
+        if (selectionData?.markdown) {
+            messageText = "<Message>" + text + "</Message>\n<Selected>" + selectionData.markdown + "</Selected>";
+        }
+
         const userMessage = {
             id: Date.now(),
             user: 'You',
@@ -199,8 +205,9 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
             socket.send(JSON.stringify({
                 type: "user_message",
                 user: "default",
-                text: text,
-            }))
+                text: messageText,
+            }));
+            setSelectionData(null);
         } else {
             console.error('WebSocket not connected');
         }

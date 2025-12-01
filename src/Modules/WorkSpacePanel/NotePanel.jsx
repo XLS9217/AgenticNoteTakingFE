@@ -67,7 +67,8 @@ function SlatePanel({ workspaceId, note, onSave }) {
 
                 CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, {
                     text: previewText,
-                    json: selectedFragment
+                    json: selectedFragment,
+                    markdown: markdown
                 });
             } else {
                 CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, null);
