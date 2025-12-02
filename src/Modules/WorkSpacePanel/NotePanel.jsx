@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { createEditor, Editor, Transforms, Text } from "slate";
+import { createEditor, Editor, Transforms, Text, Range, Element as SlateElement } from "slate";
 import { Slate, Editable, withReact } from "slate-react";
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 // Removed custom LiquidGlassScrollBar due to clipping issues in Slate editor
@@ -12,6 +12,7 @@ import richTextConvertor from "../../Util/RichTextConvertor.js";
 function SelectionPopup({ position, onUpdate, onCancel }) {
     const [instruction, setInstruction] = useState('');
     const [isClosing, setIsClosing] = useState(false);
+    const popupRef = useRef(null);
 
     const handleClose = (callback) => {
         setIsClosing(true);
@@ -20,8 +21,28 @@ function SelectionPopup({ position, onUpdate, onCancel }) {
         }, 150);
     };
 
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (popupRef.current && !popupRef.current.contains(e.target)) {
+                handleClose(onCancel);
+            }
+        };
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                handleClose(onCancel);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [onCancel]);
+
     return (
         <div
+            ref={popupRef}
             className={`selection-popup ${isClosing ? 'closing' : ''}`}
             style={{ top: position.top, left: position.left }}
         >
@@ -30,7 +51,6 @@ function SelectionPopup({ position, onUpdate, onCancel }) {
                 placeholder="Enter instruction for LLM..."
                 value={instruction}
                 onChange={(e) => setInstruction(e.target.value)}
-                autoFocus
                 rows={3}
             />
             <div className="selection-popup-buttons">
@@ -63,6 +83,8 @@ function SlatePanel({ workspaceId, note, onSave }) {
 
     const saveNote = useCallback(() => {
         const markdown = richTextConvertor.slate2md(editor.children);
+        console.log('Saving to backend - Slate children:', JSON.stringify(editor.children, null, 2));
+        console.log('Saving to backend - Markdown:', markdown);
         onSave();
         updateNote(workspaceId, markdown).catch(error => {
             console.error('Error saving note:', error);
@@ -95,7 +117,7 @@ function SlatePanel({ workspaceId, note, onSave }) {
 
     const handleSelect = useCallback(() => {
         const { selection } = editor;
-        if (selection && selection.anchor && selection.focus) {
+        if (selection && !Range.isCollapsed(selection)) {
             const selectedText = Editor.string(editor, selection);
             if (selectedText.trim()) {
                 const selectedFragment = Editor.fragment(editor, selection);
@@ -105,6 +127,26 @@ function SlatePanel({ workspaceId, note, onSave }) {
                 console.log('Selected Markdown:', markdown);
                 console.log('Selection Range:', { from: selection.anchor, to: selection.focus });
 
+                CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, {
+                    text: previewText,
+                    json: selectedFragment,
+                    markdown: markdown
+                });
+            } else {
+                CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, null);
+            }
+        } else {
+            // Collapsed selection (cursor only)
+            CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, null);
+            setPopupState({ show: false, text: '', position: { top: 0, left: 0 }, selection: null });
+        }
+    }, [editor]);
+
+    const handleMouseUp = useCallback(() => {
+        const { selection } = editor;
+        if (selection && !Range.isCollapsed(selection)) {
+            const selectedText = Editor.string(editor, selection);
+            if (selectedText.trim()) {
                 // Get DOM position for popup
                 const domSelection = window.getSelection();
                 if (domSelection.rangeCount > 0) {
@@ -117,15 +159,6 @@ function SlatePanel({ workspaceId, note, onSave }) {
                         selection: selection
                     });
                 }
-
-                CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, {
-                    text: previewText,
-                    json: selectedFragment,
-                    markdown: markdown
-                });
-            } else {
-                CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, null);
-                setPopupState({ show: false, text: '', position: { top: 0, left: 0 }, selection: null });
             }
         }
     }, [editor]);
@@ -157,6 +190,25 @@ function SlatePanel({ workspaceId, note, onSave }) {
         return marks ? marks[format] === true : false;
     };
 
+    const toggleBlock = (format) => {
+        const isActive = isBlockActive(editor, format);
+        Transforms.setNodes(
+            editor,
+            { type: isActive ? 'paragraph' : format },
+            { match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n) }
+        );
+    };
+
+    const isBlockActive = (editor, format) => {
+        const { selection } = editor;
+        if (!selection) return false;
+        const [match] = Editor.nodes(editor, {
+            at: Editor.unhangRange(editor, selection),
+            match: n => SlateElement.isElement(n) && n.type === format,
+        });
+        return !!match;
+    };
+
     const renderLeaf = useCallback((props) => {
         let { attributes, children, leaf } = props;
         if (leaf.bold) {
@@ -168,32 +220,38 @@ function SlatePanel({ workspaceId, note, onSave }) {
         if (leaf.underline) {
             children = <u>{children}</u>;
         }
-        if (leaf.heading1) {
-            children = <span style={{ fontSize: '2em', fontWeight: 'bold' }}>{children}</span>;
-        }
-        if (leaf.heading2) {
-            children = <span style={{ fontSize: '1.5em', fontWeight: 'bold' }}>{children}</span>;
-        }
         return <span {...attributes}>{children}</span>;
+    }, []);
+
+    const renderElement = useCallback((props) => {
+        const { attributes, children, element } = props;
+        switch (element.type) {
+            case 'heading1':
+                return <h1 {...attributes} style={{ fontSize: '2em', fontWeight: 'bold', margin: '0.5em 0' }}>{children}</h1>;
+            case 'heading2':
+                return <h2 {...attributes} style={{ fontSize: '1.5em', fontWeight: 'bold', margin: '0.4em 0' }}>{children}</h2>;
+            default:
+                return <p {...attributes} style={{ margin: 0 }}>{children}</p>;
+        }
     }, []);
 
     return (
         <>
             <div className="note-toolbar">
                 <button
-                    className={`format-button ${activeFormats.heading1 ? 'active' : ''}`}
+                    className={`format-button ${isBlockActive(editor, 'heading1') ? 'active' : ''}`}
                     onMouseDown={(e) => {
                         e.preventDefault();
-                        toggleMark('heading1');
+                        toggleBlock('heading1');
                     }}
                 >
                     H1
                 </button>
                 <button
-                    className={`format-button ${activeFormats.heading2 ? 'active' : ''}`}
+                    className={`format-button ${isBlockActive(editor, 'heading2') ? 'active' : ''}`}
                     onMouseDown={(e) => {
                         e.preventDefault();
-                        toggleMark('heading2');
+                        toggleBlock('heading2');
                     }}
                 >
                     H2
@@ -242,7 +300,9 @@ function SlatePanel({ workspaceId, note, onSave }) {
                     placeholder="Start typing your notes..."
                     onKeyDown={handleKeyDown}
                     onSelect={handleSelect}
+                    onMouseUp={handleMouseUp}
                     renderLeaf={renderLeaf}
+                    renderElement={renderElement}
                 />
             </Slate>
             {popupState.show && createPortal(

@@ -1,67 +1,88 @@
-# Bug Fix: Note Panel Layout Issues
+# Bug Fix: H1/H2 Not Preserved
 
-## Issue 1: Note Title Height Mismatch
+## Problem
+H1 and H2 headings are not being saved/restored correctly.
 
-### Cause
-The note panel has different header structure than Source and Assistant panels:
-- **Source/Assistant:** Uses consistent header padding via `.source-header` and `.chat-header` with `padding: var(--spacing-xs)` and `flex-shrink: 0`
-- **Note Panel:** Uses `.note-header` with only `margin-bottom: var(--spacing-xs)` - no padding, no consistent height
+## Cause
+**Headings are stored as leaf marks, not node types!**
 
-Also, `.note-panel-container` has `padding: var(--spacing-sm)` while others use `padding: 0px`.
-
-### Fix
-**File:** `WorkspaceLayout.css`
-
-1. Change `.note-panel-container` padding to `0px` to match others
-2. Update `.note-header` to match `.source-header` / `.chat-header`:
-```css
-.note-header {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  padding: var(--spacing-xs);
+Looking at the Slate children output:
+```js
+{
+  "type": "paragraph",  // <-- Still "paragraph", NOT "heading1" or "heading2"
+  "children": [
+    {
+      "text": "ar",
+      "heading2": true   // <-- heading2 is a MARK on the text leaf!
+    }
+  ]
 }
 ```
 
----
+The current implementation treats H1/H2 like bold/italic - as **text marks** applied to leaves. But the converter expects them to be **node types**:
 
-## Issue 2: Slate Editor Bottom Cut Off
-
-### Cause
-The `.slate-editor` has `height: 100%` but:
-1. It sits inside `.note-content` which is `flex: 1` with `min-height: 0`
-2. The padding from `.note-panel-container` and `.slate-editor` itself adds to the total height
-3. The flex container doesn't account for the toolbar height properly
-4. `box-sizing: border-box` is set but the parent chain doesn't properly constrain
-
-The real issue: `.slate-editor` needs to be a flex child that grows to fill remaining space, not `height: 100%` which calculates based on parent before siblings are accounted for.
-
-### Fix
-**File:** `WorkspaceLayout.css`
-
-1. Make `.slate-editor` a flex child instead of using `height: 100%`:
-```css
-.slate-editor {
-  flex: 1;
-  min-height: 0;  /* Critical for flex overflow */
-  /* Remove height: 100% */
-}
+**slate2md expects:**
+```js
+{ type: 'heading1', children: [...] }  // Node type
+{ type: 'heading2', children: [...] }  // Node type
 ```
 
-2. Ensure `.note-content` is a proper flex container:
-```css
-.note-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;  /* Already set, good */
-}
+**But the editor creates:**
+```js
+{ type: 'paragraph', children: [{ text: 'xxx', heading1: true }] }  // Mark on leaf
 ```
 
----
+## Why This Happens
+
+In `NotePanel.jsx`, the `toggleMark` function is used for H1/H2:
+```js
+<button onMouseDown={() => toggleMark('heading1')}>H1</button>
+<button onMouseDown={() => toggleMark('heading2')}>H2</button>
+```
+
+`toggleMark` uses `Editor.addMark()` which adds marks to text leaves, not changes the node type.
+
+## Fix Options
+
+### Option 1: Change toggleMark to use Transforms.setNodes for headings
+Create separate functions for toggling block types vs inline marks:
+```js
+const toggleBlock = (format) => {
+    const isActive = isBlockActive(editor, format);
+    Transforms.setNodes(
+        editor,
+        { type: isActive ? 'paragraph' : format },
+        { match: n => Editor.isBlock(editor, n) }
+    );
+};
+```
+
+### Option 2: Update converter to handle heading marks on leaves
+Modify `slate2md` to check for heading marks on children:
+```js
+const nodeToMd = (node) => {
+    const content = childrenToMd(node.children);
+    // Check if any child has heading mark
+    const hasH1 = node.children.some(c => c.heading1);
+    const hasH2 = node.children.some(c => c.heading2);
+    if (hasH1) return '# ' + content;
+    if (hasH2) return '## ' + content;
+    if (node.type === 'heading1') return '# ' + content;
+    if (node.type === 'heading2') return '## ' + content;
+    return content;
+};
+```
+
+## Recommended Fix
+
+**Option 1** is the correct approach - headings should be block-level node types, not inline marks. This is how Slate is designed to work. But it requires refactoring the toggle logic.
+
+**Option 2** is a quick fix that works with the current mark-based implementation.
 
 ## Files to Modify
-1. `src/Modules/WorkSpacePanel/WorkspaceLayout.css`
-   - `.note-panel-container` - change padding
-   - `.note-header` - add flex-shrink, padding, align-items
-   - `.slate-editor` - use `flex: 1` instead of `height: 100%`
+
+**Option 1:**
+- `NotePanel.jsx` - Add `toggleBlock` function, update H1/H2 buttons
+
+**Option 2:**
+- `RichTextConvertor.js` - Update `slate2md` to check for heading marks on leaves
