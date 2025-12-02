@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { createEditor, Editor, Transforms, Text, Range, Element as SlateElement } from "slate";
-import { Slate, Editable, withReact } from "slate-react";
+import { Slate, Editable, withReact, ReactEditor } from "slate-react";
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 // Removed custom LiquidGlassScrollBar due to clipping issues in Slate editor
 // import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
@@ -61,7 +61,7 @@ function SelectionPopup({ position, onUpdate, onCancel }) {
     );
 }
 
-function SlatePanel({ workspaceId, note, onSave }) {
+function SlatePanel({ workspaceId, note, onSave, socket, isConnected }) {
     const editor = useMemo(() => withReact(createEditor()), []);
     const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, underline: false, heading1: false, heading2: false });
     const [popupState, setPopupState] = useState({
@@ -70,6 +70,7 @@ function SlatePanel({ workspaceId, note, onSave }) {
         position: { top: 0, left: 0 },
         selection: null
     });
+    const [savedSelection, setSavedSelection] = useState(null);
     // console.log('Note:', note);
     const getInitialValue = () => {
         if (note) {
@@ -116,6 +117,9 @@ function SlatePanel({ workspaceId, note, onSave }) {
     }, [saveNote]);
 
     const handleSelect = useCallback(() => {
+        // Only process selection changes when editor is focused
+        if (!ReactEditor.isFocused(editor)) return;
+
         const { selection } = editor;
         if (selection && !Range.isCollapsed(selection)) {
             const selectedText = Editor.string(editor, selection);
@@ -127,6 +131,9 @@ function SlatePanel({ workspaceId, note, onSave }) {
                 console.log('Selected Markdown:', markdown);
                 console.log('Selection Range:', { from: selection.anchor, to: selection.focus });
 
+                // Save selection for highlight persistence
+                setSavedSelection(selection);
+
                 CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, {
                     text: previewText,
                     json: selectedFragment,
@@ -134,11 +141,13 @@ function SlatePanel({ workspaceId, note, onSave }) {
                 });
             } else {
                 CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, null);
+                setSavedSelection(null);
             }
         } else {
-            // Collapsed selection (cursor only)
-            CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, null);
+            // Collapsed selection (cursor only) - clear everything
             setPopupState({ show: false, text: '', position: { top: 0, left: 0 }, selection: null });
+            setSavedSelection(null);
+            CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, null);
         }
     }, [editor]);
 
@@ -165,11 +174,25 @@ function SlatePanel({ workspaceId, note, onSave }) {
 
     const handlePopupUpdate = (instruction) => {
         if (popupState.selection && instruction.trim()) {
-            Transforms.select(editor, popupState.selection);
-            Transforms.delete(editor);
-            Transforms.insertText(editor, instruction); // For now, just insert the instruction - LLM integration later
+            // Get the selected text as markdown
+            const selectedFragment = Editor.fragment(editor, popupState.selection);
+            const originalMarkdown = richTextConvertor.slate2md(selectedFragment);
+
+            // Send smart_update message via WebSocket
+            if (socket && isConnected) {
+                socket.send(JSON.stringify({
+                    type: "workspace_message",
+                    sub_type: "smart_update",
+                    message_original: originalMarkdown,
+                    query: instruction
+                }));
+                console.log('Sent smart_update:', { original: originalMarkdown, query: instruction });
+            } else {
+                console.error('WebSocket not connected for smart_update');
+            }
         }
         setPopupState({ show: false, text: '', position: { top: 0, left: 0 }, selection: null });
+        setSavedSelection(null);
     };
 
     const handlePopupCancel = () => {
@@ -209,8 +232,22 @@ function SlatePanel({ workspaceId, note, onSave }) {
         return !!match;
     };
 
+    const decorate = useCallback(([node, path]) => {
+        const ranges = [];
+        if (savedSelection && !ReactEditor.isFocused(editor)) {
+            const intersection = Range.intersection(savedSelection, Editor.range(editor, path));
+            if (intersection) {
+                ranges.push({ ...intersection, highlight: true });
+            }
+        }
+        return ranges;
+    }, [savedSelection, editor]);
+
     const renderLeaf = useCallback((props) => {
         let { attributes, children, leaf } = props;
+        if (leaf.highlight) {
+            children = <span style={{ backgroundColor: 'rgba(128, 128, 128, 0.4)' }}>{children}</span>;
+        }
         if (leaf.bold) {
             children = <strong>{children}</strong>;
         }
@@ -301,6 +338,7 @@ function SlatePanel({ workspaceId, note, onSave }) {
                     onKeyDown={handleKeyDown}
                     onSelect={handleSelect}
                     onMouseUp={handleMouseUp}
+                    decorate={decorate}
                     renderLeaf={renderLeaf}
                     renderElement={renderElement}
                 />
@@ -317,7 +355,7 @@ function SlatePanel({ workspaceId, note, onSave }) {
     );
 }
 
-export default function NotePanel({ workspaceId, note, workspaceName, onWorkspaceNameChange, onNoteChange }) {
+export default function NotePanel({ workspaceId, note, workspaceName, onWorkspaceNameChange, onNoteChange, socket, isConnected }) {
     const [isEditingName, setIsEditingName] = useState(false);
     const [editNameValue, setEditNameValue] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -384,7 +422,7 @@ export default function NotePanel({ workspaceId, note, workspaceName, onWorkspac
                 <div className={`note-divider ${isSaving ? 'saving' : ''}`}></div>
 
                 <div className="note-content">
-                    <SlatePanel workspaceId={workspaceId} note={note} onSave={handleSave} />
+                    <SlatePanel workspaceId={workspaceId} note={note} onSave={handleSave} socket={socket} isConnected={isConnected} />
                 </div>
             </div>
         </LiquidGlassDiv>

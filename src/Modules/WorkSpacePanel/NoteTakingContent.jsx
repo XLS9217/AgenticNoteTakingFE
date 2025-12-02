@@ -44,6 +44,8 @@ export default function NoteTakingContent({ workspaceId, note, transcript, proce
                         // Handle note change if needed
                         console.log('Note updated:', newNote);
                     }}
+                    socket={socket}
+                    isConnected={isConnected}
                 />
             </div>
             <div className="ide-right-panel">
