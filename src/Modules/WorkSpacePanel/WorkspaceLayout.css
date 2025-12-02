@@ -319,6 +319,30 @@ Slate Editor Styles
   background: rgba(255, 255, 255, 0.15);
 }
 
+/* Locked text (waiting for smart_update response) */
+.locked-text {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(255, 255, 255, 0.3) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 /* Native scrollbar styling for NotePanel (replaces LiquidGlassScrollBar) */
 .native-scrollbar {
   overflow-y: auto;

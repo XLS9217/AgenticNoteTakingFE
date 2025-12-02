@@ -71,6 +71,7 @@ function SlatePanel({ workspaceId, note, onSave, socket, isConnected }) {
         selection: null
     });
     const [savedSelection, setSavedSelection] = useState(null);
+    const [lockedSelection, setLockedSelection] = useState(null);
     // console.log('Note:', note);
     const getInitialValue = () => {
         if (note) {
@@ -91,6 +92,37 @@ function SlatePanel({ workspaceId, note, onSave, socket, isConnected }) {
             console.error('Error saving note:', error);
         });
     }, [editor, workspaceId, onSave]);
+
+    // Listen for smart_update_result from WebSocket
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleMessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'workspace_message' && data.sub_type === 'smart_update_result') {
+                    console.log('Received smart_update_result:', data.result);
+                    // Replace locked selection with result
+                    if (lockedSelection) {
+                        Transforms.select(editor, lockedSelection);
+                        Transforms.delete(editor);
+
+                        // Convert result markdown to Slate nodes and insert
+                        const newNodes = richTextConvertor.md2slate(data.result);
+                        Transforms.insertNodes(editor, newNodes);
+
+                        // Clear locked state
+                        setLockedSelection(null);
+                    }
+                }
+            } catch (e) {
+                console.error('Error parsing WebSocket message:', e);
+            }
+        };
+
+        socket.addEventListener('message', handleMessage);
+        return () => socket.removeEventListener('message', handleMessage);
+    }, [socket, lockedSelection, editor]);
 
     const handleChange = useCallback((newValue) => {
         const isAstChange = editor.operations.some(op => op.type !== 'set_selection');
@@ -178,6 +210,9 @@ function SlatePanel({ workspaceId, note, onSave, socket, isConnected }) {
             const selectedFragment = Editor.fragment(editor, popupState.selection);
             const originalMarkdown = richTextConvertor.slate2md(selectedFragment);
 
+            // Lock the selection while waiting for response
+            setLockedSelection(popupState.selection);
+
             // Send smart_update message via WebSocket
             if (socket && isConnected) {
                 socket.send(JSON.stringify({
@@ -189,6 +224,7 @@ function SlatePanel({ workspaceId, note, onSave, socket, isConnected }) {
                 console.log('Sent smart_update:', { original: originalMarkdown, query: instruction });
             } else {
                 console.error('WebSocket not connected for smart_update');
+                setLockedSelection(null); // Unlock if failed
             }
         }
         setPopupState({ show: false, text: '', position: { top: 0, left: 0 }, selection: null });
@@ -234,17 +270,28 @@ function SlatePanel({ workspaceId, note, onSave, socket, isConnected }) {
 
     const decorate = useCallback(([node, path]) => {
         const ranges = [];
-        if (savedSelection && !ReactEditor.isFocused(editor)) {
+        // Locked selection - always show (takes priority)
+        if (lockedSelection) {
+            const intersection = Range.intersection(lockedSelection, Editor.range(editor, path));
+            if (intersection) {
+                ranges.push({ ...intersection, locked: true });
+            }
+        }
+        // Saved selection highlight (when popup is open or editor not focused)
+        else if (savedSelection && (popupState.show || !ReactEditor.isFocused(editor))) {
             const intersection = Range.intersection(savedSelection, Editor.range(editor, path));
             if (intersection) {
                 ranges.push({ ...intersection, highlight: true });
             }
         }
         return ranges;
-    }, [savedSelection, editor]);
+    }, [lockedSelection, savedSelection, editor, popupState.show]);
 
     const renderLeaf = useCallback((props) => {
         let { attributes, children, leaf } = props;
+        if (leaf.locked) {
+            children = <span className="locked-text">{children}</span>;
+        }
         if (leaf.highlight) {
             children = <span style={{ backgroundColor: 'rgba(128, 128, 128, 0.4)' }}>{children}</span>;
         }
@@ -335,6 +382,7 @@ function SlatePanel({ workspaceId, note, onSave, socket, isConnected }) {
                 <Editable
                     className="slate-editor native-scrollbar"
                     placeholder="Start typing your notes..."
+                    readOnly={!!lockedSelection}
                     onKeyDown={handleKeyDown}
                     onSelect={handleSelect}
                     onMouseUp={handleMouseUp}
