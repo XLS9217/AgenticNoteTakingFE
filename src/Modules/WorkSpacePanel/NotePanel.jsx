@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { createEditor, Editor, Transforms, Text } from "slate";
 import { Slate, Editable, withReact } from "slate-react";
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
@@ -8,9 +9,47 @@ import { changeWorkspaceName, updateNote } from "../../Api/gateway.js";
 import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
 import richTextConvertor from "../../Util/RichTextConvertor.js";
 
+function SelectionPopup({ position, onUpdate, onCancel }) {
+    const [instruction, setInstruction] = useState('');
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = (callback) => {
+        setIsClosing(true);
+        setTimeout(() => {
+            callback();
+        }, 150);
+    };
+
+    return (
+        <div
+            className={`selection-popup ${isClosing ? 'closing' : ''}`}
+            style={{ top: position.top, left: position.left }}
+        >
+            <textarea
+                className="selection-popup-input"
+                placeholder="Enter instruction for LLM..."
+                value={instruction}
+                onChange={(e) => setInstruction(e.target.value)}
+                autoFocus
+                rows={3}
+            />
+            <div className="selection-popup-buttons">
+                <button onClick={() => handleClose(() => onUpdate(instruction))}>Update</button>
+                <button onClick={() => handleClose(onCancel)}>Cancel</button>
+            </div>
+        </div>
+    );
+}
+
 function SlatePanel({ workspaceId, note, onSave }) {
     const editor = useMemo(() => withReact(createEditor()), []);
     const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, underline: false, heading1: false, heading2: false });
+    const [popupState, setPopupState] = useState({
+        show: false,
+        text: '',
+        position: { top: 0, left: 0 },
+        selection: null
+    });
     // console.log('Note:', note);
     const getInitialValue = () => {
         if (note) {
@@ -66,6 +105,19 @@ function SlatePanel({ workspaceId, note, onSave }) {
                 console.log('Selected Markdown:', markdown);
                 console.log('Selection Range:', { from: selection.anchor, to: selection.focus });
 
+                // Get DOM position for popup
+                const domSelection = window.getSelection();
+                if (domSelection.rangeCount > 0) {
+                    const range = domSelection.getRangeAt(0);
+                    const rect = range.getBoundingClientRect();
+                    setPopupState({
+                        show: true,
+                        text: selectedText,
+                        position: { top: rect.bottom + 8, left: rect.left },
+                        selection: selection
+                    });
+                }
+
                 CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, {
                     text: previewText,
                     json: selectedFragment,
@@ -73,9 +125,23 @@ function SlatePanel({ workspaceId, note, onSave }) {
                 });
             } else {
                 CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, null);
+                setPopupState({ show: false, text: '', position: { top: 0, left: 0 }, selection: null });
             }
         }
     }, [editor]);
+
+    const handlePopupUpdate = (instruction) => {
+        if (popupState.selection && instruction.trim()) {
+            Transforms.select(editor, popupState.selection);
+            Transforms.delete(editor);
+            Transforms.insertText(editor, instruction); // For now, just insert the instruction - LLM integration later
+        }
+        setPopupState({ show: false, text: '', position: { top: 0, left: 0 }, selection: null });
+    };
+
+    const handlePopupCancel = () => {
+        setPopupState({ show: false, text: '', position: { top: 0, left: 0 }, selection: null });
+    };
 
     const toggleMark = (format) => {
         const isActive = isMarkActive(editor, format);
@@ -179,6 +245,14 @@ function SlatePanel({ workspaceId, note, onSave }) {
                     renderLeaf={renderLeaf}
                 />
             </Slate>
+            {popupState.show && createPortal(
+                <SelectionPopup
+                    position={popupState.position}
+                    onUpdate={handlePopupUpdate}
+                    onCancel={handlePopupCancel}
+                />,
+                document.body
+            )}
         </>
     );
 }

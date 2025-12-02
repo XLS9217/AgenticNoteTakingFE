@@ -231,6 +231,89 @@ Slate Editor Styles
   background: rgba(128, 128, 128, 0.4);
 }
 
+/* Selection Popup */
+.selection-popup {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  width: 280px;
+  animation: popupFadeIn 0.2s ease-out forwards;
+}
+
+.selection-popup.closing {
+  animation: popupFadeOut 0.15s ease-in forwards;
+}
+
+@keyframes popupFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popupFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.selection-popup-input {
+  background: transparent;
+  border: none;
+  padding: var(--spacing-xs);
+  color: rgba(255, 255, 255, 0.9);
+  outline: none;
+  width: 100%;
+  resize: none;
+  font-family: inherit;
+  font-size: 0.9em;
+  box-sizing: border-box;
+  line-height: 1.4;
+}
+
+.selection-popup-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.selection-popup-buttons {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 8px;
+}
+
+.selection-popup-buttons button {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  font-size: 0.85em;
+}
+
+.selection-popup-buttons button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 /* Native scrollbar styling for NotePanel (replaces LiquidGlassScrollBar) */
 .native-scrollbar {
   overflow-y: auto;
