@@ -227,6 +227,9 @@ Slate Editor Styles
   background: rgba(255, 255, 255, 0.08);
 }
 
+.slate-editor ::selection {
+  background: rgba(128, 128, 128, 0.4);
+}
 
 /* Native scrollbar styling for NotePanel (replaces LiquidGlassScrollBar) */
 .native-scrollbar {
