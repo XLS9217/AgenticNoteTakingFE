@@ -23,7 +23,7 @@ function ApplicationContent({ activeWorkspace, setActiveWorkspace, currentView, 
             },
             {
                 key: 'user',
-                icon: '/icons/icon_user.png',
+                icon: '/icons/icon_venus.png',
                 label: 'User',
                 action: () => setCurrentView(currentView === 'user' ? 'workspace' : 'user')
             },

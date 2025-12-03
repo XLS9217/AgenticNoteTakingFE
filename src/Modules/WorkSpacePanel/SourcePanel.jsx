@@ -68,7 +68,17 @@ function RawTranscriptUpload({ rawTranscript, setRawTranscript, onSave }) {
 
 // Processed Transcript Section Component
 function ProcessedTranscriptSection({ utterances }) {
-    const handleUtteranceClick = (topic) => {
+    const handleSpeakerClick = (e, speaker) => {
+        e.stopPropagation();
+        if (!speaker) return;
+        CommendDispatcher.Publish2Channel(ChannelEnum.DISPLAY_CONTROL, {
+            action: 'scroll-to-speaker',
+            speaker: speaker
+        });
+    };
+
+    const handleTopicClick = (e, topic) => {
+        e.stopPropagation();
         if (!topic) return;
         CommendDispatcher.Publish2Channel(ChannelEnum.DISPLAY_CONTROL, {
             action: 'scroll-to-topic',
@@ -80,19 +90,26 @@ function ProcessedTranscriptSection({ utterances }) {
         <LiquidGlassScrollBar className="source-transcript-section">
             {utterances.length > 0 ? (
                 utterances.map((item, index) => (
-                    <div
-                        key={index}
-                        className={`transcript-entry ${item.topic ? 'transcript-entry--clickable' : ''}`}
-                        onClick={() => handleUtteranceClick(item.topic)}
-                        title={item.topic ? `Click to scroll to topic: ${item.topic}` : ''}
-                    >
+                    <div key={index} className="transcript-entry">
                         <div className="transcript-entry-header">
                             <img src="/icons/user.png" alt="Speaker" className="speaker-icon-small" />
-                            <span className="transcript-speaker">{item.speaker}</span>
+                            <span
+                                className="transcript-speaker transcript-speaker--clickable"
+                                onClick={(e) => handleSpeakerClick(e, item.speaker)}
+                                title={`Click to view ${item.speaker}'s info`}
+                            >
+                                {item.speaker}
+                            </span>
                             <span className="transcript-timestamp">{item.timestamp}</span>
                         </div>
                         {item.topic && (
-                            <span className="transcript-topic-tag" title={item.topic}>{item.topic}</span>
+                            <span
+                                className="transcript-topic-tag transcript-topic-tag--clickable"
+                                onClick={(e) => handleTopicClick(e, item.topic)}
+                                title={`Click to view topic: ${item.topic}`}
+                            >
+                                {item.topic}
+                            </span>
                         )}
                         <div className="transcript-utterance">{item.utterance}</div>
                     </div>
@@ -104,8 +121,8 @@ function ProcessedTranscriptSection({ utterances }) {
     );
 }
 
-// Topics Section Component
-function TopicsSection({ topics }) {
+// Metadata Section Component (Topics + Speakers stacked)
+function MetadataSection({ topics, speakers }) {
     const handleScrollToTopic = (topicTitle) => {
         const topicElements = document.querySelectorAll('.source-topic-card .topic-title');
         const targetElement = Array.from(topicElements).find(
@@ -114,15 +131,26 @@ function TopicsSection({ topics }) {
 
         if (targetElement) {
             const topicCard = targetElement.closest('.source-topic-card');
-
-            topicCard.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-
+            topicCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
             topicCard.classList.add('topic-card--highlighted');
             setTimeout(() => {
                 topicCard.classList.remove('topic-card--highlighted');
+            }, 1500);
+        }
+    };
+
+    const handleScrollToSpeaker = (speakerName) => {
+        const speakerElements = document.querySelectorAll('.source-speaker-card .speaker-title');
+        const targetElement = Array.from(speakerElements).find(
+            el => el.textContent === speakerName
+        );
+
+        if (targetElement) {
+            const speakerCard = targetElement.closest('.source-speaker-card');
+            speakerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            speakerCard.classList.add('topic-card--highlighted');
+            setTimeout(() => {
+                speakerCard.classList.remove('topic-card--highlighted');
             }, 1500);
         }
     };
@@ -133,14 +161,18 @@ function TopicsSection({ topics }) {
             (payload) => {
                 if (payload.action === 'scroll-to-topic' && payload.topic) {
                     handleScrollToTopic(payload.topic);
+                } else if (payload.action === 'scroll-to-speaker' && payload.speaker) {
+                    handleScrollToSpeaker(payload.speaker);
                 }
             }
         );
         return unsubscribe;
-    }, [topics]);
+    }, [topics, speakers]);
 
     return (
-        <LiquidGlassScrollBar className="source-topics-section">
+        <LiquidGlassScrollBar className="metadata-section">
+            {/* Topics */}
+            <div className="metadata-group-title">Topics</div>
             {topics.length > 0 ? (
                 topics.map((topic, index) => (
                     <div key={index} className="source-topic-card">
@@ -153,6 +185,22 @@ function TopicsSection({ topics }) {
                 ))
             ) : (
                 <p className="source-empty-state">No topics available...</p>
+            )}
+
+            {/* Speakers */}
+            <div className="metadata-group-title">Speakers</div>
+            {speakers.length > 0 ? (
+                speakers.map((speaker, index) => (
+                    <div key={index} className="source-speaker-card">
+                        <div className="topic-header">
+                            <img src="/icons/user.png" alt="Speaker" className="topic-icon" />
+                            <div className="speaker-title">{speaker.name}</div>
+                        </div>
+                        <div className="topic-summary">{speaker.description}</div>
+                    </div>
+                ))
+            ) : (
+                <p className="source-empty-state">No speakers available...</p>
             )}
         </LiquidGlassScrollBar>
     );
@@ -168,6 +216,7 @@ export default function SourcePanel({ workspaceId, processedTranscript, metadata
 
     const utterances = fetchedTranscript || processedTranscript || [];
     const topics = fetchedMetadata?.topics_list || metadata?.topics_list || [];
+    const speakers = fetchedMetadata?.speaker_list || metadata?.speaker_list || [];
     const hasTranscript = utterances && utterances.length > 0;
 
     const fetchProcessedTranscript = useCallback(async () => {
@@ -309,8 +358,8 @@ export default function SourcePanel({ workspaceId, processedTranscript, metadata
                         {/* Divider */}
                         <div className="source-divider"></div>
 
-                        {/* Topics Section */}
-                        <TopicsSection topics={topics} />
+                        {/* Topics/Speakers Section */}
+                        <MetadataSection topics={topics} speakers={speakers} />
                     </>
                 )}
             </div>

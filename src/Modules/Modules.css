@@ -489,6 +489,69 @@ Source Panel Layout
   padding: var(--spacing-md);
 }
 
+/* Metadata Section (Topics + Speakers stacked) */
+.metadata-section {
+  flex: 1 1 50%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs);
+}
+
+.metadata-group-title {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85em;
+  font-weight: 500;
+  padding: 4px 0;
+  margin-top: 4px;
+}
+
+.metadata-group-title:first-child {
+  margin-top: 0;
+}
+
+.source-speaker-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-fast);
+}
+
+.source-speaker-card:hover {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.speaker-title {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.95em;
+  font-weight: 500;
+}
+
+/* Clickable speaker in transcript */
+.transcript-speaker--clickable {
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.transcript-speaker--clickable:hover {
+  color: rgba(255, 255, 255, 1);
+  font-weight: 600;
+}
+
+/* Clickable topic tag in transcript */
+.transcript-topic-tag--clickable {
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.transcript-topic-tag--clickable:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
 .speaker-icon-small {
   width: 20px;
   height: 20px;
@@ -607,16 +670,25 @@ Authentication Screens
 
 .auth-input:focus {
   background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(var(--color-primary-rgb), 0.5);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .auth-input::placeholder {
   color: rgba(255, 255, 255, 0.5);
 }
 
+.auth-input:-webkit-autofill,
+.auth-input:-webkit-autofill:hover,
+.auth-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px rgba(40, 40, 40, 1) inset;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.3);
+  caret-color: rgba(255, 255, 255, 0.95);
+}
+
 .auth-button {
-  background: rgba(var(--color-primary-rgb), 0.2);
-  border: 1px solid rgba(var(--color-primary-rgb), 0.4);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--border-radius-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   color: rgba(255, 255, 255, 0.95);
@@ -629,8 +701,8 @@ Authentication Screens
 }
 
 .auth-button:hover {
-  background: rgba(var(--color-primary-rgb), 0.3);
-  border-color: rgba(var(--color-primary-rgb), 0.6);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .workspace-list {
