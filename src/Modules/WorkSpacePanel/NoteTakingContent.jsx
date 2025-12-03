@@ -4,7 +4,7 @@ import NotePanel from "./NotePanel.jsx";
 import ChatBox from "./ChatBox.jsx";
 import "./WorkspaceLayout.css";
 
-export default function NoteTakingContent({ workspaceId, note, transcript, processedTranscript, initialMetadata, socket, isConnected, chatHistory, workspaceName, onWorkspaceNameChange }) {
+export default function NoteTakingContent({ workspaceId, note, transcript, processedTranscript, initialMetadata, socket, isConnected, chatHistory }) {
     const [metadata, setMetadata] = useState(initialMetadata);
     const transcriptPanelRef = useRef(null);
 
@@ -29,7 +29,6 @@ export default function NoteTakingContent({ workspaceId, note, transcript, proce
                     workspaceId={workspaceId}
                     processedTranscript={processedTranscript}
                     metadata={metadata}
-                    fileName={workspaceName}
                     socket={socket}
                     isConnected={isConnected}
                 />
@@ -38,12 +37,6 @@ export default function NoteTakingContent({ workspaceId, note, transcript, proce
                 <NotePanel
                     workspaceId={workspaceId}
                     note={note}
-                    workspaceName={workspaceName}
-                    onWorkspaceNameChange={onWorkspaceNameChange}
-                    onNoteChange={(newNote) => {
-                        // Handle note change if needed
-                        console.log('Note updated:', newNote);
-                    }}
                     socket={socket}
                     isConnected={isConnected}
                 />

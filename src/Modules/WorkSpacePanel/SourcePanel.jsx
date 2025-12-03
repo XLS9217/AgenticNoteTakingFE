@@ -207,7 +207,7 @@ function MetadataSection({ topics, speakers }) {
 }
 
 // Main SourcePanel Component
-export default function SourcePanel({ workspaceId, processedTranscript, metadata, fileName, socket, isConnected }) {
+export default function SourcePanel({ workspaceId, processedTranscript, metadata, socket, isConnected }) {
     const [rawTranscript, setRawTranscript] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [processStatus, setProcessStatus] = useState(null);
@@ -317,7 +317,6 @@ export default function SourcePanel({ workspaceId, processedTranscript, metadata
                 {/* Header Section */}
                 <div className="source-header">
                     <h2 className="source-title">Source</h2>
-                    <div className="source-filename">{fileName || 'No file'}</div>
                 </div>
 
                 {!hasTranscript ? (

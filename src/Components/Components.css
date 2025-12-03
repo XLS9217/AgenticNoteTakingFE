@@ -86,6 +86,12 @@ Liquid Glass Section
   height: 100%;
 }
 
+/* Card variant - no padding, content fills container */
+.liquid-glass-container--card {
+  padding: 0;
+  margin: 0;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .liquid-glass-container {

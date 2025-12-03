@@ -219,9 +219,7 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
         <LiquidGlassDiv blurriness={0.5} variant="workspace">
             <div className="chat-panel-container">
                 <div className="chat-header">
-                    <div className="workspace-name-display">
-                        Assistant
-                    </div>
+                    <h2 className="panel-title">Assistant</h2>
                     <div className="connection-status">
                         {status.color} {status.text}
                     </div>

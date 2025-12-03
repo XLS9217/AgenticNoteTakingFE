@@ -4,7 +4,8 @@
       "Bash(find:*)",
       "Bash(npm run lint)",
       "Read(//e/Project/_MeetingNoteTaking/AgenticNoteTakingBE/**)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,150 +1,110 @@
-# Plan: Handle Smart Update Response
+# My needs
+1. focus on the overall layout, keep my three panel structure. Use my aesthetic, but learn from notebookLM
+2. What I want most is a header section in E:\Project\_MeetingNoteTaking\AgenticNoteTakingFE\src\Modules\AppHeader.jsx Use in application.
+    - in header section, I want a Veuns Logo with Notech title. On most left
+    - a user icon on most right
+    - this header should always be there after logging in.
+3. for workspace selection, thumbnail should turn into icon_note.png in my public folder and I want a three dot on top right
+4. while im in note taking, if I click the logo in header, go back to selection page
 
-## Current Flow
-1. User selects text → popup appears
-2. User types instruction → clicks "Update"
-3. Frontend sends `workspace_message` with `sub_type: "smart_update"`
-4. Backend processes and returns `workspace_message` with `sub_type: "smart_update_result"` containing the new text
+# new look in ascii graph
 
-## Requirements
-1. **Lock selected text** - Make selected section uneditable and visually distinct while waiting for response
-2. **Replace on receive** - When `smart_update_result` arrives, replace the locked section with the new text
-
-## Implementation Plan
-
-### Step 1: Add "locked" state for selection
-**File:** `NotePanel.jsx`
-
-Add state to track locked selection:
-```js
-const [lockedSelection, setLockedSelection] = useState(null);
+in workspace selection:
+```
++------------------------------------------------------------------+
+| [Venus] Notech                                   [User Icon]     |  <- transparent header, no bar
++------------------------------------------------------------------+
+|                                                                  |
+|   Workspace for {username}                                       |
+|                                                                  |
+|   +-------------+  +-------------+  +-------------+              |
+|   |   [icon]    |  |   [icon]  ⋮ |  |   [icon]  ⋮ |              |
+|   |     +       |  |   note.png  |  |   note.png  |              |
+|   |             |  |             |  |             |              |
+|   | New Workspace| | Workspace 1 |  | Workspace 2 |              |
+|   | Create new   | | Last updated|  | Last updated|              |
+|   +-------------+  +-------------+  +-------------+              |
+|                                                                  |
++------------------------------------------------------------------+
 ```
 
-### Step 2: Update handlePopupUpdate to lock selection
-**File:** `NotePanel.jsx`
-
-After sending `smart_update`, store the selection to lock it:
-```js
-const handlePopupUpdate = (instruction) => {
-    if (popupState.selection && instruction.trim()) {
-        // Store selection for locking
-        setLockedSelection(popupState.selection);
-
-        // Send smart_update message...
-        // (existing code)
-    }
-    // Close popup but keep lockedSelection
-};
+in note taking:
+```
++------------------------------------------------------------------+
+| [Venus] {NoteName} (clickable to edit)           [User Icon]     |  <- transparent header
++------------------------------------------------------------------+
+|                                                                  |
+| +----------------+ +----------------------+ +------------------+ |
+| |    Source      | |        Note          | |    Assistant     | |
+| |                | |                      | |                  | |
+| |  (transcript)  | |   (slate editor)     | |   (chat box)     | |
+| |                | |                      | |                  | |
+| +----------------+ +----------------------+ +------------------+ |
+|                                                                  |
++------------------------------------------------------------------+
 ```
 
-### Step 3: Update decorate to show locked style
-**File:** `NotePanel.jsx`
+# plan
 
-Modify `decorate` to add `locked: true` decoration for the locked range:
-```js
-const decorate = useCallback(([node, path]) => {
-    const ranges = [];
+## phase 1: Header
 
-    // Locked selection - always show (takes priority)
-    if (lockedSelection) {
-        const intersection = Range.intersection(lockedSelection, Editor.range(editor, path));
-        if (intersection) {
-            ranges.push({ ...intersection, locked: true });
-        }
-    }
-    // Saved selection highlight (only when not focused and not locked)
-    else if (savedSelection && !ReactEditor.isFocused(editor)) {
-        const intersection = Range.intersection(savedSelection, Editor.range(editor, path));
-        if (intersection) {
-            ranges.push({ ...intersection, highlight: true });
-        }
-    }
-    return ranges;
-}, [lockedSelection, savedSelection, editor]);
-```
+**Files to create/modify:**
+- Create: `src/Modules/AppHeader.jsx`
+- Create: `src/Modules/AppHeader.css`
+- Modify: `src/Modules/Application.jsx`
 
-### Step 4: Update renderLeaf for locked style
-**File:** `NotePanel.jsx`
+**Steps:**
+1. Create `AppHeader.jsx` component with:
+   - Left side: Venus logo (`/icons/icon_venus.png`) clickable -> go back to workspace selection
+   - Center/Left: Title text
+     - In workspace selection: "Notech"
+     - In note taking: `{noteName}` (clickable to edit, from prop)
+   - Right side: User icon (`/icons/icon_user.png`) clickable -> toggle user panel
+   - Props: `title`, `isEditable`, `onTitleChange`, `onLogoClick`, `onUserClick`
 
-Add locked styling (e.g., pulsing/loading animation, different background):
-```js
-if (leaf.locked) {
-    children = <span className="locked-text">{children}</span>;
-}
-```
+2. Create `AppHeader.css`:
+   - Transparent background (NO visible bar)
+   - Flexbox layout (space-between)
+   - Logo + title on left
+   - User icon on right
+   - Proper spacing
 
-### Step 5: Make editor read-only for locked range
-**File:** `NotePanel.jsx`
+3. Modify `Application.jsx`:
+   - Import and render `AppHeader` after authentication
+   - Pass appropriate title ("Notech" or workspace name)
+   - Pass `onLogoClick` to go back to workspace selection
+   - Pass `onUserClick` to toggle user panel
+   - Handle title editing for workspace name change
 
-Make entire editor read-only while locked:
-```jsx
-<Editable
-    readOnly={!!lockedSelection}
-    // ...other props
-/>
-```
+## phase 2: Workspace Selection
 
-### Step 6: Listen for smart_update_result via WebSocket
-**File:** `NotePanel.jsx`
+**Files to modify:**
+- `src/Modules/UserPanel/WorkspaceSelection.jsx`
+- `src/Modules/Modules.css`
 
-Add useEffect to listen for WebSocket messages:
-```js
-useEffect(() => {
-    if (!socket) return;
+**Steps:**
+1. Update workspace card thumbnail:
+   - Replace text placeholder with `icon_note.png` image
+   - Keep "+" for new workspace card
 
-    const handleMessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'workspace_message' && data.sub_type === 'smart_update_result') {
-            // Replace locked selection with result
-            if (lockedSelection) {
-                Transforms.select(editor, lockedSelection);
-                Transforms.delete(editor);
+2. Replace delete button with three-dot menu:
+   - Move to top-right corner inside the card
+   - Use vertical three-dot icon (⋮)
+   - On click, show dropdown with "Delete" option
+   - Style dropdown with liquid glass aesthetic
 
-                // Convert result markdown to Slate nodes and insert
-                const newNodes = richTextConvertor.md2slate(data.result);
-                Transforms.insertNodes(editor, newNodes);
+3. Clean up workspace card layout:
+   - Remove redundant name from thumbnail area
+   - Keep name and meta in info section only
 
-                // Clear locked state
-                setLockedSelection(null);
-            }
-        }
-    };
+## phase 3: Panel Headers
 
-    socket.addEventListener('message', handleMessage);
-    return () => socket.removeEventListener('message', handleMessage);
-}, [socket, lockedSelection, editor]);
-```
+**Files to modify:**
+- `src/Modules/WorkSpacePanel/SourcePanel.jsx`
+- `src/Modules/WorkSpacePanel/NotePanel.jsx`
+- `src/Modules/WorkSpacePanel/ChatBox.jsx`
 
-### Step 7: Add CSS for locked animation
-**File:** `WorkspaceLayout.css`
-
-```css
-.locked-text {
-    background-color: rgba(100, 149, 237, 0.3);
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-}
-```
-
-## Files to Modify
-1. `src/Modules/WorkSpacePanel/NotePanel.jsx`
-   - Add `lockedSelection` state
-   - Update `handlePopupUpdate` to set locked state
-   - Update `decorate` to handle locked range
-   - Update `renderLeaf` for locked style
-   - Add WebSocket listener for `smart_update_result`
-   - Make editor readOnly while locked
-
-2. `src/Modules/WorkSpacePanel/WorkspaceLayout.css`
-   - Add pulse animation for locked text
-
-## Flow Summary
-1. User selects text → popup appears
-2. User clicks "Update" → selection becomes locked (pulsing blue), editor becomes read-only
-3. Backend processes → returns result
-4. Frontend receives `smart_update_result` → replaces locked text with new content
-5. Editor unlocks, normal editing resumes
+**Steps:**
+1. Update SourcePanel header: just "Source" title
+2. Update NotePanel header: just "Note" title (remove workspace name, moved to AppHeader)
+3. Update ChatBox header: just "Assistant" title

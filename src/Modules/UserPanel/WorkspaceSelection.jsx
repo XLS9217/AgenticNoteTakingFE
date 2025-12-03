@@ -3,14 +3,50 @@ import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.js
 import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import { createWorkspace, getWorkspacesByOwner, deleteWorkspace } from "../../Api/gateway.js";
 
+function NewWorkspaceCard({ onClick }) {
+    return (
+        <LiquidGlassDiv isButton={true} variant="card">
+            <div className="workspace-card workspace-card--new" onClick={onClick}>
+                <div className="workspace-card-new-icon">+</div>
+                <div className="workspace-card-new-label">Create new</div>
+            </div>
+        </LiquidGlassDiv>
+    );
+}
+
+function WorkspaceCard({ workspace, onSelect, onMenuClick, onDelete, isMenuOpen }) {
+    return (
+        <LiquidGlassDiv isButton={true} variant="card">
+            <div className="workspace-card" onClick={() => onSelect(workspace.workspace_id, workspace.workspace_name)}>
+                <img src="/icons/icon_note.png" alt="Note" className="workspace-card-icon" />
+                <button
+                    className="workspace-card-menu"
+                    onClick={(e) => onMenuClick(e, workspace.workspace_id)}
+                >
+                    ⋮
+                </button>
+                {isMenuOpen && (
+                    <div className="workspace-card-dropdown">
+                        <button onClick={(e) => onDelete(e, workspace.workspace_id)}>Delete</button>
+                    </div>
+                )}
+                <div className="workspace-card-info">
+                    <div className="workspace-card-title">{workspace.workspace_name}</div>
+                    <div className="workspace-card-date">{new Date(workspace.updated_at).toLocaleDateString()}</div>
+                </div>
+            </div>
+        </LiquidGlassDiv>
+    );
+}
+
 export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
     const username = userInfo?.username || 'User';
     const [workspaces, setWorkspaces] = useState([]);
+    const [openMenuId, setOpenMenuId] = useState(null);
 
     const fetchWorkspaces = async () => {
         try {
             const ownerWorkspaces = await getWorkspacesByOwner(username);
-            console.log('Workspaces by owner:', ownerWorkspaces);
             setWorkspaces(ownerWorkspaces);
         } catch (error) {
             console.error('Failed to fetch workspaces:', error);
@@ -21,6 +57,14 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
         fetchWorkspaces();
     }, [username]);
 
+    useEffect(() => {
+        const handleClickOutside = () => setOpenMenuId(null);
+        if (openMenuId) {
+            document.addEventListener('click', handleClickOutside);
+            return () => document.removeEventListener('click', handleClickOutside);
+        }
+    }, [openMenuId]);
+
     const handleNewWorkspace = async () => {
         try {
             const response = await createWorkspace({
@@ -29,20 +73,22 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
                 note: "",
                 transcript: ""
             });
-            console.log('Create workspace response:', response);
-
-            // Enter the newly created workspace
-            onWorkspaceSelect(response.workspace_id);
+            onWorkspaceSelect(response.workspace_id, "Untitled");
         } catch (error) {
             console.error('Failed to create workspace:', error);
         }
     };
 
+    const handleMenuClick = (e, workspaceId) => {
+        e.stopPropagation();
+        setOpenMenuId(openMenuId === workspaceId ? null : workspaceId);
+    };
+
     const handleDeleteWorkspace = async (e, workspaceId) => {
-        e.stopPropagation(); // Prevent card click event
+        e.stopPropagation();
+        setOpenMenuId(null);
         try {
             await deleteWorkspace(workspaceId);
-            // Refresh workspace list after deletion
             fetchWorkspaces();
         } catch (error) {
             console.error('Failed to delete workspace:', error);
@@ -50,50 +96,20 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
     };
 
     return (
-        <div className="workspace-selection-container">
-            <div className="workspace-header">
-                <h1 className="workspace-main-title">Workspace for {username}</h1>
+        <LiquidGlassScrollBar className="workspace-selection-container">
+            <div className="workspace-grid">
+                <NewWorkspaceCard onClick={handleNewWorkspace} />
+                {workspaces.map((workspace) => (
+                    <WorkspaceCard
+                        key={workspace.workspace_id}
+                        workspace={workspace}
+                        onSelect={onWorkspaceSelect}
+                        onMenuClick={handleMenuClick}
+                        onDelete={handleDeleteWorkspace}
+                        isMenuOpen={openMenuId === workspace.workspace_id}
+                    />
+                ))}
             </div>
-            <LiquidGlassScrollBar className="workspace-grid-wrapper">
-                <div className="workspace-grid">
-                    <LiquidGlassDiv isButton={true}>
-                        <button className="workspace-card workspace-card--new" onClick={handleNewWorkspace}>
-                            <div className="workspace-thumbnail">
-                                <span className="workspace-placeholder workspace-placeholder--new">+</span>
-                            </div>
-                            <div className="workspace-info">
-                                <h3 className="workspace-name">New Workspace</h3>
-                                <p className="workspace-meta">Create a new workspace</p>
-                            </div>
-                        </button>
-                    </LiquidGlassDiv>
-                    {workspaces.map((workspace) => (
-                        <div key={workspace.workspace_id} className="workspace-card-container">
-                            <button
-                                className="workspace-delete-btn"
-                                onClick={(e) => handleDeleteWorkspace(e, workspace.workspace_id)}
-                                aria-label="Delete workspace"
-                            >
-                                <img src="/icons/icon_trash.png" alt="Delete" />
-                            </button>
-                            <LiquidGlassDiv isButton={true}>
-                                <button
-                                    className="workspace-card"
-                                    onClick={() => onWorkspaceSelect(workspace.workspace_id)}
-                                >
-                                    <div className="workspace-thumbnail">
-                                        <span className="workspace-placeholder">{workspace.workspace_name}</span>
-                                    </div>
-                                    <div className="workspace-info">
-                                        <h3 className="workspace-name">{workspace.workspace_name}</h3>
-                                        <p className="workspace-meta">Last updated: {new Date(workspace.updated_at).toLocaleDateString()}</p>
-                                    </div>
-                                </button>
-                            </LiquidGlassDiv>
-                        </div>
-                    ))}
-                </div>
-            </LiquidGlassScrollBar>
-        </div>
+        </LiquidGlassScrollBar>
     );
 }

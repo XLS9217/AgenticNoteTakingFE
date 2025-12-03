@@ -5,7 +5,7 @@ import { Slate, Editable, withReact, ReactEditor } from "slate-react";
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 // Removed custom LiquidGlassScrollBar due to clipping issues in Slate editor
 // import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
-import { changeWorkspaceName, updateNote } from "../../Api/gateway.js";
+import { updateNote } from "../../Api/gateway.js";
 import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
 import richTextConvertor from "../../Util/RichTextConvertor.js";
 
@@ -403,41 +403,8 @@ function SlatePanel({ workspaceId, note, onSave, socket, isConnected }) {
     );
 }
 
-export default function NotePanel({ workspaceId, note, workspaceName, onWorkspaceNameChange, onNoteChange, socket, isConnected }) {
-    const [isEditingName, setIsEditingName] = useState(false);
-    const [editNameValue, setEditNameValue] = useState('');
+export default function NotePanel({ workspaceId, note, socket, isConnected }) {
     const [isSaving, setIsSaving] = useState(false);
-
-    const handleNameClick = () => {
-        setIsEditingName(true);
-        setEditNameValue(workspaceName);
-    };
-
-    const handleNameChange = (e) => {
-        setEditNameValue(e.target.value);
-    };
-
-    const handleNameKeyDown = async (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const newName = editNameValue.trim();
-            if (newName && newName !== workspaceName) {
-                try {
-                    await changeWorkspaceName(workspaceId, newName);
-                    onWorkspaceNameChange(newName);
-                } catch (error) {
-                    console.error('Failed to change workspace name:', error);
-                }
-            }
-            setIsEditingName(false);
-        } else if (e.key === 'Escape') {
-            setIsEditingName(false);
-        }
-    };
-
-    const handleNameBlur = () => {
-        setIsEditingName(false);
-    };
 
     const handleSave = () => {
         setIsSaving(true);
@@ -450,21 +417,7 @@ export default function NotePanel({ workspaceId, note, workspaceName, onWorkspac
         <LiquidGlassDiv blurriness={0.5} variant="workspace">
             <div className="note-panel-container">
                 <div className="note-header">
-                    {isEditingName ? (
-                        <textarea
-                            className="workspace-name-input"
-                            value={editNameValue}
-                            onChange={handleNameChange}
-                            onKeyDown={handleNameKeyDown}
-                            onBlur={handleNameBlur}
-                            autoFocus
-                            rows={1}
-                        />
-                    ) : (
-                        <div className="workspace-name-display" onClick={handleNameClick}>
-                            {workspaceName || 'Untitled'}
-                        </div>
-                    )}
+                    <h2 className="panel-title">Note</h2>
                 </div>
 
                 <div className={`note-divider ${isSaving ? 'saving' : ''}`}></div>

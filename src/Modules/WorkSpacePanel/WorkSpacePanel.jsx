@@ -1,33 +1,26 @@
 import { useState, useEffect, useCallback } from "react";
 import NoteTakingContent from "./NoteTakingContent.jsx";
-import { useUtilBar } from "../../Components/UtilBar/UtilBarProvider.jsx";
 import { getWorkspace, getChatHistory, getProcessedTranscript, connectToChatSession } from "../../Api/gateway.js";
 
-
-
-export default function WorkSpacePanel({ workspaceId, onLeave }) {
+export default function WorkSpacePanel({ workspaceId, onLeave, onWorkspaceNameChange }) {
     const [workspaceData, setWorkspaceData] = useState({ note: '', transcript: '', processed_transcript: [], meta_data: null });
     const [chatHistory, setChatHistory] = useState([]);
-    const [workspaceName, setWorkspaceName] = useState('');
     const [socket, setSocket] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
-    const { setOverride, clearOverride } = useUtilBar();
 
     const loadWorkspace = useCallback(async () => {
         try {
-            // 1) Load basic workspace info
             const data = await getWorkspace(workspaceId);
             console.log('Workspace data loaded:', data);
 
             setWorkspaceData({
                 note: data.note || '',
                 transcript: data.transcript || '',
-                processed_transcript: [], // will be loaded separately
+                processed_transcript: [],
                 meta_data: data.meta_data || null
             });
-            setWorkspaceName(data.workspace_name || 'Untitled Workspace');
+            onWorkspaceNameChange?.(data.workspace_name || 'Untitled');
 
-            // 2) Load chat history
             try {
                 const chatResp = await getChatHistory(workspaceId);
                 const chats = Array.isArray(chatResp) ? chatResp : (chatResp?.chat_history || []);
@@ -37,7 +30,6 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
                 setChatHistory([]);
             }
 
-            // 3) Load processed transcript (process script)
             try {
                 const procResp = await getProcessedTranscript(workspaceId);
                 const processed = Array.isArray(procResp) ? procResp : (procResp?.processed_transcript ?? []);
@@ -47,7 +39,6 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
                 }));
             } catch (procErr) {
                 console.error('Error loading processed transcript:', procErr);
-                // keep processed_transcript as empty array
             }
         } catch (error) {
             console.error('Error loading workspace:', error);
@@ -88,39 +79,6 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
         };
     }, [workspaceId]);
 
-    useEffect(() => {
-        setOverride([
-            {
-                key: 'workspace',
-                icon: '/icons/icon_ws.png',
-                label: 'Workspace',
-                action: () => onLeave?.()
-            },
-            {
-                key: 'refresh',
-                icon: '/icons/icon_refresh.png',
-                label: 'Refresh Workspace',
-                action: loadWorkspace,
-                hoverClass: 'util-bar-icon-circle--rotate'
-            },
-            {
-                key: 'import',
-                icon: '/icons/icon_import.png',
-                label: 'Import Workspace',
-                action: () => console.log('Import clicked')
-            },
-            {
-                key: 'export',
-                icon: '/icons/icon_export.png',
-                label: 'Export Workspace',
-                action: () => console.log('Export clicked')
-            }
-        ]);
-
-        return () => clearOverride();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
     return (
         <div className="workspace-main">
             <NoteTakingContent
@@ -132,8 +90,6 @@ export default function WorkSpacePanel({ workspaceId, onLeave }) {
                 socket={socket}
                 isConnected={isConnected}
                 chatHistory={chatHistory}
-                workspaceName={workspaceName}
-                onWorkspaceNameChange={setWorkspaceName}
             />
         </div>
     );
