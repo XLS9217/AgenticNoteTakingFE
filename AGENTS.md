@@ -98,3 +98,4 @@ When clicking a workspace card, workspace selection slides left out while note-t
 3. Trigger animation
 4. Workspace moves to translateX(100%)
 5. Selection moves to translateX(0)
+ 
