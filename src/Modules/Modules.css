@@ -24,6 +24,55 @@ Application Layout
   padding-left: var(--spacing-xs);
 }
 
+/*
+==========================================
+View Slide Transitions
+==========================================
+*/
+
+.view-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.view-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Default positions */
+.view-slide--selection {
+  transform: translateX(0);
+}
+
+.view-slide--workspace {
+  transform: translateX(100%);
+}
+
+/* Slide left animation (entering workspace) */
+.view-slide--selection.slide-left {
+  transform: translateX(-100%);
+}
+
+.view-slide--workspace.slide-left {
+  transform: translateX(0);
+}
+
+/* Slide right animation (leaving workspace) */
+.view-slide--selection.slide-right {
+  transform: translateX(0);
+}
+
+.view-slide--workspace.slide-right {
+  transform: translateX(100%);
+}
+
 .workspace-main {
   display: flex;
   flex-direction: row;

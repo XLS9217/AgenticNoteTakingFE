@@ -13,15 +13,32 @@ export default function Application() {
     const [currentView, setCurrentView] = useState('workspace');
     const [userInfo, setUserInfo] = useState(null);
     const [workspaceName, setWorkspaceName] = useState('');
+    const [slideDirection, setSlideDirection] = useState('');
+    const [pendingWorkspace, setPendingWorkspace] = useState(null);
+
+    const handleWorkspaceSelect = (workspace, name) => {
+        setPendingWorkspace({ id: workspace, name: name || 'Untitled' });
+        setSlideDirection('slide-left');
+        setTimeout(() => {
+            setActiveWorkspace(workspace);
+            setWorkspaceName(name || 'Untitled');
+            setPendingWorkspace(null);
+        }, 300);
+    };
 
     const handleLeaveWorkspace = () => {
-        setActiveWorkspace('');
-        setWorkspaceName('');
-        setCurrentView('workspace');
+        setSlideDirection('slide-right');
+        setTimeout(() => {
+            setActiveWorkspace('');
+            setWorkspaceName('');
+            setSlideDirection('');
+        }, 300);
     };
 
     const handleMenuClick = () => {
-        handleLeaveWorkspace();
+        if (activeWorkspace) {
+            handleLeaveWorkspace();
+        }
     };
 
     const handleUserClick = () => {
@@ -56,6 +73,24 @@ export default function Application() {
     const isInWorkspace = !!activeWorkspace;
     const headerTitle = isInWorkspace ? (workspaceName || 'Untitled') : 'Notech';
 
+    if (currentView === 'user') {
+        return (
+            <>
+                <AppHeader
+                    title={headerTitle}
+                    isEditable={false}
+                    onTitleChange={handleTitleChange}
+                    onMenuClick={handleMenuClick}
+                    onUserClick={handleUserClick}
+                    username={userInfo?.username}
+                />
+                <div className="application-container application-container--fullscreen">
+                    <UserPanel userInfo={userInfo} />
+                </div>
+            </>
+        );
+    }
+
     return (
         <>
             <AppHeader
@@ -67,20 +102,23 @@ export default function Application() {
                 username={userInfo?.username}
             />
             <div className="application-container application-container--fullscreen">
-                {currentView === 'user' ? (
-                    <UserPanel userInfo={userInfo} />
-                ) : activeWorkspace ? (
-                    <WorkSpacePanel
-                        workspaceId={activeWorkspace}
-                        onLeave={handleLeaveWorkspace}
-                        onWorkspaceNameChange={setWorkspaceName}
-                    />
-                ) : (
-                    <WorkspaceSelection onWorkspaceSelect={(workspace, name) => {
-                        setActiveWorkspace(workspace);
-                        setWorkspaceName(name || 'Untitled');
-                    }} userInfo={userInfo} />
-                )}
+                <div className="view-container">
+                    <div className={`view-slide view-slide--selection ${slideDirection}`}>
+                        <WorkspaceSelection
+                            onWorkspaceSelect={handleWorkspaceSelect}
+                            userInfo={userInfo}
+                        />
+                    </div>
+                    <div className={`view-slide view-slide--workspace ${slideDirection}`}>
+                        {(activeWorkspace || pendingWorkspace) && (
+                            <WorkSpacePanel
+                                workspaceId={activeWorkspace || pendingWorkspace?.id}
+                                onLeave={handleLeaveWorkspace}
+                                onWorkspaceNameChange={setWorkspaceName}
+                            />
+                        )}
+                    </div>
+                </div>
             </div>
         </>
     );

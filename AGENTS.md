@@ -1,110 +1,100 @@
-# My needs
-1. focus on the overall layout, keep my three panel structure. Use my aesthetic, but learn from notebookLM
-2. What I want most is a header section in E:\Project\_MeetingNoteTaking\AgenticNoteTakingFE\src\Modules\AppHeader.jsx Use in application.
-    - in header section, I want a Veuns Logo with Notech title. On most left
-    - a user icon on most right
-    - this header should always be there after logging in.
-3. for workspace selection, thumbnail should turn into icon_note.png in my public folder and I want a three dot on top right
-4. while im in note taking, if I click the logo in header, go back to selection page
+# Slide Transition Animation Plan
 
-# new look in ascii graph
+## Goal
+When clicking a workspace card, workspace selection slides left out while note-taking view slides left in. When clicking back button (menu icon), the reverse happens.
 
-in workspace selection:
+## Files to modify
+- `src/Modules/Application.jsx` - Add transition state and wrapper
+- `src/Modules/Modules.css` - Add slide animation CSS
+
+## Implementation Steps
+
+### Step 1: Add transition state to Application.jsx
+- Add `transitionDirection` state: `'none' | 'slide-left' | 'slide-right'`
+- Wrap workspace selection and workspace panel in a transition container
+- When selecting workspace: set direction to `'slide-left'`, after animation set view
+- When going back: set direction to `'slide-right'`, after animation set view
+
+### Step 2: Create CSS animations
+```css
+.view-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.view-slide {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Workspace selection - slides out left when entering workspace */
+.view-slide--selection.slide-left-exit {
+  transform: translateX(-100%);
+}
+
+/* Workspace panel - slides in from right when entering */
+.view-slide--workspace.slide-left-enter {
+  transform: translateX(0);
+}
+
+.view-slide--workspace.slide-left-enter-from {
+  transform: translateX(100%);
+}
+
+/* Reverse for going back */
+.view-slide--selection.slide-right-enter {
+  transform: translateX(0);
+}
+
+.view-slide--selection.slide-right-enter-from {
+  transform: translateX(-100%);
+}
+
+.view-slide--workspace.slide-right-exit {
+  transform: translateX(100%);
+}
 ```
-+------------------------------------------------------------------+
-| [Venus] Notech                                   [User Icon]     |  <- transparent header, no bar
-+------------------------------------------------------------------+
-|                                                                  |
-|   Workspace for {username}                                       |
-|                                                                  |
-|   +-------------+  +-------------+  +-------------+              |
-|   |   [icon]    |  |   [icon]  ⋮ |  |   [icon]  ⋮ |              |
-|   |     +       |  |   note.png  |  |   note.png  |              |
-|   |             |  |             |  |             |              |
-|   | New Workspace| | Workspace 1 |  | Workspace 2 |              |
-|   | Create new   | | Last updated|  | Last updated|              |
-|   +-------------+  +-------------+  +-------------+              |
-|                                                                  |
-+------------------------------------------------------------------+
+
+### Step 3: Update Application.jsx logic
+1. When `onWorkspaceSelect` is called:
+   - Start slide-left animation
+   - After 300ms, update `activeWorkspace` state
+
+2. When `handleMenuClick` (back) is called:
+   - Start slide-right animation
+   - After 300ms, clear `activeWorkspace` state
+
+### Step 4: Structure
+```jsx
+<div className="view-container">
+  {/* Workspace Selection */}
+  <div className={`view-slide view-slide--selection ${transitionClass}`}>
+    <WorkspaceSelection ... />
+  </div>
+
+  {/* Workspace Panel */}
+  <div className={`view-slide view-slide--workspace ${transitionClass}`}>
+    <WorkSpacePanel ... />
+  </div>
+</div>
 ```
 
-in note taking:
-```
-+------------------------------------------------------------------+
-| [Venus] {NoteName} (clickable to edit)           [User Icon]     |  <- transparent header
-+------------------------------------------------------------------+
-|                                                                  |
-| +----------------+ +----------------------+ +------------------+ |
-| |    Source      | |        Note          | |    Assistant     | |
-| |                | |                      | |                  | |
-| |  (transcript)  | |   (slate editor)     | |   (chat box)     | |
-| |                | |                      | |                  | |
-| +----------------+ +----------------------+ +------------------+ |
-|                                                                  |
-+------------------------------------------------------------------+
-```
+## Animation Flow
 
-# plan
+### Entering workspace (slide left):
+1. Selection is visible at translateX(0)
+2. Workspace is hidden at translateX(100%)
+3. Trigger animation
+4. Selection moves to translateX(-100%)
+5. Workspace moves to translateX(0)
 
-## phase 1: Header
-
-**Files to create/modify:**
-- Create: `src/Modules/AppHeader.jsx`
-- Create: `src/Modules/AppHeader.css`
-- Modify: `src/Modules/Application.jsx`
-
-**Steps:**
-1. Create `AppHeader.jsx` component with:
-   - Left side: Venus logo (`/icons/icon_venus.png`) clickable -> go back to workspace selection
-   - Center/Left: Title text
-     - In workspace selection: "Notech"
-     - In note taking: `{noteName}` (clickable to edit, from prop)
-   - Right side: User icon (`/icons/icon_user.png`) clickable -> toggle user panel
-   - Props: `title`, `isEditable`, `onTitleChange`, `onLogoClick`, `onUserClick`
-
-2. Create `AppHeader.css`:
-   - Transparent background (NO visible bar)
-   - Flexbox layout (space-between)
-   - Logo + title on left
-   - User icon on right
-   - Proper spacing
-
-3. Modify `Application.jsx`:
-   - Import and render `AppHeader` after authentication
-   - Pass appropriate title ("Notech" or workspace name)
-   - Pass `onLogoClick` to go back to workspace selection
-   - Pass `onUserClick` to toggle user panel
-   - Handle title editing for workspace name change
-
-## phase 2: Workspace Selection
-
-**Files to modify:**
-- `src/Modules/UserPanel/WorkspaceSelection.jsx`
-- `src/Modules/Modules.css`
-
-**Steps:**
-1. Update workspace card thumbnail:
-   - Replace text placeholder with `icon_note.png` image
-   - Keep "+" for new workspace card
-
-2. Replace delete button with three-dot menu:
-   - Move to top-right corner inside the card
-   - Use vertical three-dot icon (⋮)
-   - On click, show dropdown with "Delete" option
-   - Style dropdown with liquid glass aesthetic
-
-3. Clean up workspace card layout:
-   - Remove redundant name from thumbnail area
-   - Keep name and meta in info section only
-
-## phase 3: Panel Headers
-
-**Files to modify:**
-- `src/Modules/WorkSpacePanel/SourcePanel.jsx`
-- `src/Modules/WorkSpacePanel/NotePanel.jsx`
-- `src/Modules/WorkSpacePanel/ChatBox.jsx`
-
-**Steps:**
-1. Update SourcePanel header: just "Source" title
-2. Update NotePanel header: just "Note" title (remove workspace name, moved to AppHeader)
-3. Update ChatBox header: just "Assistant" title
+### Leaving workspace (slide right):
+1. Workspace is visible at translateX(0)
+2. Selection is hidden at translateX(-100%)
+3. Trigger animation
+4. Workspace moves to translateX(100%)
+5. Selection moves to translateX(0)
