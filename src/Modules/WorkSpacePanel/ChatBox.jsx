@@ -1,7 +1,8 @@
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
-import {useEffect, useState} from "react";
+import {useEffect, useState, useRef} from "react";
 import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
+import ReactMarkdown from "react-markdown";
 
 
 export function UserMessage({ text }) {
@@ -17,8 +18,8 @@ export function UserMessage({ text }) {
 export function AgentMessage({ text }) {
     return (
         <div className="message ai-message">
-            <div className="message-content">
-                <span className="message-text">{text}</span>
+            <div className="message-content message-markdown">
+                <ReactMarkdown>{text}</ReactMarkdown>
             </div>
         </div>
     );
@@ -112,6 +113,15 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
     const [messages, setMessages] = useState([]);
     const [currentChunk, setCurrentChunk] = useState(null);
     const [selectionData, setSelectionData] = useState(null);
+    const messagesEndRef = useRef(null);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages, currentChunk]);
 
     useEffect(() => {
         const unsubscribe = CommendDispatcher.Subscribe2Channel(
@@ -188,12 +198,6 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
     const handleSendMessage = async (text) => {
         if (!text.trim()) return;
 
-        // Build message text: append selection if present
-        let messageText = text;
-        if (selectionData?.markdown) {
-            messageText = "<Message>" + text + "</Message>\n<Selected>" + selectionData.markdown + "</Selected>";
-        }
-
         const userMessage = {
             id: Date.now(),
             user: 'You',
@@ -202,11 +206,15 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
         setMessages(prev => [...prev, userMessage]);
 
         if (socket && isConnected) {
-            socket.send(JSON.stringify({
+            const payload = {
                 type: "user_message",
                 user: "default",
-                text: messageText,
-            }));
+                text: text,
+            };
+            if (selectionData?.markdown) {
+                payload.extra = { selected: selectionData.markdown };
+            }
+            socket.send(JSON.stringify(payload));
             setSelectionData(null);
         } else {
             console.error('WebSocket not connected');
@@ -236,6 +244,7 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
                         onMessageComplete={handleMessageComplete}
                         debugForceShow={false}
                     />
+                    <div ref={messagesEndRef} />
                 </LiquidGlassScrollBar>
 
                 <UserInputArea
