@@ -51,6 +51,7 @@ export default function WorkSpacePanel({ workspaceId, onLeave, onWorkspaceNameCh
     }, [loadWorkspace]);
 
     useEffect(() => {
+        console.log('Workspace switched to:', workspaceId);
         const ws = connectToChatSession();
         setSocket(ws);
 

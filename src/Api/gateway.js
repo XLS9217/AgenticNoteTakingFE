@@ -24,15 +24,31 @@ export async function sendChatMessage(message) {
  * @returns {WebSocket} The WebSocket instances
  */
 export function connectToChatSession() {
+    console.log('[WS] connectToChatSession called');
+
     if (socket && socket.readyState === WebSocket.OPEN) {
+        console.log('[WS] Reusing existing connection');
         return socket;
+    }
+
+    const token = localStorage.getItem('token');
+    console.log('[WS] Token present:', !!token);
+
+    if (!token) {
+        console.error('[WS] No token found, cannot connect to chat session');
+        return null;
     }
 
     const { protocol, host } = window.location;
     const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${wsProtocol}//${host}/agent/chat_session`;
+    const url = `${wsProtocol}//${host}/agent/chat_session?token=${token}`;
+    console.log('[WS] Connecting to:', url);
 
     socket = new WebSocket(url);
+
+    socket.onopen = () => console.log('[WS] Connection opened');
+    socket.onclose = (e) => console.log('[WS] Connection closed:', e.code, e.reason);
+    socket.onerror = (e) => console.error('[WS] Error:', e);
 
     return socket;
 }
@@ -46,11 +62,21 @@ export function connectToChatSession() {
 export async function authUser(credentials) {
     try {
         const response = await request.post('/user/auth', credentials);
+        if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
+        }
         return response.data;
     } catch (error) {
         console.error('Error authenticating user:', error);
         throw error;
     }
+}
+
+/**
+ * Logout user by clearing token
+ */
+export function logout() {
+    localStorage.removeItem('token');
 }
 
 /**
@@ -114,16 +140,15 @@ export async function getWorkspace(workspaceId) {
 }
 
 /**
- * Get all workspaces by owner
- * @param {string} owner - The owner username
+ * Get all workspaces owned by the current user
  * @returns {Promise<Array>} List of workspaces
  */
-export async function getWorkspacesByOwner(owner) {
+export async function getMyWorkspaces() {
     try {
-        const response = await request.get(`/workspace/owner/${owner}`);
+        const response = await request.get('/workspace/list');
         return response.data;
     } catch (error) {
-        console.error('Error fetching workspaces by owner:', error);
+        console.error('Error fetching workspaces:', error);
         throw error;
     }
 }

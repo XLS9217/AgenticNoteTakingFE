@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
-import { createWorkspace, getWorkspacesByOwner, deleteWorkspace } from "../../Api/gateway.js";
+import { createWorkspace, getMyWorkspaces, deleteWorkspace } from "../../Api/gateway.js";
 
 function NewWorkspaceCard({ onClick }) {
     return (
@@ -46,7 +46,7 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
 
     const fetchWorkspaces = async () => {
         try {
-            const ownerWorkspaces = await getWorkspacesByOwner(username);
+            const ownerWorkspaces = await getMyWorkspaces();
             setWorkspaces(ownerWorkspaces);
         } catch (error) {
             console.error('Failed to fetch workspaces:', error);
