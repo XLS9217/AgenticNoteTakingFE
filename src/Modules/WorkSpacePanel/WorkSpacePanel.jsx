@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import NoteTakingContent from "./NoteTakingContent.jsx";
-import { getWorkspace, getChatHistory, getProcessedTranscript, connectToChatSession } from "../../Api/gateway.js";
+import { getWorkspace, getChatHistory, getProcessedTranscript } from "../../Api/gateway.js";
+import { connectSocket, disconnectSocket } from "../../Api/socket_gateway.js";
 import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
 
 export default function WorkSpacePanel({ workspaceId, onLeave, onWorkspaceNameChange }) {
     const [workspaceData, setWorkspaceData] = useState({ note: '', transcript: '', processed_transcript: [], meta_data: null });
     const [chatHistory, setChatHistory] = useState([]);
-    const [socket, setSocket] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
 
     const loadWorkspace = useCallback(async () => {
@@ -50,80 +50,20 @@ export default function WorkSpacePanel({ workspaceId, onLeave, onWorkspaceNameCh
         loadWorkspace();
     }, [loadWorkspace]);
 
+    // Connect socket when workspace changes
     useEffect(() => {
-        console.log('Workspace switched to:', workspaceId);
-        const ws = connectToChatSession();
-        setSocket(ws);
-
-        ws.onopen = () => {
-            console.log('WebSocket connected');
-            setIsConnected(true);
-            ws.send(JSON.stringify({
-                type: "workspace_switch",
-                workspace_id: workspaceId
-            }));
-        };
-
-        ws.onclose = () => {
-            console.log('WebSocket closed');
-            setIsConnected(false);
-        };
-
-        ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            setIsConnected(false);
-        };
-
-        return () => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.close();
-            }
-        };
+        connectSocket(workspaceId);
+        return () => disconnectSocket();
     }, [workspaceId]);
 
-    // Centralized WebSocket message handling
-    useEffect(() => {
-        if (!socket) return;
-
-        const handleMessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                console.log('WebSocket received:', data);
-
-                if (data.type === 'agent_message' || data.type === 'agent_chunk') {
-                    CommendDispatcher.Publish2Channel(ChannelEnum.CHAT_MESSAGE, data);
-                }
-                else if (data.type === 'workspace_message') {
-                    if (data.sub_type === 'process_status') {
-                        CommendDispatcher.Publish2Channel(ChannelEnum.PROCESS_STATUS, data);
-                    }
-                    else if (data.sub_type === 'smart_update_result') {
-                        CommendDispatcher.Publish2Channel(ChannelEnum.SMART_UPDATE, data);
-                    }
-                }
-            } catch (error) {
-                console.error('Error parsing WebSocket message:', error);
-            }
-        };
-
-        socket.addEventListener('message', handleMessage);
-        return () => socket.removeEventListener('message', handleMessage);
-    }, [socket]);
-
-    // Listen for SOCKET_SEND requests from child components
+    // Subscribe to socket status changes
     useEffect(() => {
         const unsubscribe = CommendDispatcher.Subscribe2Channel(
-            ChannelEnum.SOCKET_SEND,
-            (payload) => {
-                if (socket && isConnected) {
-                    socket.send(JSON.stringify(payload));
-                } else {
-                    console.error('WebSocket not connected');
-                }
-            }
+            ChannelEnum.SOCKET_STATUS,
+            (data) => setIsConnected(data.connected)
         );
         return unsubscribe;
-    }, [socket, isConnected]);
+    }, []);
 
     return (
         <div className="workspace-main">

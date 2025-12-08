@@ -1,59 +1,5 @@
 import request from "./request.js";
 
-let socket = null;
-
-/**
- * Sends a chat message to the agent via HTTP POST
- * @param {Object} message - The message to send
- * @param {string} message.user - User identifier
- * @param {string} message.text - Message text
- * @returns {Promise<Object>} Response from the agent
- */
-export async function sendChatMessage(message) {
-    try {
-        const response = await request.post('/agent/chat', message);
-        return response.data;
-    } catch (error) {
-        console.error('Error sending chat message:', error);
-        throw error;
-    }
-}
-
-/**
- * Establishes a WebSocket connection to the chat session endpoint
- * @returns {WebSocket} The WebSocket instances
- */
-export function connectToChatSession() {
-    console.log('[WS] connectToChatSession called');
-
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        console.log('[WS] Reusing existing connection');
-        return socket;
-    }
-
-    const token = localStorage.getItem('token');
-    console.log('[WS] Token present:', !!token);
-
-    if (!token) {
-        console.error('[WS] No token found, cannot connect to chat session');
-        return null;
-    }
-
-    const { protocol, host } = window.location;
-    const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${wsProtocol}//${host}/agent/chat_session?token=${token}`;
-    console.log('[WS] Connecting to:', url);
-
-    socket = new WebSocket(url);
-
-    socket.onopen = () => console.log('[WS] Connection opened');
-    socket.onclose = (e) => console.log('[WS] Connection closed:', e.code, e.reason);
-    socket.onerror = (e) => console.error('[WS] Error:', e);
-
-    return socket;
-}
-
-
 /**
  * Authenticate a user
  * @param {{username: string, password: string}} credentials
