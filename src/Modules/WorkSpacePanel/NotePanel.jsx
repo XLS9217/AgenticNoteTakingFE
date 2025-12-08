@@ -61,7 +61,7 @@ function SelectionPopup({ position, onUpdate, onCancel }) {
     );
 }
 
-function SlatePanel({ workspaceId, note, onSave, socket, isConnected }) {
+function SlatePanel({ workspaceId, note, onSave }) {
     const editor = useMemo(() => withReact(createEditor()), []);
     const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, underline: false, heading1: false, heading2: false });
     const [popupState, setPopupState] = useState({
@@ -93,36 +93,28 @@ function SlatePanel({ workspaceId, note, onSave, socket, isConnected }) {
         });
     }, [editor, workspaceId, onSave]);
 
-    // Listen for smart_update_result from WebSocket
+    // Subscribe to SMART_UPDATE channel
     useEffect(() => {
-        if (!socket) return;
+        const unsubscribe = CommendDispatcher.Subscribe2Channel(
+            ChannelEnum.SMART_UPDATE,
+            (data) => {
+                console.log('Received smart_update_result:', data.result);
+                // Replace locked selection with result
+                if (lockedSelection) {
+                    Transforms.select(editor, lockedSelection);
+                    Transforms.delete(editor);
 
-        const handleMessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                if (data.type === 'workspace_message' && data.sub_type === 'smart_update_result') {
-                    console.log('Received smart_update_result:', data.result);
-                    // Replace locked selection with result
-                    if (lockedSelection) {
-                        Transforms.select(editor, lockedSelection);
-                        Transforms.delete(editor);
+                    // Convert result markdown to Slate nodes and insert
+                    const newNodes = richTextConvertor.md2slate(data.result);
+                    Transforms.insertNodes(editor, newNodes);
 
-                        // Convert result markdown to Slate nodes and insert
-                        const newNodes = richTextConvertor.md2slate(data.result);
-                        Transforms.insertNodes(editor, newNodes);
-
-                        // Clear locked state
-                        setLockedSelection(null);
-                    }
+                    // Clear locked state
+                    setLockedSelection(null);
                 }
-            } catch (e) {
-                console.error('Error parsing WebSocket message:', e);
             }
-        };
-
-        socket.addEventListener('message', handleMessage);
-        return () => socket.removeEventListener('message', handleMessage);
-    }, [socket, lockedSelection, editor]);
+        );
+        return unsubscribe;
+    }, [lockedSelection, editor]);
 
     const handleChange = useCallback((newValue) => {
         const isAstChange = editor.operations.some(op => op.type !== 'set_selection');
@@ -213,19 +205,14 @@ function SlatePanel({ workspaceId, note, onSave, socket, isConnected }) {
             // Lock the selection while waiting for response
             setLockedSelection(popupState.selection);
 
-            // Send smart_update message via WebSocket
-            if (socket && isConnected) {
-                socket.send(JSON.stringify({
-                    type: "workspace_message",
-                    sub_type: "smart_update",
-                    message_original: originalMarkdown,
-                    query: instruction
-                }));
-                console.log('Sent smart_update:', { original: originalMarkdown, query: instruction });
-            } else {
-                console.error('WebSocket not connected for smart_update');
-                setLockedSelection(null); // Unlock if failed
-            }
+            // Send smart_update message via SOCKET_SEND channel
+            CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_SEND, {
+                type: "workspace_message",
+                sub_type: "smart_update",
+                message_original: originalMarkdown,
+                query: instruction
+            });
+            console.log('Sent smart_update:', { original: originalMarkdown, query: instruction });
         }
         setPopupState({ show: false, text: '', position: { top: 0, left: 0 }, selection: null });
         setSavedSelection(null);
@@ -403,7 +390,7 @@ function SlatePanel({ workspaceId, note, onSave, socket, isConnected }) {
     );
 }
 
-export default function NotePanel({ workspaceId, note, socket, isConnected }) {
+export default function NotePanel({ workspaceId, note }) {
     const [isSaving, setIsSaving] = useState(false);
 
     const handleSave = () => {
@@ -423,7 +410,7 @@ export default function NotePanel({ workspaceId, note, socket, isConnected }) {
                 <div className={`note-divider ${isSaving ? 'saving' : ''}`}></div>
 
                 <div className="note-content">
-                    <SlatePanel workspaceId={workspaceId} note={note} onSave={handleSave} socket={socket} isConnected={isConnected} />
+                    <SlatePanel workspaceId={workspaceId} note={note} onSave={handleSave} />
                 </div>
             </div>
         </LiquidGlassDiv>

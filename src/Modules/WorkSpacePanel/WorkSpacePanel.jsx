@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import NoteTakingContent from "./NoteTakingContent.jsx";
 import { getWorkspace, getChatHistory, getProcessedTranscript, connectToChatSession } from "../../Api/gateway.js";
+import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
 
 export default function WorkSpacePanel({ workspaceId, onLeave, onWorkspaceNameChange }) {
     const [workspaceData, setWorkspaceData] = useState({ note: '', transcript: '', processed_transcript: [], meta_data: null });
@@ -79,6 +80,50 @@ export default function WorkSpacePanel({ workspaceId, onLeave, onWorkspaceNameCh
         };
     }, [workspaceId]);
 
+    // Centralized WebSocket message handling
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleMessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('WebSocket received:', data);
+
+                if (data.type === 'agent_message' || data.type === 'agent_chunk') {
+                    CommendDispatcher.Publish2Channel(ChannelEnum.CHAT_MESSAGE, data);
+                }
+                else if (data.type === 'workspace_message') {
+                    if (data.sub_type === 'process_status') {
+                        CommendDispatcher.Publish2Channel(ChannelEnum.PROCESS_STATUS, data);
+                    }
+                    else if (data.sub_type === 'smart_update_result') {
+                        CommendDispatcher.Publish2Channel(ChannelEnum.SMART_UPDATE, data);
+                    }
+                }
+            } catch (error) {
+                console.error('Error parsing WebSocket message:', error);
+            }
+        };
+
+        socket.addEventListener('message', handleMessage);
+        return () => socket.removeEventListener('message', handleMessage);
+    }, [socket]);
+
+    // Listen for SOCKET_SEND requests from child components
+    useEffect(() => {
+        const unsubscribe = CommendDispatcher.Subscribe2Channel(
+            ChannelEnum.SOCKET_SEND,
+            (payload) => {
+                if (socket && isConnected) {
+                    socket.send(JSON.stringify(payload));
+                } else {
+                    console.error('WebSocket not connected');
+                }
+            }
+        );
+        return unsubscribe;
+    }, [socket, isConnected]);
+
     return (
         <div className="workspace-main">
             <NoteTakingContent
@@ -87,7 +132,6 @@ export default function WorkSpacePanel({ workspaceId, onLeave, onWorkspaceNameCh
                 transcript={workspaceData.transcript}
                 processedTranscript={workspaceData.processed_transcript}
                 initialMetadata={workspaceData.meta_data}
-                socket={socket}
                 isConnected={isConnected}
                 chatHistory={chatHistory}
             />

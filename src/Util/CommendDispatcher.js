@@ -62,6 +62,11 @@ export const ChannelEnum = Object.freeze({
     DISPLAY_CONTROL: 'DISPLAY_CONTROL',
     REFRESH_CONTROL: 'REFRESH_CONTROL',
     TEXT_SELECT: 'TEXT_SELECT',
+    // WebSocket message channels
+    CHAT_MESSAGE: 'CHAT_MESSAGE',
+    PROCESS_STATUS: 'PROCESS_STATUS',
+    SMART_UPDATE: 'SMART_UPDATE',
+    SOCKET_SEND: 'SOCKET_SEND',
 });
 
 class CommendDispatcher {

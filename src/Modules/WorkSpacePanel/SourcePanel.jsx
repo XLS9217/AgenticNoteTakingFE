@@ -207,7 +207,7 @@ function MetadataSection({ topics, speakers }) {
 }
 
 // Main SourcePanel Component
-export default function SourcePanel({ workspaceId, processedTranscript, metadata, socket, isConnected }) {
+export default function SourcePanel({ workspaceId, processedTranscript, metadata }) {
     const [rawTranscript, setRawTranscript] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [processStatus, setProcessStatus] = useState(null);
@@ -253,17 +253,10 @@ export default function SourcePanel({ workspaceId, processedTranscript, metadata
     const handleProcess = () => {
         setIsProcessing(true);
         setProcessStatus('Starting');
-
-        if (socket && isConnected) {
-            socket.send(JSON.stringify({
-                type: "workspace_message",
-                sub_type: "process_transcript"
-            }));
-        } else {
-            console.error('WebSocket not connected');
-            setIsProcessing(false);
-            setProcessStatus(null);
-        }
+        CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_SEND, {
+            type: "workspace_message",
+            sub_type: "process_transcript"
+        });
     };
 
     useEffect(() => {
@@ -278,38 +271,27 @@ export default function SourcePanel({ workspaceId, processedTranscript, metadata
         }
     }, [metadata]);
 
+    // Subscribe to PROCESS_STATUS channel
     useEffect(() => {
-        if (!socket) return;
+        const unsubscribe = CommendDispatcher.Subscribe2Channel(
+            ChannelEnum.PROCESS_STATUS,
+            (data) => {
+                const status = data.status;
+                setProcessStatus(status);
 
-        const handleMessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-
-                if (data.type === 'workspace_message' && data.sub_type === 'process_status') {
-                    const status = data.status;
-                    setProcessStatus(status);
-
-                    if (status === 'Done') {
-                        setIsProcessing(false);
-                        fetchProcessedTranscript();
-                        fetchMetadata();
-                    } else if (status === 'Error' || status === 'None') {
-                        setIsProcessing(false);
-                    } else {
-                        setIsProcessing(true);
-                    }
+                if (status === 'Done') {
+                    setIsProcessing(false);
+                    fetchProcessedTranscript();
+                    fetchMetadata();
+                } else if (status === 'Error' || status === 'None') {
+                    setIsProcessing(false);
+                } else {
+                    setIsProcessing(true);
                 }
-            } catch (error) {
-                console.error('Error parsing message:', error);
             }
-        };
-
-        socket.addEventListener('message', handleMessage);
-
-        return () => {
-            socket.removeEventListener('message', handleMessage);
-        };
-    }, [socket, fetchProcessedTranscript, fetchMetadata]);
+        );
+        return unsubscribe;
+    }, [fetchProcessedTranscript, fetchMetadata]);
 
     return (
         <LiquidGlassDiv blurriness={0.5} variant="workspace">

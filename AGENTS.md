@@ -1,101 +1,137 @@
-# Slide Transition Animation Plan
+# Centralized WebSocket Message Handling Plan
 
 ## Goal
-When clicking a workspace card, workspace selection slides left out while note-taking view slides left in. When clicking back button (menu icon), the reverse happens.
+Move all WebSocket message handling to WorkSpacePanel.jsx and use CommendDispatcher to route messages to the appropriate components via channels.
 
-## Files to modify
-- `src/Modules/Application.jsx` - Add transition state and wrapper
-- `src/Modules/Modules.css` - Add slide animation CSS
+## Current State
+- Socket created in `WorkSpacePanel.jsx`
+- Each component adds its own `socket.addEventListener('message', ...)`:
+  - `ChatBox.jsx` - handles `agent_message`, `agent_chunk`
+  - `SourcePanel.jsx` - handles `workspace_message` with `sub_type: 'process_status'`
+  - `NotePanel.jsx` - handles `workspace_message` with `sub_type: 'smart_update_result'`
 
-## Implementation Steps
+## New Architecture
 
-### Step 1: Add transition state to Application.jsx
-- Add `transitionDirection` state: `'none' | 'slide-left' | 'slide-right'`
-- Wrap workspace selection and workspace panel in a transition container
-- When selecting workspace: set direction to `'slide-left'`, after animation set view
-- When going back: set direction to `'slide-right'`, after animation set view
-
-### Step 2: Create CSS animations
-```css
-.view-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.view-slide {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  transition: transform 0.3s ease-in-out;
-}
-
-/* Workspace selection - slides out left when entering workspace */
-.view-slide--selection.slide-left-exit {
-  transform: translateX(-100%);
-}
-
-/* Workspace panel - slides in from right when entering */
-.view-slide--workspace.slide-left-enter {
-  transform: translateX(0);
-}
-
-.view-slide--workspace.slide-left-enter-from {
-  transform: translateX(100%);
-}
-
-/* Reverse for going back */
-.view-slide--selection.slide-right-enter {
-  transform: translateX(0);
-}
-
-.view-slide--selection.slide-right-enter-from {
-  transform: translateX(-100%);
-}
-
-.view-slide--workspace.slide-right-exit {
-  transform: translateX(100%);
-}
+### Step 1: Add new channels to CommendDispatcher
+```javascript
+export const ChannelEnum = Object.freeze({
+    DISPLAY_CONTROL: 'DISPLAY_CONTROL',
+    REFRESH_CONTROL: 'REFRESH_CONTROL',
+    TEXT_SELECT: 'TEXT_SELECT',
+    // New channels for WebSocket messages
+    CHAT_MESSAGE: 'CHAT_MESSAGE',         // agent_message, agent_chunk
+    PROCESS_STATUS: 'PROCESS_STATUS',     // process_status updates
+    SMART_UPDATE: 'SMART_UPDATE',         // smart_update_result
+});
 ```
 
-### Step 3: Update Application.jsx logic
-1. When `onWorkspaceSelect` is called:
-   - Start slide-left animation
-   - After 300ms, update `activeWorkspace` state
+### Step 2: Centralize message handling in WorkSpacePanel.jsx
+```javascript
+useEffect(() => {
+    if (!socket) return;
 
-2. When `handleMenuClick` (back) is called:
-   - Start slide-right animation
-   - After 300ms, clear `activeWorkspace` state
+    const handleMessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
 
-### Step 4: Structure
-```jsx
-<div className="view-container">
-  {/* Workspace Selection */}
-  <div className={`view-slide view-slide--selection ${transitionClass}`}>
-    <WorkspaceSelection ... />
-  </div>
+            // Route to appropriate channel based on message type
+            if (data.type === 'agent_message' || data.type === 'agent_chunk') {
+                CommendDispatcher.Publish2Channel(ChannelEnum.CHAT_MESSAGE, data);
+            }
+            else if (data.type === 'workspace_message') {
+                if (data.sub_type === 'process_status') {
+                    CommendDispatcher.Publish2Channel(ChannelEnum.PROCESS_STATUS, data);
+                }
+                else if (data.sub_type === 'smart_update_result') {
+                    CommendDispatcher.Publish2Channel(ChannelEnum.SMART_UPDATE, data);
+                }
+            }
+        } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
+        }
+    };
 
-  {/* Workspace Panel */}
-  <div className={`view-slide view-slide--workspace ${transitionClass}`}>
-    <WorkSpacePanel ... />
-  </div>
-</div>
+    socket.addEventListener('message', handleMessage);
+    return () => socket.removeEventListener('message', handleMessage);
+}, [socket]);
 ```
 
-## Animation Flow
+### Step 3: Update child components to subscribe via CommendDispatcher
 
-### Entering workspace (slide left):
-1. Selection is visible at translateX(0)
-2. Workspace is hidden at translateX(100%)
-3. Trigger animation
-4. Selection moves to translateX(-100%)
-5. Workspace moves to translateX(0)
+**ChatBox.jsx:**
+- Remove: `socket` prop, `socket.addEventListener`
+- Add: Subscribe to `CHAT_MESSAGE` channel
+```javascript
+useEffect(() => {
+    const unsubscribe = CommendDispatcher.Subscribe2Channel(
+        ChannelEnum.CHAT_MESSAGE,
+        (data) => {
+            if (data.type === 'agent_message') {
+                setMessages(prev => [...prev, { id: Date.now(), user: 'AI', text: data.text }]);
+            } else if (data.type === 'agent_chunk') {
+                setCurrentChunk(data);
+            }
+        }
+    );
+    return unsubscribe;
+}, []);
+```
 
-### Leaving workspace (slide right):
-1. Workspace is visible at translateX(0)
-2. Selection is hidden at translateX(-100%)
-3. Trigger animation
-4. Workspace moves to translateX(100%)
-5. Selection moves to translateX(0)
- 
+**SourcePanel.jsx:**
+- Remove: `socket` prop, `socket.addEventListener`
+- Add: Subscribe to `PROCESS_STATUS` channel
+```javascript
+useEffect(() => {
+    const unsubscribe = CommendDispatcher.Subscribe2Channel(
+        ChannelEnum.PROCESS_STATUS,
+        (data) => {
+            const status = data.status;
+            setProcessStatus(status);
+            // ... rest of logic
+        }
+    );
+    return unsubscribe;
+}, []);
+```
+
+**NotePanel.jsx:**
+- Remove: `socket` prop, `socket.addEventListener`
+- Add: Subscribe to `SMART_UPDATE` channel
+```javascript
+useEffect(() => {
+    const unsubscribe = CommendDispatcher.Subscribe2Channel(
+        ChannelEnum.SMART_UPDATE,
+        (data) => {
+            // Handle smart_update_result
+        }
+    );
+    return unsubscribe;
+}, []);
+```
+
+### Step 4: Update props
+
+**Remove socket prop from:**
+- `NoteTakingContent.jsx` - no longer passes socket to children
+- `ChatBox.jsx`
+- `SourcePanel.jsx`
+- `NotePanel.jsx`
+
+**Keep socket in WorkSpacePanel for:**
+- Sending messages (still needed for `socket.send()`)
+- Could expose a `sendMessage` function via context or dispatcher if needed
+
+### Files to modify:
+1. `src/Util/CommendDispatcher.js` - Add new channels
+2. `src/Modules/WorkSpacePanel/WorkSpacePanel.jsx` - Centralize message handling
+3. `src/Modules/WorkSpacePanel/NoteTakingContent.jsx` - Remove socket props
+4. `src/Modules/WorkSpacePanel/ChatBox.jsx` - Subscribe to CHAT_MESSAGE
+5. `src/Modules/WorkSpacePanel/SourcePanel.jsx` - Subscribe to PROCESS_STATUS
+6. `src/Modules/WorkSpacePanel/NotePanel.jsx` - Subscribe to SMART_UPDATE
+
+## Benefits
+- Single point of WebSocket message parsing
+- Clear separation of concerns
+- Components don't need socket prop drilling
+- Easier to add new message types
+- Easier to debug (single place to log all messages)

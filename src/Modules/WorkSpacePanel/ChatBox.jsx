@@ -109,7 +109,7 @@ function UserInputArea({ onSendMessage, selectionData, onPreviewClick }) {
     );
 }
 
-export default function ChatBox({ chatHistory, socket, isConnected }) {
+export default function ChatBox({ chatHistory, isConnected }) {
     const [messages, setMessages] = useState([]);
     const [currentChunk, setCurrentChunk] = useState(null);
     const [selectionData, setSelectionData] = useState(null);
@@ -123,11 +123,31 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
         scrollToBottom();
     }, [messages, currentChunk]);
 
+    // Subscribe to TEXT_SELECT channel
     useEffect(() => {
         const unsubscribe = CommendDispatcher.Subscribe2Channel(
             ChannelEnum.TEXT_SELECT,
             (payload) => {
                 setSelectionData(payload);
+            }
+        );
+        return unsubscribe;
+    }, []);
+
+    // Subscribe to CHAT_MESSAGE channel for agent messages
+    useEffect(() => {
+        const unsubscribe = CommendDispatcher.Subscribe2Channel(
+            ChannelEnum.CHAT_MESSAGE,
+            (data) => {
+                if (data.type === 'agent_message') {
+                    setMessages(prev => [...prev, {
+                        id: Date.now(),
+                        user: 'AI',
+                        text: data.text
+                    }]);
+                } else if (data.type === 'agent_chunk') {
+                    setCurrentChunk(data);
+                }
             }
         );
         return unsubscribe;
@@ -140,7 +160,6 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
     };
 
     const getConnectionStatus = () => {
-        if (!socket) return { color: '🟡', text: 'Loading...' };
         if (!isConnected) return { color: '🔴', text: 'Disconnected' };
         return { color: '🟢', text: 'Connected' };
     };
@@ -155,37 +174,6 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
             setMessages(loadedMessages);
         }
     }, [chatHistory]);
-
-    useEffect(() => {
-        if (!socket) return;
-
-        const handleMessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                console.log('Received message:', data);
-
-                if (data.type === 'agent_message') {
-                    setMessages(prev => [...prev, {
-                        id: Date.now(),
-                        user: 'AI',
-                        text: data.text
-                    }]);
-                } else if (data.type === "agent_chunk") {
-                    setCurrentChunk(data);
-                } else if (data.error) {
-                    console.error('Error from server:', data.error);
-                }
-            } catch (error) {
-                console.error('Error parsing message:', error);
-            }
-        };
-
-        socket.addEventListener('message', handleMessage);
-
-        return () => {
-            socket.removeEventListener('message', handleMessage);
-        };
-    }, [socket]);
 
     const handleMessageComplete = (completeText) => {
         setMessages(prev => [...prev, {
@@ -205,20 +193,16 @@ export default function ChatBox({ chatHistory, socket, isConnected }) {
         };
         setMessages(prev => [...prev, userMessage]);
 
-        if (socket && isConnected) {
-            const payload = {
-                type: "user_message",
-                user: "default",
-                text: text,
-            };
-            if (selectionData?.markdown) {
-                payload.extra = { selected: selectionData.markdown };
-            }
-            socket.send(JSON.stringify(payload));
-            setSelectionData(null);
-        } else {
-            console.error('WebSocket not connected');
+        const payload = {
+            type: "user_message",
+            user: "default",
+            text: text,
+        };
+        if (selectionData?.markdown) {
+            payload.extra = { selected: selectionData.markdown };
         }
+        CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_SEND, payload);
+        setSelectionData(null);
     };
 
     const status = getConnectionStatus();
