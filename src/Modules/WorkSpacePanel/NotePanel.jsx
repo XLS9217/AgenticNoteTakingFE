@@ -85,13 +85,78 @@ function SlatePanel({ workspaceId, note, onSave }) {
 
     const saveNote = useCallback(() => {
         const markdown = richTextConvertor.slate2md(editor.children);
-        console.log('Saving to backend - Slate children:', JSON.stringify(editor.children, null, 2));
+        // console.log('Saving to backend - Slate children:', JSON.stringify(editor.children, null, 2));
         console.log('Saving to backend - Markdown:', markdown);
         onSave();
         updateNote(workspaceId, markdown).catch(error => {
             console.error('Error saving note:', error);
         });
     }, [editor, workspaceId, onSave]);
+
+    // Find text in Slate editor and return Range
+    const findTextRange = useCallback((searchMarkdown) => {
+        // Convert search markdown to plain text for matching
+        const searchNodes = richTextConvertor.md2slate(searchMarkdown);
+        const searchText = searchNodes.map(node =>
+            node.children?.map(child => child.text || '').join('') || ''
+        ).join('\n').trim();
+
+        // Search through editor content
+        const allText = Editor.string(editor, []);
+        const index = allText.indexOf(searchText);
+
+        if (index === -1) {
+            console.warn('Could not find text in editor:', searchText);
+            return null;
+        }
+
+        // Convert character index to Slate path/offset
+        let charCount = 0;
+        let startPoint = null;
+        let endPoint = null;
+        const endIndex = index + searchText.length;
+
+        for (const [node, path] of Editor.nodes(editor, { at: [], match: Text.isText })) {
+            const nodeText = node.text;
+            const nodeStart = charCount;
+            const nodeEnd = charCount + nodeText.length;
+
+            // Find start point
+            if (!startPoint && index >= nodeStart && index < nodeEnd) {
+                startPoint = { path, offset: index - nodeStart };
+            }
+
+            // Find end point
+            if (!endPoint && endIndex > nodeStart && endIndex <= nodeEnd) {
+                endPoint = { path, offset: endIndex - nodeStart };
+            }
+
+            if (startPoint && endPoint) break;
+            charCount = nodeEnd;
+        }
+
+        if (startPoint && endPoint) {
+            return { anchor: startPoint, focus: endPoint };
+        }
+        return null;
+    }, [editor]);
+
+    // Subscribe to SMART_UPDATE_LOCK channel
+    useEffect(() => {
+        const unsubscribe = CommendDispatcher.Subscribe2Channel(
+            ChannelEnum.SMART_UPDATE_LOCK,
+            (data) => {
+                console.log('Received smart_update_lock:', data.lock_text);
+                const range = findTextRange(data.lock_text);
+                if (range) {
+                    setLockedSelection(range);
+                } else {
+                    console.error('Failed to find and lock text');
+                }
+            }
+        );
+        return unsubscribe;
+    }, [findTextRange]);
 
     // Subscribe to SMART_UPDATE channel
     useEffect(() => {
@@ -202,10 +267,8 @@ function SlatePanel({ workspaceId, note, onSave }) {
             const selectedFragment = Editor.fragment(editor, popupState.selection);
             const originalMarkdown = richTextConvertor.slate2md(selectedFragment);
 
-            // Lock the selection while waiting for response
-            setLockedSelection(popupState.selection);
-
             // Send smart_update message via SOCKET_SEND channel
+            // Lock will come from backend via SMART_UPDATE_LOCK channel
             CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_SEND, {
                 type: "workspace_message",
                 sub_type: "smart_update",

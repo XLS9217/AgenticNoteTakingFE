@@ -44,13 +44,14 @@ export function connectSocket(workspaceId) {
     socket.onopen = () => {
         console.log('WebSocket connected');
         isConnected = true;
-        CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_STATUS, { connected: true });
 
-        // Send workspace switch message
+        // Send workspace switch message first, before notifying subscribers
         socket.send(JSON.stringify({
             type: "workspace_switch",
             workspace_id: workspaceId
         }));
+
+        CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_STATUS, { connected: true });
     };
 
     socket.onclose = () => {
@@ -77,6 +78,9 @@ export function connectSocket(workspaceId) {
                 if (data.sub_type === 'process_status') {
                     CommendDispatcher.Publish2Channel(ChannelEnum.PROCESS_STATUS, data);
                 }
+                else if (data.sub_type === 'smart_update_lock') {
+                    CommendDispatcher.Publish2Channel(ChannelEnum.SMART_UPDATE_LOCK, data);
+                }
                 else if (data.sub_type === 'smart_update_result') {
                     CommendDispatcher.Publish2Channel(ChannelEnum.SMART_UPDATE, data);
                 }
@@ -93,7 +97,7 @@ export function connectSocket(workspaceId) {
     sendSubscription = CommendDispatcher.Subscribe2Channel(
         ChannelEnum.SOCKET_SEND,
         (payload) => {
-            if (socket && isConnected) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
                 socket.send(JSON.stringify(payload));
             } else {
                 console.error('WebSocket not connected');

@@ -65,6 +65,7 @@ export const ChannelEnum = Object.freeze({
     // WebSocket message channels
     CHAT_MESSAGE: 'CHAT_MESSAGE',
     PROCESS_STATUS: 'PROCESS_STATUS',
+    SMART_UPDATE_LOCK: 'SMART_UPDATE_LOCK',
     SMART_UPDATE: 'SMART_UPDATE',
     SOCKET_SEND: 'SOCKET_SEND',
     SOCKET_STATUS: 'SOCKET_STATUS',
