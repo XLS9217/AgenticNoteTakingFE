@@ -1,137 +1,172 @@
-# Centralized WebSocket Message Handling Plan
+# Backend Markdown Insertion Plan
 
 ## Goal
-Move all WebSocket message handling to WorkSpacePanel.jsx and use CommendDispatcher to route messages to the appropriate components via channels.
+Backend sends markdown content to FE, FE determines where to insert it in the Slate editor.
 
-## Current State
-- Socket created in `WorkSpacePanel.jsx`
-- Each component adds its own `socket.addEventListener('message', ...)`:
-  - `ChatBox.jsx` - handles `agent_message`, `agent_chunk`
-  - `SourcePanel.jsx` - handles `workspace_message` with `sub_type: 'process_status'`
-  - `NotePanel.jsx` - handles `workspace_message` with `sub_type: 'smart_update_result'`
+## Challenge
+Slate uses a tree structure with paths (e.g., `[0, 1, 2]`) and offsets. We need a way for the backend to specify "where" without knowing Slate's internal structure.
 
-## New Architecture
+## Possible Approaches
 
-### Step 1: Add new channels to CommendDispatcher
-```javascript
-export const ChannelEnum = Object.freeze({
-    DISPLAY_CONTROL: 'DISPLAY_CONTROL',
-    REFRESH_CONTROL: 'REFRESH_CONTROL',
-    TEXT_SELECT: 'TEXT_SELECT',
-    // New channels for WebSocket messages
-    CHAT_MESSAGE: 'CHAT_MESSAGE',         // agent_message, agent_chunk
-    PROCESS_STATUS: 'PROCESS_STATUS',     // process_status updates
-    SMART_UPDATE: 'SMART_UPDATE',         // smart_update_result
-});
+### Approach 1: Anchor Text Matching
+Backend sends:
+```json
+{
+  "sub_type": "insert_content",
+  "anchor_text": "some existing text to find",
+  "position": "after",  // "before", "after", "replace"
+  "content": "# New markdown content\n\nWith paragraphs..."
+}
 ```
 
-### Step 2: Centralize message handling in WorkSpacePanel.jsx
+**FE Logic:**
+1. Search for `anchor_text` in editor using `Editor.string()` or iterate nodes
+2. Find the Slate path of that text
+3. Insert new nodes before/after that path
+
+**Pros:** Simple, works without knowing Slate structure
+**Cons:** Anchor text must be unique, might not find if text was edited
+
+---
+
+### Approach 2: Section/Block ID System
+Add IDs to each block in Slate:
 ```javascript
-useEffect(() => {
-    if (!socket) return;
-
-    const handleMessage = (event) => {
-        try {
-            const data = JSON.parse(event.data);
-
-            // Route to appropriate channel based on message type
-            if (data.type === 'agent_message' || data.type === 'agent_chunk') {
-                CommendDispatcher.Publish2Channel(ChannelEnum.CHAT_MESSAGE, data);
-            }
-            else if (data.type === 'workspace_message') {
-                if (data.sub_type === 'process_status') {
-                    CommendDispatcher.Publish2Channel(ChannelEnum.PROCESS_STATUS, data);
-                }
-                else if (data.sub_type === 'smart_update_result') {
-                    CommendDispatcher.Publish2Channel(ChannelEnum.SMART_UPDATE, data);
-                }
-            }
-        } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
-        }
-    };
-
-    socket.addEventListener('message', handleMessage);
-    return () => socket.removeEventListener('message', handleMessage);
-}, [socket]);
+// Slate node with ID
+{ type: 'paragraph', id: 'block_123', children: [{ text: '...' }] }
 ```
 
-### Step 3: Update child components to subscribe via CommendDispatcher
-
-**ChatBox.jsx:**
-- Remove: `socket` prop, `socket.addEventListener`
-- Add: Subscribe to `CHAT_MESSAGE` channel
-```javascript
-useEffect(() => {
-    const unsubscribe = CommendDispatcher.Subscribe2Channel(
-        ChannelEnum.CHAT_MESSAGE,
-        (data) => {
-            if (data.type === 'agent_message') {
-                setMessages(prev => [...prev, { id: Date.now(), user: 'AI', text: data.text }]);
-            } else if (data.type === 'agent_chunk') {
-                setCurrentChunk(data);
-            }
-        }
-    );
-    return unsubscribe;
-}, []);
+Backend sends:
+```json
+{
+  "sub_type": "insert_content",
+  "target_block_id": "block_123",
+  "position": "after",
+  "content": "# New content..."
+}
 ```
 
-**SourcePanel.jsx:**
-- Remove: `socket` prop, `socket.addEventListener`
-- Add: Subscribe to `PROCESS_STATUS` channel
-```javascript
-useEffect(() => {
-    const unsubscribe = CommendDispatcher.Subscribe2Channel(
-        ChannelEnum.PROCESS_STATUS,
-        (data) => {
-            const status = data.status;
-            setProcessStatus(status);
-            // ... rest of logic
-        }
-    );
-    return unsubscribe;
-}, []);
+**FE Logic:**
+1. Find node by ID using `Editor.nodes()` with matcher
+2. Get its path
+3. Insert at calculated position
+
+**Pros:** Reliable, survives text edits
+**Cons:** Need to generate/sync IDs, more complex
+
+---
+
+### Approach 3: Cursor Position
+Use current cursor position as insertion point.
+
+Backend sends:
+```json
+{
+  "sub_type": "insert_at_cursor",
+  "content": "# New content..."
+}
 ```
 
-**NotePanel.jsx:**
-- Remove: `socket` prop, `socket.addEventListener`
-- Add: Subscribe to `SMART_UPDATE` channel
-```javascript
-useEffect(() => {
-    const unsubscribe = CommendDispatcher.Subscribe2Channel(
-        ChannelEnum.SMART_UPDATE,
-        (data) => {
-            // Handle smart_update_result
-        }
-    );
-    return unsubscribe;
-}, []);
+**FE Logic:**
+1. Get current `editor.selection`
+2. Insert nodes at selection point
+3. Or append at end if no selection
+
+**Pros:** Simplest, natural UX
+**Cons:** User must position cursor first
+
+---
+
+### Approach 4: Line Number Based
+Backend specifies line number.
+
+Backend sends:
+```json
+{
+  "sub_type": "insert_content",
+  "after_line": 5,
+  "content": "# New content..."
+}
 ```
 
-### Step 4: Update props
+**FE Logic:**
+1. Count block-level nodes to find line 5
+2. Insert after that node
 
-**Remove socket prop from:**
-- `NoteTakingContent.jsx` - no longer passes socket to children
-- `ChatBox.jsx`
-- `SourcePanel.jsx`
-- `NotePanel.jsx`
+**Pros:** Simple concept
+**Cons:** Line numbers change as content changes
 
-**Keep socket in WorkSpacePanel for:**
-- Sending messages (still needed for `socket.send()`)
-- Could expose a `sendMessage` function via context or dispatcher if needed
+---
 
-### Files to modify:
-1. `src/Util/CommendDispatcher.js` - Add new channels
-2. `src/Modules/WorkSpacePanel/WorkSpacePanel.jsx` - Centralize message handling
-3. `src/Modules/WorkSpacePanel/NoteTakingContent.jsx` - Remove socket props
-4. `src/Modules/WorkSpacePanel/ChatBox.jsx` - Subscribe to CHAT_MESSAGE
-5. `src/Modules/WorkSpacePanel/SourcePanel.jsx` - Subscribe to PROCESS_STATUS
-6. `src/Modules/WorkSpacePanel/NotePanel.jsx` - Subscribe to SMART_UPDATE
+## Recommended Approach: Hybrid (Anchor + Cursor Fallback)
 
-## Benefits
-- Single point of WebSocket message parsing
-- Clear separation of concerns
-- Components don't need socket prop drilling
-- Easier to add new message types
-- Easier to debug (single place to log all messages)
+Combine Approach 1 and 3:
+
+```json
+{
+  "sub_type": "insert_content",
+  "anchor_text": "optional text to find",  // nullable
+  "position": "after",  // "before", "after", "append", "prepend"
+  "content": "# Markdown to insert..."
+}
+```
+
+**Logic:**
+1. If `anchor_text` provided → find it, insert relative to it
+2. If not found or not provided → use current cursor position
+3. If no cursor → append to end
+
+**Implementation in NotePanel.jsx:**
+```javascript
+const handleInsertContent = (data) => {
+  const { anchor_text, position, content } = data;
+  const newNodes = richTextConvertor.md2slate(content);
+
+  let targetPath = null;
+
+  // Try to find anchor text
+  if (anchor_text) {
+    const range = findTextRange(anchor_text);
+    if (range) {
+      targetPath = range.anchor.path.slice(0, 1); // Get block path
+    }
+  }
+
+  // Fallback to cursor
+  if (!targetPath && editor.selection) {
+    targetPath = editor.selection.anchor.path.slice(0, 1);
+  }
+
+  // Fallback to end
+  if (!targetPath) {
+    targetPath = [editor.children.length - 1];
+  }
+
+  // Calculate insert position
+  const insertPath = position === 'before'
+    ? targetPath
+    : [targetPath[0] + 1];
+
+  Transforms.insertNodes(editor, newNodes, { at: insertPath });
+};
+```
+
+## New Channel Needed
+Add to CommendDispatcher:
+```javascript
+INSERT_CONTENT: 'INSERT_CONTENT'
+```
+
+## Backend Message Format
+```python
+class NotetakingInsertContent(SubWorkspaceMessageBase):
+    sub_type: Literal["insert_content"]
+    anchor_text: str | None = None
+    position: Literal["before", "after", "append", "prepend"] = "after"
+    content: str  # markdown
+```
+
+## Questions to Consider
+1. Should we support replacing a range of text (not just single anchor)?
+2. Do we need undo/redo support for these insertions?
+3. Should the insertion trigger auto-save?

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import { createWorkspace, getMyWorkspaces, deleteWorkspace } from "../../Api/gateway.js";
+import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
 
 function NewWorkspaceCard({ onClick }) {
     return (
@@ -47,6 +48,8 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
     const fetchWorkspaces = async () => {
         try {
             const ownerWorkspaces = await getMyWorkspaces();
+            // Sort by updated_at descending (newest first)
+            ownerWorkspaces.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
             setWorkspaces(ownerWorkspaces);
         } catch (error) {
             console.error('Failed to fetch workspaces:', error);
@@ -55,7 +58,20 @@ export default function WorkspaceSelection({ onWorkspaceSelect, userInfo }) {
 
     useEffect(() => {
         fetchWorkspaces();
-    }, [username]);
+    }, []);
+
+    // Subscribe to REFRESH_CONTROL to refresh list when returning from workspace
+    useEffect(() => {
+        const unsubscribe = CommendDispatcher.Subscribe2Channel(
+            ChannelEnum.REFRESH_CONTROL,
+            (data) => {
+                if (data?.target === 'workspaces') {
+                    fetchWorkspaces();
+                }
+            }
+        );
+        return unsubscribe;
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = () => setOpenMenuId(null);

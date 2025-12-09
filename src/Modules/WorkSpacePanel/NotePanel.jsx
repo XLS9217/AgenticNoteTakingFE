@@ -95,44 +95,59 @@ function SlatePanel({ workspaceId, note, onSave }) {
 
     // Find text in Slate editor and return Range
     const findTextRange = useCallback((searchMarkdown) => {
-        // Convert search markdown to plain text for matching
-        const searchNodes = richTextConvertor.md2slate(searchMarkdown);
-        const searchText = searchNodes.map(node =>
-            node.children?.map(child => child.text || '').join('') || ''
-        ).join('\n').trim();
+        // Use raw markdown text directly for search (trim whitespace)
+        const searchText = searchMarkdown.trim();
 
-        // Search through editor content
-        const allText = Editor.string(editor, []);
-        const index = allText.indexOf(searchText);
+        // Get editor content as plain text with newlines between blocks
+        const editorText = editor.children.map(node =>
+            node.children?.map(child => child.text || '').join('') || ''
+        ).join('\n');
+
+        const index = editorText.indexOf(searchText);
 
         if (index === -1) {
-            console.warn('Could not find text in editor:', searchText);
+            console.warn('Could not find text in editor:', searchText, 'Editor text:', editorText);
             return null;
         }
 
         // Convert character index to Slate path/offset
+        // Account for newlines between blocks
         let charCount = 0;
         let startPoint = null;
         let endPoint = null;
         const endIndex = index + searchText.length;
 
-        for (const [node, path] of Editor.nodes(editor, { at: [], match: Text.isText })) {
-            const nodeText = node.text;
-            const nodeStart = charCount;
-            const nodeEnd = charCount + nodeText.length;
+        for (let blockIdx = 0; blockIdx < editor.children.length; blockIdx++) {
+            const block = editor.children[blockIdx];
+            const blockChildren = block.children || [];
 
-            // Find start point
-            if (!startPoint && index >= nodeStart && index < nodeEnd) {
-                startPoint = { path, offset: index - nodeStart };
+            for (let childIdx = 0; childIdx < blockChildren.length; childIdx++) {
+                const child = blockChildren[childIdx];
+                if (!Text.isText(child)) continue;
+
+                const nodeText = child.text;
+                const nodeStart = charCount;
+                const nodeEnd = charCount + nodeText.length;
+
+                // Find start point
+                if (!startPoint && index >= nodeStart && index < nodeEnd) {
+                    startPoint = { path: [blockIdx, childIdx], offset: index - nodeStart };
+                }
+
+                // Find end point
+                if (!endPoint && endIndex > nodeStart && endIndex <= nodeEnd) {
+                    endPoint = { path: [blockIdx, childIdx], offset: endIndex - nodeStart };
+                }
+
+                if (startPoint && endPoint) {
+                    return { anchor: startPoint, focus: endPoint };
+                }
+
+                charCount = nodeEnd;
             }
 
-            // Find end point
-            if (!endPoint && endIndex > nodeStart && endIndex <= nodeEnd) {
-                endPoint = { path, offset: endIndex - nodeStart };
-            }
-
-            if (startPoint && endPoint) break;
-            charCount = nodeEnd;
+            // Add newline between blocks
+            charCount += 1;
         }
 
         if (startPoint && endPoint) {

@@ -6,6 +6,7 @@ import WorkspaceSelection from "./UserPanel/WorkspaceSelection.jsx";
 import UserPanel from "./UserPanel/UserPanel.jsx";
 import AppHeader from "./AppHeader.jsx";
 import { changeWorkspaceName } from "../Api/gateway.js";
+import CommendDispatcher, { ChannelEnum } from "../Util/CommendDispatcher.js";
 
 export default function Application() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -28,6 +29,7 @@ export default function Application() {
 
     const handleLeaveWorkspace = () => {
         setSlideDirection('slide-right');
+        CommendDispatcher.Publish2Channel(ChannelEnum.REFRESH_CONTROL, { target: 'workspaces' });
         setTimeout(() => {
             setActiveWorkspace('');
             setWorkspaceName('');
