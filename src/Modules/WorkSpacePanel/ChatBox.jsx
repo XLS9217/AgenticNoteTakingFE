@@ -26,50 +26,106 @@ export function AgentMessage({ text }) {
 }
 
 export function RunningMessage({ chunkData, onMessageComplete, isWaiting, onStreamStart }) {
-    const [runningText, setRunningText] = useState('');
+    const [displayText, setDisplayText] = useState('');
     const [dots, setDots] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
+    const bufferRef = useRef('');
+    const displayTextRef = useRef('');
+    const isFinishedRef = useRef(false);
 
     // Animate dots: . .. ... ....
     useEffect(() => {
-        if (!isWaiting && !runningText) return;
+        if (!isWaiting && !displayText) return;
         const interval = setInterval(() => {
             setDots(prev => prev.length >= 4 ? '' : prev + '.');
         }, 400);
         return () => clearInterval(interval);
-    }, [isWaiting, runningText]);
+    }, [isWaiting, displayText]);
 
+    // Handle incoming chunks - add to buffer
     useEffect(() => {
         if (!chunkData) return;
 
         if (chunkData.finished) {
-            // Message complete - notify parent and reset
-            if (runningText) {
-                onMessageComplete(runningText);
-                setRunningText('');
-            }
+            isFinishedRef.current = true;
         } else {
             // First chunk received - notify stream started
-            if (!runningText && onStreamStart) {
+            if (!bufferRef.current && !displayTextRef.current && onStreamStart) {
                 onStreamStart();
             }
-            // Append chunk to running text
-            setRunningText(prev => prev + chunkData.text);
+            // Add to buffer and start typing
+            bufferRef.current += chunkData.text;
+            if (!isTyping) {
+                setIsTyping(true);
+            }
         }
     }, [chunkData]);
 
+    // Typewriter effect - consume buffer char by char
+    useEffect(() => {
+        if (!isTyping) return;
+
+        const typeNextChar = () => {
+            if (bufferRef.current.length > 0) {
+                // Consume one character from buffer
+                const nextChar = bufferRef.current[0];
+                bufferRef.current = bufferRef.current.slice(1);
+                displayTextRef.current += nextChar;
+                setDisplayText(displayTextRef.current);
+
+                // Adaptive speed: faster if buffer is long, slower if short
+                const bufferLen = bufferRef.current.length;
+                let delay;
+                if (bufferLen > 50) {
+                    delay = 5;  // Very fast
+                } else if (bufferLen > 20) {
+                    delay = 15; // Fast
+                } else if (bufferLen > 5) {
+                    delay = 30; // Medium
+                } else {
+                    delay = 50; // Slow, but limited
+                }
+
+                setTimeout(typeNextChar, delay);
+            } else if (isFinishedRef.current) {
+                // Buffer empty and finished - complete message
+                onMessageComplete(displayTextRef.current);
+                displayTextRef.current = '';
+                setDisplayText('');
+                setIsTyping(false);
+                isFinishedRef.current = false;
+                bufferRef.current = '';
+            } else {
+                // Buffer empty but not finished - wait and check again
+                setTimeout(typeNextChar, 50);
+            }
+        };
+
+        typeNextChar();
+    }, [isTyping]);
+
     // Don't show anything if not waiting and no text
-    if (!isWaiting && !runningText) return null;
+    if (!isWaiting && !displayText) return null;
+
+    const showCursor = displayText && !isFinishedRef.current;
+
+    // Show thinking indicator as standalone when waiting but no text yet
+    if (isWaiting && !displayText) {
+        return (
+            <div className="thinking-indicator thinking-indicator--standalone">
+                <span className="processing-text-shimmer">thinking{dots}</span>
+            </div>
+        );
+    }
 
     return (
         <div className="message ai-message ai-message--streaming">
             <div className="thinking-indicator">
                 <span className="processing-text-shimmer">thinking{dots}</span>
             </div>
-            {runningText && (
-                <div className="message-content">
-                    <span className="message-text">{runningText}</span>
-                </div>
-            )}
+            <div className="message-content">
+                <span className="message-text">{displayText}{showCursor && <span className="typewriter-cursor">_</span>}</span>
+            </div>
         </div>
     );
 }
@@ -193,6 +249,7 @@ export default function ChatBox({ chatHistory, isConnected }) {
 
     const handleMessageComplete = (completeText) => {
         setIsWaiting(false);
+        setCurrentChunk(null);  // Clear chunk to prevent re-triggering
         setMessages(prev => [...prev, {
             id: Date.now(),
             user: 'AI',
