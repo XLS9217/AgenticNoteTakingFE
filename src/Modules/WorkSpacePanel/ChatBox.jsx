@@ -25,8 +25,18 @@ export function AgentMessage({ text }) {
     );
 }
 
-export function RunningMessage({ chunkData, onMessageComplete, debugForceShow = false }) {
+export function RunningMessage({ chunkData, onMessageComplete, isWaiting, onStreamStart }) {
     const [runningText, setRunningText] = useState('');
+    const [dots, setDots] = useState('');
+
+    // Animate dots: . .. ... ....
+    useEffect(() => {
+        if (!isWaiting && !runningText) return;
+        const interval = setInterval(() => {
+            setDots(prev => prev.length >= 4 ? '' : prev + '.');
+        }, 400);
+        return () => clearInterval(interval);
+    }, [isWaiting, runningText]);
 
     useEffect(() => {
         if (!chunkData) return;
@@ -38,23 +48,28 @@ export function RunningMessage({ chunkData, onMessageComplete, debugForceShow = 
                 setRunningText('');
             }
         } else {
+            // First chunk received - notify stream started
+            if (!runningText && onStreamStart) {
+                onStreamStart();
+            }
             // Append chunk to running text
             setRunningText(prev => prev + chunkData.text);
         }
     }, [chunkData]);
 
-    if (!runningText && !debugForceShow) return null;
+    // Don't show anything if not waiting and no text
+    if (!isWaiting && !runningText) return null;
 
     return (
         <div className="message ai-message ai-message--streaming">
-            <div className="streaming-indicator">
-                <span className="liquid-dot liquid-dot--1"></span>
-                <span className="liquid-dot liquid-dot--2"></span>
-                <span className="liquid-dot liquid-dot--3"></span>
+            <div className="thinking-indicator">
+                <span className="processing-text-shimmer">thinking{dots}</span>
             </div>
-            <div className="message-content">
-                <span className="message-text">{runningText || 'Debug: Streaming animation preview'}</span>
-            </div>
+            {runningText && (
+                <div className="message-content">
+                    <span className="message-text">{runningText}</span>
+                </div>
+            )}
         </div>
     );
 }
@@ -113,6 +128,7 @@ export default function ChatBox({ chatHistory, isConnected }) {
     const [messages, setMessages] = useState([]);
     const [currentChunk, setCurrentChunk] = useState(null);
     const [selectionData, setSelectionData] = useState(null);
+    const [isWaiting, setIsWaiting] = useState(false);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -121,7 +137,7 @@ export default function ChatBox({ chatHistory, isConnected }) {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages, currentChunk]);
+    }, [messages, currentChunk, isWaiting]);
 
     // Subscribe to TEXT_SELECT channel
     useEffect(() => {
@@ -176,11 +192,17 @@ export default function ChatBox({ chatHistory, isConnected }) {
     }, [chatHistory]);
 
     const handleMessageComplete = (completeText) => {
+        setIsWaiting(false);
         setMessages(prev => [...prev, {
             id: Date.now(),
             user: 'AI',
             text: completeText
         }]);
+    };
+
+    const handleStreamStart = () => {
+        // First chunk received, no longer in "thinking" state
+        // (streaming text will show instead)
     };
 
     const handleSendMessage = async (text) => {
@@ -192,6 +214,7 @@ export default function ChatBox({ chatHistory, isConnected }) {
             text: text
         };
         setMessages(prev => [...prev, userMessage]);
+        setIsWaiting(true);  // Show "Thinking..." immediately
 
         const payload = {
             type: "user_message",
@@ -226,7 +249,8 @@ export default function ChatBox({ chatHistory, isConnected }) {
                     <RunningMessage
                         chunkData={currentChunk}
                         onMessageComplete={handleMessageComplete}
-                        debugForceShow={false}
+                        isWaiting={isWaiting}
+                        onStreamStart={handleStreamStart}
                     />
                     <div ref={messagesEndRef} />
                 </LiquidGlassScrollBar>

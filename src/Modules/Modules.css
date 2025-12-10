@@ -453,6 +453,7 @@ Streaming Message Animation
 
 .ai-message--streaming {
   position: relative;
+  width: 86%;
 }
 
 .streaming-indicator {
@@ -1294,6 +1295,17 @@ Processing Shimmer Animation
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: shimmer 2s linear infinite;
+}
+
+/* Thinking indicator inside streaming message - smaller, top-left */
+.thinking-indicator {
+  margin-bottom: 4px;
+}
+
+.thinking-indicator .processing-text-shimmer {
+  font-size: 0.8em;
+  font-weight: 400;
+  padding: 0;
 }
 
 @keyframes shimmer {
