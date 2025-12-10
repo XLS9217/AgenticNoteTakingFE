@@ -1,172 +1,109 @@
-# Backend Markdown Insertion Plan
+# Smart Approach: Structure-Aware Text Matching
 
-## Goal
-Backend sends markdown content to FE, FE determines where to insert it in the Slate editor.
+## The Problem
+Backend sends markdown `lock_text`, but Slate stores structured nodes. Simple text search fails because `#` markers don't exist in editor.
 
-## Challenge
-Slate uses a tree structure with paths (e.g., `[0, 1, 2]`) and offsets. We need a way for the backend to specify "where" without knowing Slate's internal structure.
+## Better Solution: Match Structure + Content
 
-## Possible Approaches
+Instead of stripping markdown, **parse it and match node types**.
 
-### Approach 1: Anchor Text Matching
-Backend sends:
-```json
-{
-  "sub_type": "insert_content",
-  "anchor_text": "some existing text to find",
-  "position": "after",  // "before", "after", "replace"
-  "content": "# New markdown content\n\nWith paragraphs..."
-}
-```
+### Algorithm
 
-**FE Logic:**
-1. Search for `anchor_text` in editor using `Editor.string()` or iterate nodes
-2. Find the Slate path of that text
-3. Insert new nodes before/after that path
+1. Parse `lock_text` markdown into expected structure:
+   ```
+   "# Hello\nWorld" → [
+     { type: 'heading1', text: 'Hello' },
+     { type: 'paragraph', text: 'World' }
+   ]
+   ```
 
-**Pros:** Simple, works without knowing Slate structure
-**Cons:** Anchor text must be unique, might not find if text was edited
+2. Find matching sequence in Slate editor by **type + text**:
+   ```javascript
+   editor.children = [
+     { type: 'paragraph', children: [{ text: 'Intro' }] },      // skip
+     { type: 'heading1', children: [{ text: 'Hello' }] },       // ✓ match start
+     { type: 'paragraph', children: [{ text: 'World' }] },      // ✓ match end
+     { type: 'paragraph', children: [{ text: 'Footer' }] }      // skip
+   ]
+   ```
 
----
+3. Return range from first matched block to last matched block
 
-### Approach 2: Section/Block ID System
-Add IDs to each block in Slate:
+### Implementation
+
 ```javascript
-// Slate node with ID
-{ type: 'paragraph', id: 'block_123', children: [{ text: '...' }] }
-```
+const findTextRangeStructured = (searchMarkdown) => {
+    // Step 1: Parse markdown to expected structure
+    const expectedBlocks = parseMarkdownToBlocks(searchMarkdown);
+    // Result: [{ type: 'heading1', text: 'Hello' }, { type: 'paragraph', text: 'World' }]
 
-Backend sends:
-```json
-{
-  "sub_type": "insert_content",
-  "target_block_id": "block_123",
-  "position": "after",
-  "content": "# New content..."
-}
-```
+    // Step 2: Find matching sequence in editor
+    const editorBlocks = editor.children.map((node, idx) => ({
+        idx,
+        type: node.type,
+        text: node.children?.map(c => c.text || '').join('') || ''
+    })).filter(b => b.text.trim() !== '');
 
-**FE Logic:**
-1. Find node by ID using `Editor.nodes()` with matcher
-2. Get its path
-3. Insert at calculated position
+    // Step 3: Search for matching subsequence
+    for (let startIdx = 0; startIdx <= editorBlocks.length - expectedBlocks.length; startIdx++) {
+        let match = true;
+        for (let j = 0; j < expectedBlocks.length; j++) {
+            const expected = expectedBlocks[j];
+            const actual = editorBlocks[startIdx + j];
 
-**Pros:** Reliable, survives text edits
-**Cons:** Need to generate/sync IDs, more complex
+            // Match both type AND text
+            if (expected.type !== actual.type || expected.text !== actual.text) {
+                match = false;
+                break;
+            }
+        }
 
----
+        if (match) {
+            // Found! Return range covering all matched blocks
+            const firstBlock = editorBlocks[startIdx];
+            const lastBlock = editorBlocks[startIdx + expectedBlocks.length - 1];
 
-### Approach 3: Cursor Position
-Use current cursor position as insertion point.
-
-Backend sends:
-```json
-{
-  "sub_type": "insert_at_cursor",
-  "content": "# New content..."
-}
-```
-
-**FE Logic:**
-1. Get current `editor.selection`
-2. Insert nodes at selection point
-3. Or append at end if no selection
-
-**Pros:** Simplest, natural UX
-**Cons:** User must position cursor first
-
----
-
-### Approach 4: Line Number Based
-Backend specifies line number.
-
-Backend sends:
-```json
-{
-  "sub_type": "insert_content",
-  "after_line": 5,
-  "content": "# New content..."
-}
-```
-
-**FE Logic:**
-1. Count block-level nodes to find line 5
-2. Insert after that node
-
-**Pros:** Simple concept
-**Cons:** Line numbers change as content changes
-
----
-
-## Recommended Approach: Hybrid (Anchor + Cursor Fallback)
-
-Combine Approach 1 and 3:
-
-```json
-{
-  "sub_type": "insert_content",
-  "anchor_text": "optional text to find",  // nullable
-  "position": "after",  // "before", "after", "append", "prepend"
-  "content": "# Markdown to insert..."
-}
-```
-
-**Logic:**
-1. If `anchor_text` provided → find it, insert relative to it
-2. If not found or not provided → use current cursor position
-3. If no cursor → append to end
-
-**Implementation in NotePanel.jsx:**
-```javascript
-const handleInsertContent = (data) => {
-  const { anchor_text, position, content } = data;
-  const newNodes = richTextConvertor.md2slate(content);
-
-  let targetPath = null;
-
-  // Try to find anchor text
-  if (anchor_text) {
-    const range = findTextRange(anchor_text);
-    if (range) {
-      targetPath = range.anchor.path.slice(0, 1); // Get block path
+            return {
+                anchor: { path: [firstBlock.idx, 0], offset: 0 },
+                focus: { path: [lastBlock.idx, 0], offset: lastBlock.text.length }
+            };
+        }
     }
-  }
 
-  // Fallback to cursor
-  if (!targetPath && editor.selection) {
-    targetPath = editor.selection.anchor.path.slice(0, 1);
-  }
+    return null;
+};
 
-  // Fallback to end
-  if (!targetPath) {
-    targetPath = [editor.children.length - 1];
-  }
+// Helper: Parse markdown line to block structure
+const parseMarkdownToBlocks = (md) => {
+    return md.trim().split('\n').filter(line => line.trim()).map(line => {
+        if (line.startsWith('## ')) {
+            return { type: 'heading2', text: stripInlineMarkdown(line.slice(3)) };
+        }
+        if (line.startsWith('# ')) {
+            return { type: 'heading1', text: stripInlineMarkdown(line.slice(2)) };
+        }
+        return { type: 'paragraph', text: stripInlineMarkdown(line) };
+    });
+};
 
-  // Calculate insert position
-  const insertPath = position === 'before'
-    ? targetPath
-    : [targetPath[0] + 1];
-
-  Transforms.insertNodes(editor, newNodes, { at: insertPath });
+// Helper: Remove inline markdown (**bold**, *italic*, _underline_)
+const stripInlineMarkdown = (text) => {
+    return text
+        .replace(/\*\*(.+?)\*\*/g, '$1')
+        .replace(/\*(.+?)\*/g, '$1')
+        .replace(/_(.+?)_/g, '$1');
 };
 ```
 
-## New Channel Needed
-Add to CommendDispatcher:
-```javascript
-INSERT_CONTENT: 'INSERT_CONTENT'
-```
+### Benefits
 
-## Backend Message Format
-```python
-class NotetakingInsertContent(SubWorkspaceMessageBase):
-    sub_type: Literal["insert_content"]
-    anchor_text: str | None = None
-    position: Literal["before", "after", "append", "prepend"] = "after"
-    content: str  # markdown
-```
+1. **More accurate** - `# Hello` only matches heading1, not paragraph
+2. **Handles multi-block selections** - Matches sequence of blocks
+3. **Type-safe** - Won't accidentally match wrong node types
+4. **Preserves structure** - Knows exactly which blocks to lock/replace
 
-## Questions to Consider
-1. Should we support replacing a range of text (not just single anchor)?
-2. Do we need undo/redo support for these insertions?
-3. Should the insertion trigger auto-save?
+### Edge Cases to Handle
+
+- Empty lines between blocks (filter them out)
+- Inline formatting within blocks (strip for comparison)
+- Partial block matches (not supported - match full blocks only)

@@ -28,6 +28,32 @@ class RichTextConvertor {
     }
 
     // -----------------------------
+    // Slate JSON → Plain Text (for comparison)
+    // -----------------------------
+    slate2plain(nodes) {
+        if (!Array.isArray(nodes)) return '';
+        return nodes.map(node => {
+            if (!node.children) return '';
+            return node.children.map(c => c.text || '').join('');
+        }).join('\n');
+    }
+
+    // -----------------------------
+    // Get block type from Slate node
+    // -----------------------------
+    getBlockType(node) {
+        return node?.type || 'paragraph';
+    }
+
+    // -----------------------------
+    // Get plain text from Slate node
+    // -----------------------------
+    getBlockText(node) {
+        if (!node?.children) return '';
+        return node.children.map(c => c.text || '').join('');
+    }
+
+    // -----------------------------
     // Markdown → Slate JSON
     // -----------------------------
     md2slate(mdText) {
@@ -133,6 +159,81 @@ class RichTextConvertor {
         }
 
         return nodes;
+    }
+
+    // -----------------------------
+    // Strip inline markdown formatting
+    // -----------------------------
+    stripInlineMarkdown(text) {
+        return text
+            .replace(/\*\*(.+?)\*\*/g, '$1')
+            .replace(/\*(.+?)\*/g, '$1')
+            .replace(/_(.+?)_/g, '$1');
+    }
+
+    // -----------------------------
+    // Parse markdown to block structure [{type, text}, ...]
+    // -----------------------------
+    md2blocks(mdText) {
+        if (!mdText) return [];
+        return mdText.trim().split('\n').filter(line => line.trim()).map(line => {
+            if (line.startsWith('## ')) {
+                return { type: 'heading2', text: this.stripInlineMarkdown(line.slice(3)) };
+            }
+            if (line.startsWith('# ')) {
+                return { type: 'heading1', text: this.stripInlineMarkdown(line.slice(2)) };
+            }
+            return { type: 'paragraph', text: this.stripInlineMarkdown(line) };
+        });
+    }
+
+    // -----------------------------
+    // Find matching blocks in Slate editor
+    // Returns { startIdx, endIdx } of matched block indices, or null
+    // -----------------------------
+    findMatchingBlocks(searchMarkdown, slateNodes) {
+        if (!searchMarkdown || !Array.isArray(slateNodes)) return null;
+
+        // Step 1: Parse markdown to expected block structure
+        const expectedBlocks = this.md2blocks(searchMarkdown);
+        if (expectedBlocks.length === 0) return null;
+
+        // Step 2: Get editor blocks (skip empty ones, but track original index)
+        const editorBlocks = slateNodes
+            .map((node, idx) => ({
+                idx,
+                type: this.getBlockType(node),
+                text: this.getBlockText(node)
+            }))
+            .filter(b => b.text.trim() !== '');
+
+        // Step 3: Find matching consecutive sequence
+        for (let startIdx = 0; startIdx <= editorBlocks.length - expectedBlocks.length; startIdx++) {
+            let match = true;
+            for (let j = 0; j < expectedBlocks.length; j++) {
+                const expected = expectedBlocks[j];
+                const actual = editorBlocks[startIdx + j];
+
+                // Match both type AND text
+                if (expected.type !== actual.type || expected.text !== actual.text) {
+                    match = false;
+                    break;
+                }
+            }
+
+            if (match) {
+                // Found matching sequence
+                const firstBlock = editorBlocks[startIdx];
+                const lastBlock = editorBlocks[startIdx + expectedBlocks.length - 1];
+                return {
+                    startIdx: firstBlock.idx,
+                    endIdx: lastBlock.idx,
+                    matchedBlocks: editorBlocks.slice(startIdx, startIdx + expectedBlocks.length)
+                };
+            }
+        }
+
+        return null;
     }
 
 }

@@ -93,67 +93,23 @@ function SlatePanel({ workspaceId, note, onSave }) {
         });
     }, [editor, workspaceId, onSave]);
 
-    // Find text in Slate editor and return Range
+    // Find text in Slate editor by matching structure (type + text)
     const findTextRange = useCallback((searchMarkdown) => {
-        // Use raw markdown text directly for search (trim whitespace)
-        const searchText = searchMarkdown.trim();
-
-        // Get editor content as plain text with newlines between blocks
-        const editorText = editor.children.map(node =>
-            node.children?.map(child => child.text || '').join('') || ''
-        ).join('\n');
-
-        const index = editorText.indexOf(searchText);
-
-        if (index === -1) {
-            console.warn('Could not find text in editor:', searchText, 'Editor text:', editorText);
+        const result = richTextConvertor.findMatchingBlocks(searchMarkdown, editor.children);
+        if (!result) {
+            console.warn('Could not find matching blocks in editor');
             return null;
         }
 
-        // Convert character index to Slate path/offset
-        // Account for newlines between blocks
-        let charCount = 0;
-        let startPoint = null;
-        let endPoint = null;
-        const endIndex = index + searchText.length;
+        // Convert block indices to Slate Range
+        const lastBlockNode = editor.children[result.endIdx];
+        const lastChildIdx = (lastBlockNode.children?.length || 1) - 1;
+        const lastChildText = lastBlockNode.children?.[lastChildIdx]?.text || '';
 
-        for (let blockIdx = 0; blockIdx < editor.children.length; blockIdx++) {
-            const block = editor.children[blockIdx];
-            const blockChildren = block.children || [];
-
-            for (let childIdx = 0; childIdx < blockChildren.length; childIdx++) {
-                const child = blockChildren[childIdx];
-                if (!Text.isText(child)) continue;
-
-                const nodeText = child.text;
-                const nodeStart = charCount;
-                const nodeEnd = charCount + nodeText.length;
-
-                // Find start point
-                if (!startPoint && index >= nodeStart && index < nodeEnd) {
-                    startPoint = { path: [blockIdx, childIdx], offset: index - nodeStart };
-                }
-
-                // Find end point
-                if (!endPoint && endIndex > nodeStart && endIndex <= nodeEnd) {
-                    endPoint = { path: [blockIdx, childIdx], offset: endIndex - nodeStart };
-                }
-
-                if (startPoint && endPoint) {
-                    return { anchor: startPoint, focus: endPoint };
-                }
-
-                charCount = nodeEnd;
-            }
-
-            // Add newline between blocks
-            charCount += 1;
-        }
-
-        if (startPoint && endPoint) {
-            return { anchor: startPoint, focus: endPoint };
-        }
-        return null;
+        return {
+            anchor: { path: [result.startIdx, 0], offset: 0 },
+            focus: { path: [result.endIdx, lastChildIdx], offset: lastChildText.length }
+        };
     }, [editor]);
 
     // Subscribe to SMART_UPDATE_LOCK channel
