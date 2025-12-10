@@ -121,10 +121,11 @@ export function RunningMessage({ chunkData, onMessageComplete, isWaiting, onStre
     return (
         <div className="message ai-message ai-message--streaming">
             <div className="thinking-indicator">
-                <span className="processing-text-shimmer">thinking{dots}</span>
+                <span className="processing-text-shimmer">typing{dots}</span>
             </div>
-            <div className="message-content">
-                <span className="message-text">{displayText}{showCursor && <span className="typewriter-cursor">_</span>}</span>
+            <div className="message-content message-markdown">
+                <ReactMarkdown>{displayText}</ReactMarkdown>
+                {showCursor && <span className="typewriter-cursor">_</span>}
             </div>
         </div>
     );
