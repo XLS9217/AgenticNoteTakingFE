@@ -1,109 +1,155 @@
-# Smart Approach: Structure-Aware Text Matching
+# Plan: Markdown-First NotePanel Refactor
 
-## The Problem
-Backend sends markdown `lock_text`, but Slate stores structured nodes. Simple text search fails because `#` markers don't exist in editor.
+## Problem
+Current `findMatchingBlocks` approach fails when `lock_text` from backend doesn't include block type info (e.g., "项目" fails to match because it's parsed as paragraph but exists as heading1 in editor).
 
-## Better Solution: Match Structure + Content
+## Solution
+Keep markdown string as source of truth. Use `<lock>` tags in markdown and split-then-parse approach.
 
-Instead of stripping markdown, **parse it and match node types**.
+## Constraint: Block-Level Locks Only
+- Locks operate on **whole lines/blocks**, not partial inline text
+- If user selects partial text within a line, frontend expands selection to full line(s) before sending to backend
+- This avoids inline lock complexity while keeping the parser simple
 
-### Algorithm
+## Architecture
 
-1. Parse `lock_text` markdown into expected structure:
-   ```
-   "# Hello\nWorld" → [
-     { type: 'heading1', text: 'Hello' },
-     { type: 'paragraph', text: 'World' }
-   ]
-   ```
+```
+┌─────────────────────┐
+│  markdownRef (str)  │  ← source of truth (with <lock> tags when locked)
+└──────────┬──────────┘
+           │ md2slate() with lock-aware parsing
+           ▼
+┌─────────────────────┐
+│    Slate Editor     │  ← view layer
+└─────────────────────┘
+```
 
-2. Find matching sequence in Slate editor by **type + text**:
-   ```javascript
-   editor.children = [
-     { type: 'paragraph', children: [{ text: 'Intro' }] },      // skip
-     { type: 'heading1', children: [{ text: 'Hello' }] },       // ✓ match start
-     { type: 'paragraph', children: [{ text: 'World' }] },      // ✓ match end
-     { type: 'paragraph', children: [{ text: 'Footer' }] }      // skip
-   ]
-   ```
+## Core Logic: Split-Then-Parse
 
-3. Return range from first matched block to last matched block
+```js
+// Input:
+"hello\n<lock># Title\n- first\n- second</lock>\nother"
 
-### Implementation
+// Step 1: Split by lock boundaries
+before = "hello"
+locked = "# Title\n- first\n- second"
+after  = "other"
 
-```javascript
-const findTextRangeStructured = (searchMarkdown) => {
-    // Step 1: Parse markdown to expected structure
-    const expectedBlocks = parseMarkdownToBlocks(searchMarkdown);
-    // Result: [{ type: 'heading1', text: 'Hello' }, { type: 'paragraph', text: 'World' }]
+// Step 2: Parse each separately (existing md2slate logic, untouched)
+nodesBefore = md2slate(before)
+nodesLocked = md2slate(locked)
+nodesAfter  = md2slate(after)
 
-    // Step 2: Find matching sequence in editor
-    const editorBlocks = editor.children.map((node, idx) => ({
-        idx,
-        type: node.type,
-        text: node.children?.map(c => c.text || '').join('') || ''
-    })).filter(b => b.text.trim() !== '');
+// Step 3: Mark locked nodes
+nodesLocked.forEach(n => n.locked = true)
 
-    // Step 3: Search for matching subsequence
-    for (let startIdx = 0; startIdx <= editorBlocks.length - expectedBlocks.length; startIdx++) {
-        let match = true;
-        for (let j = 0; j < expectedBlocks.length; j++) {
-            const expected = expectedBlocks[j];
-            const actual = editorBlocks[startIdx + j];
+// Step 4: Combine
+allNodes = [...nodesBefore, ...nodesLocked, ...nodesAfter]
+```
 
-            // Match both type AND text
-            if (expected.type !== actual.type || expected.text !== actual.text) {
-                match = false;
-                break;
-            }
-        }
+## Implementation Steps
 
-        if (match) {
-            // Found! Return range covering all matched blocks
-            const firstBlock = editorBlocks[startIdx];
-            const lastBlock = editorBlocks[startIdx + expectedBlocks.length - 1];
+### Step 1: Add markdownRef to SlatePanel
+- `const markdownRef = useRef(note || '')`
+- Initialize from `note` prop
 
-            return {
-                anchor: { path: [firstBlock.idx, 0], offset: 0 },
-                focus: { path: [lastBlock.idx, 0], offset: lastBlock.text.length }
-            };
-        }
+### Step 2: Create `md2slateWithLock` function in RichTextConvertor
+```js
+md2slateWithLock(mdText) {
+    // Check for <lock> tags
+    const lockMatch = mdText.match(/^([\s\S]*?)<lock>([\s\S]*?)<\/lock>([\s\S]*)$/);
+
+    if (!lockMatch) {
+        return this.md2slate(mdText);  // no lock, parse normally
     }
 
-    return null;
-};
+    // Trim \n at boundaries to avoid extra empty paragraphs
+    const before = lockMatch[1].replace(/\n$/, '');
+    const locked = lockMatch[2];
+    const after = lockMatch[3].replace(/^\n/, '');
 
-// Helper: Parse markdown line to block structure
-const parseMarkdownToBlocks = (md) => {
-    return md.trim().split('\n').filter(line => line.trim()).map(line => {
-        if (line.startsWith('## ')) {
-            return { type: 'heading2', text: stripInlineMarkdown(line.slice(3)) };
-        }
-        if (line.startsWith('# ')) {
-            return { type: 'heading1', text: stripInlineMarkdown(line.slice(2)) };
-        }
-        return { type: 'paragraph', text: stripInlineMarkdown(line) };
-    });
-};
+    const nodesBefore = before ? this.md2slate(before) : [];
+    const nodesLocked = this.md2slate(locked);
+    const nodesAfter = after ? this.md2slate(after) : [];
 
-// Helper: Remove inline markdown (**bold**, *italic*, _underline_)
-const stripInlineMarkdown = (text) => {
-    return text
-        .replace(/\*\*(.+?)\*\*/g, '$1')
-        .replace(/\*(.+?)\*/g, '$1')
-        .replace(/_(.+?)_/g, '$1');
+    // Mark locked nodes
+    nodesLocked.forEach(n => n.locked = true);
+
+    return [...nodesBefore, ...nodesLocked, ...nodesAfter];
+}
+```
+
+### Step 3: Update renderElement to handle locked blocks
+```js
+const renderElement = ({ attributes, children, element }) => {
+    const lockedClass = element.locked ? 'locked-block' : '';
+    switch (element.type) {
+        case 'heading1':
+            return <h1 {...attributes} className={lockedClass}>{children}</h1>;
+        // ... etc
+    }
 };
 ```
 
-### Benefits
+### Step 4: Expand selection to full lines before sending
+When user selects text and triggers smart_update:
+```js
+// Get selected blocks from Slate
+const selectedFragment = Editor.fragment(editor, selection);
+const markdown = richTextConvertor.slate2md(selectedFragment);
 
-1. **More accurate** - `# Hello` only matches heading1, not paragraph
-2. **Handles multi-block selections** - Matches sequence of blocks
-3. **Type-safe** - Won't accidentally match wrong node types
-4. **Preserves structure** - Knows exactly which blocks to lock/replace
+// markdown is already full lines because Slate selection is block-based
+// Send to backend
+CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_SEND, {
+    type: "workspace_message",
+    sub_type: "smart_update",
+    message_original: markdown,  // full line(s), not partial
+    query: instruction
+});
+```
 
-### Edge Cases to Handle
+### Step 5: Refactor lock mechanism in NotePanel
+When `smart_update_lock` received:
+```js
+const lockText = data.lock_text;
+markdownRef.current = markdownRef.current.replace(
+    lockText,
+    `<lock>${lockText}</lock>`
+);
+// Trigger re-render with new markdown
+```
 
-- Empty lines between blocks (filter them out)
-- Inline formatting within blocks (strip for comparison)
-- Partial block matches (not supported - match full blocks only)
+### Step 6: Refactor update mechanism
+When `smart_update` received:
+```js
+markdownRef.current = markdownRef.current.replace(
+    /<lock>[\s\S]*?<\/lock>/,
+    data.result
+);
+// Trigger re-render with new markdown
+```
+
+### Step 7: Update save flow
+On editor change:
+```js
+const newMarkdown = slate2md(editor.children);
+markdownRef.current = newMarkdown;  // keep in sync
+saveToBackend(newMarkdown);
+```
+
+### Step 8: Cleanup
+- Remove `lockedSelection` state
+- Remove `findTextRange` callback
+- Remove lock logic from `decorate` function
+- Remove `findMatchingBlocks` from RichTextConvertor (or keep for other uses)
+
+## Files to Modify
+- `src/Util/RichTextConvertor.js` - add `md2slateWithLock`
+- `src/Modules/WorkSpacePanel/NotePanel.jsx` - refactor to use markdownRef + new parsing
+
+## Benefits
+- Single source of truth (markdown with `<lock>` tags)
+- No complex offset calculations
+- Existing parseInline logic untouched
+- Multi-line locks work naturally
+- Simple string operations for lock/unlock
