@@ -69,12 +69,13 @@ export function connectSocket(workspaceId) {
     socket.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
-            console.log('WebSocket received:', data);
 
             if (data.type === 'agent_message' || data.type === 'agent_chunk') {
                 CommendDispatcher.Publish2Channel(ChannelEnum.CHAT_MESSAGE, data);
             }
             else if (data.type === 'workspace_message') {
+
+                console.log('WebSocket received:', data);
                 if (data.sub_type === 'process_status') {
                     CommendDispatcher.Publish2Channel(ChannelEnum.PROCESS_STATUS, data);
                 }
