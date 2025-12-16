@@ -1,47 +1,19 @@
-import { useState, useEffect, useRef } from "react";
 import SourcePanel from "./SourcePanel.jsx";
 import NotePanel from "./NotePanel.jsx";
 import ChatBox from "./ChatBox.jsx";
 import "./WorkspaceLayout.css";
 
-export default function NoteTakingContent({ workspaceId, note, transcript, processedTranscript, initialMetadata, isConnected, chatHistory }) {
-    const [metadata, setMetadata] = useState(initialMetadata);
-    const transcriptPanelRef = useRef(null);
-
-    useEffect(() => {
-        setMetadata(initialMetadata);
-    }, [initialMetadata]);
-
-    const handleMetadataUpdate = (newMetadata) => {
-        setMetadata(newMetadata);
-    };
-
-    const handleRefreshProcessedTranscript = () => {
-        if (transcriptPanelRef.current && transcriptPanelRef.current.refetchProcessedTranscript) {
-            transcriptPanelRef.current.refetchProcessedTranscript();
-        }
-    };
-
+export default function NoteTakingContent({ workspaceId, note, isConnected, chatHistory }) {
     return (
         <div className="ide-layout">
             <div className="ide-left-panel">
-                <SourcePanel
-                    workspaceId={workspaceId}
-                    processedTranscript={processedTranscript}
-                    metadata={metadata}
-                />
+                <SourcePanel workspaceId={workspaceId} />
             </div>
             <div className="ide-center-panel">
-                <NotePanel
-                    workspaceId={workspaceId}
-                    note={note}
-                />
+                <NotePanel workspaceId={workspaceId} note={note} />
             </div>
             <div className="ide-right-panel">
-                <ChatBox
-                    chatHistory={chatHistory}
-                    isConnected={isConnected}
-                />
+                <ChatBox chatHistory={chatHistory} isConnected={isConnected} />
             </div>
         </div>
     );

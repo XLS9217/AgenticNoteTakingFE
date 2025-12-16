@@ -3,46 +3,35 @@ import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.js
 import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import LiquidGlassInnerTextButton from "../../Components/LiquidGlassInner/LiquidGlassInnerTextButton.jsx";
 import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
-import { updateTranscript, getProcessedTranscript, getMetadata } from "../../Api/gateway.js";
+import {
+    getSources,
+    createSource,
+    deleteSource,
+    updateSourceRaw,
+    getSourceProcessed,
+    getSourceMetadata
+} from "../../Api/gateway.js";
 
-// Raw Transcript Upload Component
-function RawTranscriptUpload({ rawTranscript, setRawTranscript, onSave }) {
+// Raw Content Upload (shown when not processed yet)
+function RawContentUpload({ rawContent, onChange, onSave, onProcess, isProcessing, processStatus }) {
     const [isDragging, setIsDragging] = useState(false);
-
-    const handleDragOver = (e) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e) => {
-        e.preventDefault();
-        setIsDragging(false);
-    };
 
     const handleDrop = (e) => {
         e.preventDefault();
         setIsDragging(false);
-
         const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            const file = files[0];
-            if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    setRawTranscript(event.target.result);
-                };
-                reader.readAsText(file);
-            } else {
-                alert('Please drop a .txt file');
-            }
+        if (files.length > 0 && files[0].name.endsWith('.txt')) {
+            const reader = new FileReader();
+            reader.onload = (event) => onChange(event.target.result);
+            reader.readAsText(files[0]);
         }
     };
 
     return (
         <div className="transcript-edit-container">
             <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
                 onDrop={handleDrop}
                 className={`transcript-dropzone ${isDragging ? 'transcript-dropzone--dragging' : ''}`}
             >
@@ -51,22 +40,42 @@ function RawTranscriptUpload({ rawTranscript, setRawTranscript, onSave }) {
             <LiquidGlassScrollBar className="transcript-edit-scrollbar">
                 <textarea
                     className="transcript-textarea-edit"
-                    value={rawTranscript}
-                    onChange={(e) => setRawTranscript(e.target.value)}
+                    value={rawContent}
+                    onChange={(e) => onChange(e.target.value)}
                     placeholder="Paste your transcript here..."
                     rows={20}
                 />
             </LiquidGlassScrollBar>
             <div className="transcript-header-buttons">
-                <LiquidGlassInnerTextButton onClick={onSave}>
-                    Save Transcript
+                <LiquidGlassInnerTextButton onClick={onSave}>Save Transcript</LiquidGlassInnerTextButton>
+            </div>
+            <div className="transcript-header-buttons" style={{ marginTop: '8px' }}>
+                <LiquidGlassInnerTextButton onClick={onProcess} disabled={isProcessing}>
+                    Process
                 </LiquidGlassInnerTextButton>
             </div>
+            {isProcessing && (
+                <div className="transcript-empty-state">
+                    <div className="processing-text-shimmer">
+                        {processStatus || 'Processing'}...
+                    </div>
+                </div>
+            )}
+            {processStatus === 'Error' && (
+                <div className="transcript-empty-state">
+                    <p className="panel-content">There is an error</p>
+                </div>
+            )}
+            {processStatus === 'None' && (
+                <div className="transcript-empty-state">
+                    <p className="panel-content">You need to fill the raw transcript</p>
+                </div>
+            )}
         </div>
     );
 }
 
-// Processed Transcript Section Component
+// Processed Transcript Section (with clickable speaker/topic)
 function ProcessedTranscriptSection({ utterances }) {
     const handleSpeakerClick = (e, speaker) => {
         e.stopPropagation();
@@ -121,228 +130,236 @@ function ProcessedTranscriptSection({ utterances }) {
     );
 }
 
-// Metadata Section Component (Topics + Speakers stacked)
+// Metadata Section (Topics + Speakers stacked)
 function MetadataSection({ topics, speakers }) {
     const handleScrollToTopic = (topicTitle) => {
         const topicElements = document.querySelectorAll('.source-topic-card .topic-title');
-        const targetElement = Array.from(topicElements).find(
-            el => el.textContent === topicTitle
-        );
-
+        const targetElement = Array.from(topicElements).find(el => el.textContent === topicTitle);
         if (targetElement) {
             const topicCard = targetElement.closest('.source-topic-card');
             topicCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
             topicCard.classList.add('topic-card--highlighted');
-            setTimeout(() => {
-                topicCard.classList.remove('topic-card--highlighted');
-            }, 1500);
+            setTimeout(() => topicCard.classList.remove('topic-card--highlighted'), 1500);
         }
     };
 
     const handleScrollToSpeaker = (speakerName) => {
         const speakerElements = document.querySelectorAll('.source-speaker-card .speaker-title');
-        const targetElement = Array.from(speakerElements).find(
-            el => el.textContent === speakerName
-        );
-
+        const targetElement = Array.from(speakerElements).find(el => el.textContent === speakerName);
         if (targetElement) {
             const speakerCard = targetElement.closest('.source-speaker-card');
             speakerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
             speakerCard.classList.add('topic-card--highlighted');
-            setTimeout(() => {
-                speakerCard.classList.remove('topic-card--highlighted');
-            }, 1500);
+            setTimeout(() => speakerCard.classList.remove('topic-card--highlighted'), 1500);
         }
     };
 
     useEffect(() => {
-        const unsubscribe = CommendDispatcher.Subscribe2Channel(
-            ChannelEnum.DISPLAY_CONTROL,
-            (payload) => {
-                if (payload.action === 'scroll-to-topic' && payload.topic) {
-                    handleScrollToTopic(payload.topic);
-                } else if (payload.action === 'scroll-to-speaker' && payload.speaker) {
-                    handleScrollToSpeaker(payload.speaker);
-                }
+        const unsubscribe = CommendDispatcher.Subscribe2Channel(ChannelEnum.DISPLAY_CONTROL, (payload) => {
+            if (payload.action === 'scroll-to-topic' && payload.topic) {
+                handleScrollToTopic(payload.topic);
+            } else if (payload.action === 'scroll-to-speaker' && payload.speaker) {
+                handleScrollToSpeaker(payload.speaker);
             }
-        );
+        });
         return unsubscribe;
     }, [topics, speakers]);
 
     return (
         <LiquidGlassScrollBar className="metadata-section">
-            {/* Topics */}
             <div className="metadata-group-title">Topics</div>
-            {topics.length > 0 ? (
-                topics.map((topic, index) => (
-                    <div key={index} className="source-topic-card">
-                        <div className="topic-header">
-                            <img src="/icons/topics.png" alt="Topic" className="topic-icon" />
-                            <div className="topic-title">{topic.title}</div>
-                        </div>
-                        <div className="topic-summary">{topic.summary}</div>
+            {topics.length > 0 ? topics.map((topic, index) => (
+                <div key={index} className="source-topic-card">
+                    <div className="topic-header">
+                        <img src="/icons/topics.png" alt="Topic" className="topic-icon" />
+                        <div className="topic-title">{topic.title}</div>
                     </div>
-                ))
-            ) : (
-                <p className="source-empty-state">No topics available...</p>
-            )}
+                    <div className="topic-summary">{topic.summary}</div>
+                </div>
+            )) : <p className="source-empty-state">No topics available...</p>}
 
-            {/* Speakers */}
             <div className="metadata-group-title">Speakers</div>
-            {speakers.length > 0 ? (
-                speakers.map((speaker, index) => (
-                    <div key={index} className="source-speaker-card">
-                        <div className="topic-header">
-                            <img src="/icons/user.png" alt="Speaker" className="topic-icon" />
-                            <div className="speaker-title">{speaker.name}</div>
-                        </div>
-                        <div className="topic-summary">{speaker.description}</div>
+            {speakers.length > 0 ? speakers.map((speaker, index) => (
+                <div key={index} className="source-speaker-card">
+                    <div className="topic-header">
+                        <img src="/icons/user.png" alt="Speaker" className="topic-icon" />
+                        <div className="speaker-title">{speaker.name}</div>
                     </div>
-                ))
-            ) : (
-                <p className="source-empty-state">No speakers available...</p>
-            )}
+                    <div className="topic-summary">{speaker.description}</div>
+                </div>
+            )) : <p className="source-empty-state">No speakers available...</p>}
         </LiquidGlassScrollBar>
     );
 }
 
-// Main SourcePanel Component
-export default function SourcePanel({ workspaceId, processedTranscript, metadata }) {
-    const [rawTranscript, setRawTranscript] = useState('');
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [processStatus, setProcessStatus] = useState(null);
-    const [fetchedTranscript, setFetchedTranscript] = useState(null);
-    const [fetchedMetadata, setFetchedMetadata] = useState(null);
+// Single Source Item
+function SourceItem({ source, workspaceId, isExpanded, onToggle, onDelete, processingSourceId }) {
+    const [rawContent, setRawContent] = useState(source.raw_content || '');
+    const [processed, setProcessed] = useState([]);
+    const [speakers, setSpeakers] = useState([]);
+    const [topics, setTopics] = useState([]);
+    const [status, setStatus] = useState(null);
 
-    const utterances = fetchedTranscript || processedTranscript || [];
-    const topics = fetchedMetadata?.topics_list || metadata?.topics_list || [];
-    const speakers = fetchedMetadata?.speaker_list || metadata?.speaker_list || [];
-    const hasTranscript = utterances && utterances.length > 0;
+    const sourceId = source.source_id;
+    const isProcessing = processingSourceId === sourceId;
+    const hasProcessed = processed.length > 0;
 
-    const fetchProcessedTranscript = useCallback(async () => {
+    const fetchData = useCallback(async () => {
         try {
-            const response = await getProcessedTranscript(workspaceId);
-            setFetchedTranscript(response.processed_transcript);
-        } catch (error) {
-            console.error('Failed to fetch processed transcript:', error);
+            const [procRes, metaRes] = await Promise.all([
+                getSourceProcessed(workspaceId, sourceId),
+                getSourceMetadata(workspaceId, sourceId)
+            ]);
+            setProcessed(procRes.processed || []);
+            setSpeakers(metaRes.speaker_list || []);
+            setTopics(metaRes.topics_list || []);
+        } catch (err) {
+            console.error('Failed to fetch source data:', err);
         }
-    }, [workspaceId]);
+    }, [workspaceId, sourceId]);
 
-    const fetchMetadata = useCallback(async () => {
-        try {
-            const response = await getMetadata(workspaceId);
-            setFetchedMetadata(response.metadata);
-        } catch (error) {
-            console.error('Failed to fetch metadata:', error);
-        }
-    }, [workspaceId]);
+    useEffect(() => {
+        if (isExpanded) fetchData();
+    }, [isExpanded, fetchData]);
 
-    const handleSaveTranscript = async () => {
-        if (!workspaceId) {
-            console.error('No workspace ID provided');
-            return;
-        }
+    useEffect(() => {
+        const unsubscribe = CommendDispatcher.Subscribe2Channel(ChannelEnum.PROCESS_STATUS, (data) => {
+            if (data.source_id === sourceId) {
+                setStatus(data.status);
+                if (data.status === 'Done') {
+                    fetchData();
+                }
+            }
+        });
+        return unsubscribe;
+    }, [sourceId, fetchData]);
+
+    const handleSaveRaw = async () => {
         try {
-            await updateTranscript(workspaceId, rawTranscript);
-            console.log('Transcript saved successfully');
-        } catch (error) {
-            console.error('Failed to save transcript:', error);
+            await updateSourceRaw(workspaceId, sourceId, rawContent);
+        } catch (err) {
+            console.error('Failed to save:', err);
         }
     };
 
     const handleProcess = () => {
-        setIsProcessing(true);
-        setProcessStatus('Starting');
+        setStatus('Starting');
         CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_SEND, {
             type: "workspace_message",
-            sub_type: "process_transcript"
+            sub_type: "process_transcript",
+            source_id: sourceId
         });
     };
 
-    useEffect(() => {
-        if (processedTranscript && processedTranscript.length > 0) {
-            setFetchedTranscript(processedTranscript);
+    return (
+        <div className="source-item">
+            <div className="source-item-header" onClick={onToggle}>
+                <span className="source-item-expand">{isExpanded ? '▼' : '▶'}</span>
+                <span className="source-item-title">Transcript</span>
+                <span className="source-item-id">{sourceId.slice(0, 8)}...</span>
+                <button className="source-item-delete" onClick={(e) => { e.stopPropagation(); onDelete(); }}>×</button>
+            </div>
+
+            {isExpanded && (
+                <div className="source-item-content">
+                    {!hasProcessed ? (
+                        <RawContentUpload
+                            rawContent={rawContent}
+                            onChange={setRawContent}
+                            onSave={handleSaveRaw}
+                            onProcess={handleProcess}
+                            isProcessing={isProcessing}
+                            processStatus={status}
+                        />
+                    ) : (
+                        <>
+                            <ProcessedTranscriptSection utterances={processed} />
+                            <div className="source-divider"></div>
+                            <MetadataSection topics={topics} speakers={speakers} />
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// Main SourcePanel
+export default function SourcePanel({ workspaceId }) {
+    const [sources, setSources] = useState([]);
+    const [expandedSourceId, setExpandedSourceId] = useState(null);
+    const [processingSourceId, setProcessingSourceId] = useState(null);
+
+    const fetchSources = useCallback(async () => {
+        if (!workspaceId) return;
+        try {
+            const res = await getSources(workspaceId);
+            setSources(res.sources || []);
+        } catch (err) {
+            console.error('Failed to fetch sources:', err);
         }
-    }, [processedTranscript]);
+    }, [workspaceId]);
 
     useEffect(() => {
-        if (metadata) {
-            setFetchedMetadata(metadata);
-        }
-    }, [metadata]);
+        fetchSources();
+    }, [fetchSources]);
 
-    // Subscribe to PROCESS_STATUS channel
     useEffect(() => {
-        const unsubscribe = CommendDispatcher.Subscribe2Channel(
-            ChannelEnum.PROCESS_STATUS,
-            (data) => {
-                const status = data.status;
-                setProcessStatus(status);
-
-                if (status === 'Done') {
-                    setIsProcessing(false);
-                    fetchProcessedTranscript();
-                    fetchMetadata();
-                } else if (status === 'Error' || status === 'None') {
-                    setIsProcessing(false);
-                } else {
-                    setIsProcessing(true);
-                }
+        const unsubscribe = CommendDispatcher.Subscribe2Channel(ChannelEnum.PROCESS_STATUS, (data) => {
+            if (data.status === 'Done' || data.status === 'Error' || data.status === 'None') {
+                setProcessingSourceId(null);
+            } else if (data.source_id) {
+                setProcessingSourceId(data.source_id);
             }
-        );
+        });
         return unsubscribe;
-    }, [fetchProcessedTranscript, fetchMetadata]);
+    }, []);
+
+    const handleAddSource = async () => {
+        try {
+            const res = await createSource(workspaceId);
+            if (res.source_id) {
+                await fetchSources();
+                setExpandedSourceId(res.source_id);
+            }
+        } catch (err) {
+            console.error('Failed to create source:', err);
+        }
+    };
+
+    const handleDeleteSource = async (sourceId) => {
+        try {
+            await deleteSource(workspaceId, sourceId);
+            setSources(sources.filter(s => s.source_id !== sourceId));
+            if (expandedSourceId === sourceId) setExpandedSourceId(null);
+        } catch (err) {
+            console.error('Failed to delete source:', err);
+        }
+    };
 
     return (
         <LiquidGlassDiv blurriness={0.5} variant="workspace">
             <div className="source-panel-container">
-                {/* Header Section */}
                 <div className="source-header">
-                    <h2 className="source-title">Source</h2>
+                    <h2 className="source-title">Sources</h2>
+                    <LiquidGlassInnerTextButton onClick={handleAddSource}>+ Add</LiquidGlassInnerTextButton>
                 </div>
 
-                {!hasTranscript ? (
-                    <>
-                        <RawTranscriptUpload
-                            rawTranscript={rawTranscript}
-                            setRawTranscript={setRawTranscript}
-                            onSave={handleSaveTranscript}
+                <LiquidGlassScrollBar className="source-list">
+                    {sources.length > 0 ? sources.map(source => (
+                        <SourceItem
+                            key={source.source_id}
+                            source={source}
+                            workspaceId={workspaceId}
+                            isExpanded={expandedSourceId === source.source_id}
+                            onToggle={() => setExpandedSourceId(expandedSourceId === source.source_id ? null : source.source_id)}
+                            onDelete={() => handleDeleteSource(source.source_id)}
+                            processingSourceId={processingSourceId}
                         />
-                        <div className="transcript-header-buttons" style={{ marginTop: '8px' }}>
-                            <LiquidGlassInnerTextButton onClick={handleProcess}>
-                                Process
-                            </LiquidGlassInnerTextButton>
-                        </div>
-                        {isProcessing && (
-                            <div className="transcript-empty-state">
-                                <div className="processing-text-shimmer">
-                                    {processStatus || 'Processing'}...
-                                </div>
-                            </div>
-                        )}
-                        {processStatus === 'Error' && (
-                            <div className="transcript-empty-state">
-                                <p className="panel-content">There is an error</p>
-                            </div>
-                        )}
-                        {processStatus === 'None' && (
-                            <div className="transcript-empty-state">
-                                <p className="panel-content">You need to fill the raw transcript</p>
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    <>
-                        {/* Processed Transcript Section */}
-                        <ProcessedTranscriptSection utterances={utterances} />
-
-                        {/* Divider */}
-                        <div className="source-divider"></div>
-
-                        {/* Topics/Speakers Section */}
-                        <MetadataSection topics={topics} speakers={speakers} />
-                    </>
-                )}
+                    )) : (
+                        <p className="source-empty-state">No sources yet. Click "+ Add" to create one.</p>
+                    )}
+                </LiquidGlassScrollBar>
             </div>
         </LiquidGlassDiv>
     );

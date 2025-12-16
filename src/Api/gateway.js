@@ -134,29 +134,7 @@ export async function changeWorkspaceName(workspaceId, newName) {
 }
 
 /**
- * Update workspace transcript
- * @param {string} workspaceId - The workspace ID
- * @param {string} transcript - The new transcript content
- * @returns {Promise<Object>} Response from the backend
- */
-export async function updateTranscript(workspaceId, transcript) {
-    try {
-        const response = await request.put('/note-taking/update-transcript', {
-            workspace_id: workspaceId,
-            transcript: transcript
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Error updating transcript:', error);
-        throw error;
-    }
-}
-
-/**
  * Update workspace note
- * @param {string} workspaceId - The workspace ID
- * @param {string} note - The new note content
- * @returns {Promise<Object>} Response from the backend
  */
 export async function updateNote(workspaceId, note) {
     try {
@@ -172,39 +150,7 @@ export async function updateNote(workspaceId, note) {
 }
 
 /**
- * Get processed transcript for a workspace
- * @param {string} workspaceId - The workspace ID
- * @returns {Promise<Object>} Response from the backend containing processed_transcript
- */
-export async function getProcessedTranscript(workspaceId) {
-    try {
-        const response = await request.get(`/note-taking/get-processed-transcript/${workspaceId}`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching processed transcript:', error);
-        throw error;
-    }
-}
-
-/**
- * Get metadata for a workspace
- * @param {string} workspaceId - The workspace ID
- * @returns {Promise<Object>} Response from the backend containing metadata
- */
-export async function getMetadata(workspaceId) {
-    try {
-        const response = await request.get(`/note-taking/get-metadata/${workspaceId}`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching metadata:', error);
-        throw error;
-    }
-}
-
-/**
  * Get chat history for a workspace
- * @param {string} workspaceId - The workspace ID
- * @returns {Promise<Object|Array>} Response from the backend containing chat_history or an array
  */
 export async function getChatHistory(workspaceId) {
     try {
@@ -216,19 +162,100 @@ export async function getChatHistory(workspaceId) {
     }
 }
 
-/**
- * Update speaker name in metadata and processed transcript
- * @param {string} workspaceId - The workspace ID
- * @param {string} oldSpeakerName - The old speaker name
- * @param {string} newSpeakerName - The new speaker name
- * @returns {Promise<Object>} Response from the backend
- */
-export async function updateSpeakerName(workspaceId, oldSpeakerName, newSpeakerName) {
+// ==============================
+// Source API
+// ==============================
+
+export async function createSource(workspaceId, rawContent = '') {
     try {
-        const response = await request.put('/note-taking/update-speaker-name', {
-            workspace_id: workspaceId,
-            old_speaker_name: oldSpeakerName,
-            new_speaker_name: newSpeakerName
+        const response = await request.post(`/note-taking/source/${workspaceId}`, {
+            source_type: 'transcript',
+            raw_content: rawContent
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error creating source:', error);
+        throw error;
+    }
+}
+
+export async function getSources(workspaceId) {
+    try {
+        const response = await request.get(`/note-taking/source/${workspaceId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching sources:', error);
+        throw error;
+    }
+}
+
+export async function getSourceById(workspaceId, sourceId) {
+    try {
+        const response = await request.get(`/note-taking/source/${workspaceId}/${sourceId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching source:', error);
+        throw error;
+    }
+}
+
+export async function deleteSource(workspaceId, sourceId) {
+    try {
+        const response = await request.delete(`/note-taking/source/${workspaceId}/${sourceId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting source:', error);
+        throw error;
+    }
+}
+
+export async function getSourceRaw(workspaceId, sourceId) {
+    try {
+        const response = await request.get(`/note-taking/source/${workspaceId}/${sourceId}/raw`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching raw content:', error);
+        throw error;
+    }
+}
+
+export async function updateSourceRaw(workspaceId, sourceId, rawContent) {
+    try {
+        const response = await request.put(`/note-taking/source/${workspaceId}/${sourceId}/raw`, {
+            raw_content: rawContent
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating raw content:', error);
+        throw error;
+    }
+}
+
+export async function getSourceProcessed(workspaceId, sourceId) {
+    try {
+        const response = await request.get(`/note-taking/source/${workspaceId}/${sourceId}/processed`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching processed content:', error);
+        throw error;
+    }
+}
+
+export async function getSourceMetadata(workspaceId, sourceId) {
+    try {
+        const response = await request.get(`/note-taking/source/${workspaceId}/${sourceId}/metadata`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching metadata:', error);
+        throw error;
+    }
+}
+
+export async function updateSpeakerName(workspaceId, sourceId, oldName, newName) {
+    try {
+        const response = await request.put(`/note-taking/source/${workspaceId}/${sourceId}/speaker-name`, {
+            old_name: oldName,
+            new_name: newName
         });
         return response.data;
     } catch (error) {
