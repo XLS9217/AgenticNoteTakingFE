@@ -263,3 +263,15 @@ export async function updateSpeakerName(workspaceId, sourceId, oldName, newName)
         throw error;
     }
 }
+
+export async function updateSourceName(workspaceId, sourceId, sourceName) {
+    try {
+        const response = await request.put(`/note-taking/source/${workspaceId}/${sourceId}/name`, {
+            source_name: sourceName
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating source name:', error);
+        throw error;
+    }
+}

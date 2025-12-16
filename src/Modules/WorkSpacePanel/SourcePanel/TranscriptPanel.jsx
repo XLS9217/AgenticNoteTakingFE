@@ -202,10 +202,14 @@ export default function TranscriptPanel({ source, workspaceId }) {
 
     const fetchData = useCallback(async () => {
         try {
+            console.log('[TranscriptPanel] Fetching data for source:', sourceId);
+            console.log('[TranscriptPanel] Calling getSourceProcessed & getSourceMetadata...');
             const [procRes, metaRes] = await Promise.all([
                 getSourceProcessed(workspaceId, sourceId),
                 getSourceMetadata(workspaceId, sourceId)
             ]);
+            console.log('[TranscriptPanel] getSourceProcessed response:', procRes);
+            console.log('[TranscriptPanel] getSourceMetadata response:', metaRes);
             setProcessed(procRes.processed || []);
             setSpeakers(metaRes.speaker_list || []);
             setTopics(metaRes.topics_list || []);

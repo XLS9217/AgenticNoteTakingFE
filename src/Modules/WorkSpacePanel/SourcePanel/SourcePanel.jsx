@@ -7,7 +7,8 @@ import TranscriptPanel from "./TranscriptPanel.jsx";
 import {
     getSources,
     createSource,
-    deleteSource
+    deleteSource,
+    updateSourceName
 } from "../../../Api/gateway.js";
 
 // Source list item with three-dot menu (NotebookLM style)
@@ -40,13 +41,15 @@ function SourceListItem({ source, onSelect, onDelete }) {
         return () => document.removeEventListener('click', handleClickOutside);
     }, [menuOpen]);
 
+    const displayName = source.source_name || source.name || '(no name)';
+
     return (
         <div className="source-item" onClick={onSelect}>
             <button ref={menuBtnRef} className="source-item-menu" onClick={handleMenuClick}>
                 ⋮
             </button>
-            <span className="source-item-title" title={`Transcript${sourceId}`}>
-                Transcript{sourceId.slice(0, 8)}...
+            <span className="source-item-title" title={displayName}>
+                {displayName}
             </span>
             {menuOpen && createPortal(
                 <div
@@ -65,11 +68,16 @@ function SourceListItem({ source, onSelect, onDelete }) {
 export default function SourcePanel({ workspaceId }) {
     const [sources, setSources] = useState([]);
     const [selectedSource, setSelectedSource] = useState(null);
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editTitleValue, setEditTitleValue] = useState('');
 
     const fetchSources = useCallback(async () => {
         if (!workspaceId) return;
         try {
+            console.log('[SourcePanel] Fetching sources for workspace:', workspaceId);
             const res = await getSources(workspaceId);
+            console.log('[SourcePanel] Got sources:', res);
             setSources(res.sources || []);
         } catch (err) {
             console.error('Failed to fetch sources:', err);
@@ -84,11 +92,27 @@ export default function SourcePanel({ workspaceId }) {
         try {
             const res = await createSource(workspaceId);
             if (res.source_id) {
-                await fetchSources();
+                const updatedSources = await getSources(workspaceId);
+                setSources(updatedSources.sources || []);
+                const newSource = updatedSources.sources?.find(s => s.source_id === res.source_id);
+                if (newSource) {
+                    handleSelectSource(newSource);
+                }
             }
         } catch (err) {
             console.error('Failed to create source:', err);
         }
+    };
+
+    const handleSelectSource = (source) => {
+        console.log('[SourcePanel] Selected source:', source);
+        setIsAnimating(true);
+        setSelectedSource(source);
+    };
+
+    const handleCollapse = () => {
+        setIsAnimating(true);
+        setSelectedSource(null);
     };
 
     const handleDeleteSource = async (sourceId) => {
@@ -103,49 +127,106 @@ export default function SourcePanel({ workspaceId }) {
         }
     };
 
-    // Expanded view - show TranscriptPanel
-    if (selectedSource) {
-        return (
-            <LiquidGlassDiv blurriness={0.5} variant="workspace">
-                <div className="source-panel-container">
-                    <div className="source-header">
-                        <h2 className="source-title" title={`Transcript${selectedSource.source_id}`}>
-                            Transcript{selectedSource.source_id.slice(0, 8)}...
-                        </h2>
-                        <LiquidGlassInnerTextButton onClick={() => setSelectedSource(null)}>
-                            &lt; Collapse
-                        </LiquidGlassInnerTextButton>
-                    </div>
-                    <TranscriptPanel
-                        source={selectedSource}
-                        workspaceId={workspaceId}
-                    />
-                </div>
-            </LiquidGlassDiv>
-        );
-    }
+    const handleTitleClick = () => {
+        setEditTitleValue(selectedSource?.source_name || '');
+        setIsEditingTitle(true);
+    };
 
-    // List view - show sources list
+    const handleTitleKeyDown = async (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const newName = editTitleValue.trim();
+            if (newName && newName !== selectedSource?.source_name) {
+                try {
+                    await updateSourceName(workspaceId, selectedSource.source_id, newName);
+                    setSelectedSource({ ...selectedSource, source_name: newName });
+                    setSources(sources.map(s =>
+                        s.source_id === selectedSource.source_id ? { ...s, source_name: newName } : s
+                    ));
+                } catch (err) {
+                    console.error('Failed to update source name:', err);
+                }
+            }
+            setIsEditingTitle(false);
+        } else if (e.key === 'Escape') {
+            setIsEditingTitle(false);
+        }
+    };
+
+    const handleTitleBlur = () => {
+        setIsEditingTitle(false);
+    };
+
+    const isExpanded = selectedSource !== null;
+
     return (
         <LiquidGlassDiv blurriness={0.5} variant="workspace">
             <div className="source-panel-container">
+                {/* Header */}
                 <div className="source-header">
-                    <h2 className="source-title">Sources</h2>
-                    <LiquidGlassInnerTextButton onClick={handleAddSource}>+ Add</LiquidGlassInnerTextButton>
+                    {isExpanded ? (
+                        <>
+                            {isEditingTitle ? (
+                                <input
+                                    type="text"
+                                    className="source-title-input"
+                                    value={editTitleValue}
+                                    onChange={(e) => setEditTitleValue(e.target.value)}
+                                    onKeyDown={handleTitleKeyDown}
+                                    onBlur={handleTitleBlur}
+                                    autoFocus
+                                />
+                            ) : (
+                                <h2
+                                    className="source-title source-title--editable"
+                                    title={selectedSource.source_name || '(no name)'}
+                                    onClick={handleTitleClick}
+                                >
+                                    {selectedSource.source_name || '(no name)'}
+                                </h2>
+                            )}
+                            <button className="source-header-icon-btn" onClick={handleCollapse}>
+                                <img src="/icons/back.png" alt="Collapse" className="source-header-icon" />
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <h2 className="source-title">Sources</h2>
+                            <button className="source-header-icon-btn" onClick={handleAddSource}>
+                                <img src="/icons/add.png" alt="Add" className="source-header-icon" />
+                            </button>
+                        </>
+                    )}
                 </div>
 
-                <LiquidGlassScrollBar className="source-list">
-                    {sources.length > 0 ? sources.map(source => (
-                        <SourceListItem
-                            key={source.source_id}
-                            source={source}
-                            onSelect={() => setSelectedSource(source)}
-                            onDelete={() => handleDeleteSource(source.source_id)}
-                        />
-                    )) : (
-                        <p className="source-empty-state">No sources yet. Click "+ Add" to create one.</p>
-                    )}
-                </LiquidGlassScrollBar>
+                {/* Sliding content area */}
+                <div className="source-slide-container">
+                    {/* List view */}
+                    <div className={`source-slide source-slide--list ${isExpanded ? 'source-slide--left' : ''}`}>
+                        <LiquidGlassScrollBar className="source-list">
+                            {sources.length > 0 ? sources.map(source => (
+                                <SourceListItem
+                                    key={source.source_id}
+                                    source={source}
+                                    onSelect={() => handleSelectSource(source)}
+                                    onDelete={() => handleDeleteSource(source.source_id)}
+                                />
+                            )) : (
+                                <p className="source-empty-state">No sources yet. Click "+ Add" to create one.</p>
+                            )}
+                        </LiquidGlassScrollBar>
+                    </div>
+
+                    {/* Content view */}
+                    <div className={`source-slide source-slide--content ${isExpanded ? '' : 'source-slide--right'}`}>
+                        {selectedSource && (
+                            <TranscriptPanel
+                                source={selectedSource}
+                                workspaceId={workspaceId}
+                            />
+                        )}
+                    </div>
+                </div>
             </div>
         </LiquidGlassDiv>
     );
