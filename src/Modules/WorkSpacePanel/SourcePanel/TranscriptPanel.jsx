@@ -1,16 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
-import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
-import LiquidGlassScrollBar from "../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
-import LiquidGlassInnerTextButton from "../../Components/LiquidGlassInner/LiquidGlassInnerTextButton.jsx";
-import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
+import LiquidGlassScrollBar from "../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
+import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInner/LiquidGlassInnerTextButton.jsx";
+import CommendDispatcher, { ChannelEnum } from "../../../Util/CommendDispatcher.js";
 import {
-    getSources,
-    createSource,
-    deleteSource,
     updateSourceRaw,
     getSourceProcessed,
     getSourceMetadata
-} from "../../Api/gateway.js";
+} from "../../../Api/gateway.js";
 
 // Raw Content Upload (shown when not processed yet)
 function RawContentUpload({ rawContent, onChange, onSave, onProcess, isProcessing, processStatus }) {
@@ -192,16 +188,16 @@ function MetadataSection({ topics, speakers }) {
     );
 }
 
-// Single Source Item
-function SourceItem({ source, workspaceId, isExpanded, onToggle, onDelete, processingSourceId }) {
+// Main TranscriptPanel - shows content for a single source
+export default function TranscriptPanel({ source, workspaceId }) {
     const [rawContent, setRawContent] = useState(source.raw_content || '');
     const [processed, setProcessed] = useState([]);
     const [speakers, setSpeakers] = useState([]);
     const [topics, setTopics] = useState([]);
     const [status, setStatus] = useState(null);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const sourceId = source.source_id;
-    const isProcessing = processingSourceId === sourceId;
     const hasProcessed = processed.length > 0;
 
     const fetchData = useCallback(async () => {
@@ -219,15 +215,20 @@ function SourceItem({ source, workspaceId, isExpanded, onToggle, onDelete, proce
     }, [workspaceId, sourceId]);
 
     useEffect(() => {
-        if (isExpanded) fetchData();
-    }, [isExpanded, fetchData]);
+        fetchData();
+    }, [fetchData]);
 
     useEffect(() => {
         const unsubscribe = CommendDispatcher.Subscribe2Channel(ChannelEnum.PROCESS_STATUS, (data) => {
             if (data.source_id === sourceId) {
                 setStatus(data.status);
                 if (data.status === 'Done') {
+                    setIsProcessing(false);
                     fetchData();
+                } else if (data.status === 'Error' || data.status === 'None') {
+                    setIsProcessing(false);
+                } else {
+                    setIsProcessing(true);
                 }
             }
         });
@@ -244,6 +245,7 @@ function SourceItem({ source, workspaceId, isExpanded, onToggle, onDelete, proce
 
     const handleProcess = () => {
         setStatus('Starting');
+        setIsProcessing(true);
         CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_SEND, {
             type: "workspace_message",
             sub_type: "process_transcript",
@@ -251,116 +253,24 @@ function SourceItem({ source, workspaceId, isExpanded, onToggle, onDelete, proce
         });
     };
 
-    return (
-        <div className="source-item">
-            <div className="source-item-header" onClick={onToggle}>
-                <span className="source-item-expand">{isExpanded ? '▼' : '▶'}</span>
-                <span className="source-item-title">Transcript</span>
-                <span className="source-item-id">{sourceId.slice(0, 8)}...</span>
-                <button className="source-item-delete" onClick={(e) => { e.stopPropagation(); onDelete(); }}>×</button>
-            </div>
-
-            {isExpanded && (
-                <div className="source-item-content">
-                    {!hasProcessed ? (
-                        <RawContentUpload
-                            rawContent={rawContent}
-                            onChange={setRawContent}
-                            onSave={handleSaveRaw}
-                            onProcess={handleProcess}
-                            isProcessing={isProcessing}
-                            processStatus={status}
-                        />
-                    ) : (
-                        <>
-                            <ProcessedTranscriptSection utterances={processed} />
-                            <div className="source-divider"></div>
-                            <MetadataSection topics={topics} speakers={speakers} />
-                        </>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-}
-
-// Main SourcePanel
-export default function SourcePanel({ workspaceId }) {
-    const [sources, setSources] = useState([]);
-    const [expandedSourceId, setExpandedSourceId] = useState(null);
-    const [processingSourceId, setProcessingSourceId] = useState(null);
-
-    const fetchSources = useCallback(async () => {
-        if (!workspaceId) return;
-        try {
-            const res = await getSources(workspaceId);
-            setSources(res.sources || []);
-        } catch (err) {
-            console.error('Failed to fetch sources:', err);
-        }
-    }, [workspaceId]);
-
-    useEffect(() => {
-        fetchSources();
-    }, [fetchSources]);
-
-    useEffect(() => {
-        const unsubscribe = CommendDispatcher.Subscribe2Channel(ChannelEnum.PROCESS_STATUS, (data) => {
-            if (data.status === 'Done' || data.status === 'Error' || data.status === 'None') {
-                setProcessingSourceId(null);
-            } else if (data.source_id) {
-                setProcessingSourceId(data.source_id);
-            }
-        });
-        return unsubscribe;
-    }, []);
-
-    const handleAddSource = async () => {
-        try {
-            const res = await createSource(workspaceId);
-            if (res.source_id) {
-                await fetchSources();
-                setExpandedSourceId(res.source_id);
-            }
-        } catch (err) {
-            console.error('Failed to create source:', err);
-        }
-    };
-
-    const handleDeleteSource = async (sourceId) => {
-        try {
-            await deleteSource(workspaceId, sourceId);
-            setSources(sources.filter(s => s.source_id !== sourceId));
-            if (expandedSourceId === sourceId) setExpandedSourceId(null);
-        } catch (err) {
-            console.error('Failed to delete source:', err);
-        }
-    };
+    if (!hasProcessed) {
+        return (
+            <RawContentUpload
+                rawContent={rawContent}
+                onChange={setRawContent}
+                onSave={handleSaveRaw}
+                onProcess={handleProcess}
+                isProcessing={isProcessing}
+                processStatus={status}
+            />
+        );
+    }
 
     return (
-        <LiquidGlassDiv blurriness={0.5} variant="workspace">
-            <div className="source-panel-container">
-                <div className="source-header">
-                    <h2 className="source-title">Sources</h2>
-                    <LiquidGlassInnerTextButton onClick={handleAddSource}>+ Add</LiquidGlassInnerTextButton>
-                </div>
-
-                <LiquidGlassScrollBar className="source-list">
-                    {sources.length > 0 ? sources.map(source => (
-                        <SourceItem
-                            key={source.source_id}
-                            source={source}
-                            workspaceId={workspaceId}
-                            isExpanded={expandedSourceId === source.source_id}
-                            onToggle={() => setExpandedSourceId(expandedSourceId === source.source_id ? null : source.source_id)}
-                            onDelete={() => handleDeleteSource(source.source_id)}
-                            processingSourceId={processingSourceId}
-                        />
-                    )) : (
-                        <p className="source-empty-state">No sources yet. Click "+ Add" to create one.</p>
-                    )}
-                </LiquidGlassScrollBar>
-            </div>
-        </LiquidGlassDiv>
+        <>
+            <ProcessedTranscriptSection utterances={processed} />
+            <div className="source-divider"></div>
+            <MetadataSection topics={topics} speakers={speakers} />
+        </>
     );
 }

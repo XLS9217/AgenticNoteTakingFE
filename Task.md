@@ -1,140 +1,105 @@
-# Frontend Tasks - Source System Migration
+# Task: Redesign Source Panel (NotebookLM style)
 
-## New Source API Endpoints
+## My Understanding (ASCII)
 
-```javascript
-// Source CRUD
-POST   /note-taking/source/{workspace_id}                      // create source
-GET    /note-taking/source/{workspace_id}                      // get all sources
-GET    /note-taking/source/{workspace_id}/{source_id}          // get source by id
-PUT    /note-taking/source/{workspace_id}/{source_id}          // update source
-DELETE /note-taking/source/{workspace_id}/{source_id}          // delete source
+```
+=== STATE 1: Sources List ===
++--------------------------------------------------+
+|  Sources                              [+ Add]    |
++--------------------------------------------------+
+|  :  Transcript65942d36...                        |  <-- click row to expand
+|  :  Transcript2e9217ca...                        |
+|  :  TranscriptABC123...                          |
++--------------------------------------------------+
+   ^
+   three-dot menu (click = dropdown with Delete)
+   hover title = tooltip with full ID
 
-// Source content
-GET    /note-taking/source/{workspace_id}/{source_id}/raw      // get raw_content
-PUT    /note-taking/source/{workspace_id}/{source_id}/raw      // update raw_content
-GET    /note-taking/source/{workspace_id}/{source_id}/processed  // get processed
-GET    /note-taking/source/{workspace_id}/{source_id}/metadata   // get metadata
 
-// Source processing
-POST   /note-taking/source/{workspace_id}/{source_id}/process  // trigger processing
+=== STATE 2: Source Expanded (takes over whole panel) ===
++--------------------------------------------------+
+|  Transcript65942d36...                [< Collapse]|
++--------------------------------------------------+
+|                                                  |
+|  (source content here - transcript/metadata)     |
+|                                                  |
++--------------------------------------------------+
 
-// Note management (unchanged)
-PUT  /note-taking/update-note
-GET  /note-taking/get-chat-history/{workspace_id}
+Header transforms:
+  "Sources"  -->  "Transcript{id}..."
+  "+ Add"    -->  "< Collapse"
 ```
 
-## WebSocket Message Changes
+## Files
 
-### process_status (updated)
-```javascript
-// Before
-{ type: "workspace_message", sub_type: "process_status", status: "Evaluating" }
-
-// After - includes source_id
-{ type: "workspace_message", sub_type: "process_status", source_id: "uuid", status: "Evaluating" }
+```
+SourcePanel/
+  ├── SourcePanel.jsx      <-- main panel with state switching
+  └── TranscriptPanel.jsx  <-- content when source is expanded
 ```
 
-## Files to Change (Frontend)
+## Plan
 
-| File | Changes |
-|------|---------|
-| `src/Api/gateway.js` | Replace `updateTranscript`, `getProcessedTranscript`, `getMetadata` with source API calls |
-| `src/Api/socket_gateway.js` | Handle `source_id` in `process_status` message |
-| `src/Modules/WorkSpacePanel/*` | Update to work with sources array instead of single transcript |
+### 1. SourcePanel.jsx - Add view state switching
 
-## gateway.js Changes
+```jsx
+export default function SourcePanel({ workspaceId }) {
+    const [selectedSource, setSelectedSource] = useState(null);  // null = list view
 
-### Remove
-```javascript
-// Remove these functions
-updateTranscript(workspaceId, transcript)
-getProcessedTranscript(workspaceId)
-getMetadata(workspaceId)
-updateSpeakerName(workspaceId, oldName, newName)
-```
+    // When source is selected, show TranscriptPanel
+    if (selectedSource) {
+        return (
+            <LiquidGlassDiv>
+                <div className="source-header">
+                    <h2 className="source-title" title={`Transcript${selectedSource.source_id}`}>
+                        Transcript{selectedSource.source_id.slice(0,8)}...
+                    </h2>
+                    <LiquidGlassInnerTextButton onClick={() => setSelectedSource(null)}>
+                        &lt; Collapse
+                    </LiquidGlassInnerTextButton>
+                </div>
+                <TranscriptPanel source={selectedSource} workspaceId={workspaceId} />
+            </LiquidGlassDiv>
+        );
+    }
 
-### Add
-```javascript
-// Add these functions
-createSource(workspaceId, sourceType, rawContent)
-getSources(workspaceId)
-getSourceById(workspaceId, sourceId)
-updateSource(workspaceId, sourceId, updates)
-deleteSource(workspaceId, sourceId)
-getSourceRaw(workspaceId, sourceId)
-updateSourceRaw(workspaceId, sourceId, rawContent)
-getSourceProcessed(workspaceId, sourceId)
-getSourceMetadata(workspaceId, sourceId)
-processSource(workspaceId, sourceId)
-```
-
-## socket_gateway.js Changes
-
-```javascript
-// Update onmessage handler
-if (data.sub_type === 'process_status') {
-    // data now includes source_id
-    CommendDispatcher.Publish2Channel(ChannelEnum.PROCESS_STATUS, {
-        source_id: data.source_id,  // NEW
-        status: data.status
-    });
+    // Otherwise show sources list
+    return (/* sources list with three-dot menu items */);
 }
 ```
 
-## UI Changes Needed
+### 2. Source list item (NotebookLM style)
 
-### Source Panel Tree Structure
-
-```
-Sources Panel
-├── [+] Add Source Button
-│
-├── ▼ Transcript: "Meeting 2024-12-16" (source_id)     <- expandable header
-│   ├── Raw Content                                    <- tab/section
-│   │   └── [textarea: raw transcript text]
-│   ├── Speakers                                       <- tab/section
-│   │   ├── Alice - Engineering Manager
-│   │   └── Bob - QA Lead
-│   ├── Topics                                         <- tab/section
-│   │   ├── Product Release
-│   │   └── Sprint Planning
-│   └── Processed                                      <- tab/section
-│       ├── [00:01:23] Alice: "We shipped v1.2..."
-│       └── [00:02:45] Bob: "Next sprint focuses..."
-│
-├── ▶ Transcript: "Standup Notes" (source_id)          <- collapsed
-│
-└── ▶ Transcript: "Design Review" (source_id)          <- collapsed
+```jsx
+<div className="source-item" onClick={() => setSelectedSource(source)}>
+    <button className="source-item-menu" onClick={e => { e.stopPropagation(); toggleMenu(); }}>
+        ⋮
+    </button>
+    <span className="source-item-title" title={`Transcript${sourceId}`}>
+        Transcript{sourceId.slice(0,8)}...
+    </span>
+    {menuOpen && (
+        <div className="source-item-dropdown">
+            <button onClick={handleDelete}>Delete</button>
+        </div>
+    )}
+</div>
 ```
 
-### Tree Behavior
+### 3. TranscriptPanel.jsx - Source content
 
-- **Expand/Collapse**: Click header to toggle source content visibility
-- **Only one expanded**: When expanding a source, collapse others (optional)
-- **Selected state**: Highlight currently selected source
-- **Process button**: Per-source button to trigger processing
-- **Delete button**: Per-source button to delete source
+Move `RawContentUpload`, `ProcessedTranscriptSection`, `MetadataSection` here.
 
-### Component Structure
+### 4. CSS additions
 
-```
-src/Modules/WorkSpacePanel/
-├── SourcePanel/
-│   ├── SourcePanel.jsx           <- main container
-│   ├── SourceHeader.jsx          <- expandable header with title, process/delete buttons
-│   ├── SourceContent.jsx         <- container for tabs when expanded
-│   ├── RawContentTab.jsx         <- raw transcript textarea
-│   ├── SpeakersTab.jsx           <- speaker list with edit
-│   ├── TopicsTab.jsx             <- topics list
-│   └── ProcessedTab.jsx          <- processed transcript display
+```css
+.source-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.source-item-menu { /* three-dot button */ }
+.source-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.source-item-dropdown { /* absolute positioned menu */ }
 ```
 
-### State Management
-
-```javascript
-// Source panel state
-const [sources, setSources] = useState([]);           // all sources
-const [expandedSourceId, setExpandedSourceId] = useState(null);  // which is expanded
-const [activeTab, setActiveTab] = useState('raw');    // raw | speakers | topics | processed
-```
+## Files to modify
+1. `SourcePanel/SourcePanel.jsx` - State switching + NotebookLM list items
+2. `SourcePanel/TranscriptPanel.jsx` - Expanded source content
+3. `Modules.css` - New styles

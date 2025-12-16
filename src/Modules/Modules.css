@@ -593,6 +593,87 @@ Source Panel Layout
   padding: var(--spacing-md);
 }
 
+/*
+------------------------------------------
+Source List Item (NotebookLM style)
+------------------------------------------
+*/
+
+.source-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.source-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.source-item-menu {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.1em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+}
+
+.source-item-menu:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.source-item-title {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.source-item-dropdown {
+  position: fixed;
+  background: rgba(30, 30, 30, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--border-radius-sm);
+  padding: 4px;
+  z-index: 9999;
+  min-width: 100px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.source-item-dropdown button {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85em;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-fast);
+}
+
+.source-item-dropdown button:hover {
+  background: rgba(255, 80, 80, 0.25);
+  color: rgba(255, 100, 100, 1);
+}
+
 /* Metadata Section (Topics + Speakers stacked) */
 .metadata-section {
   flex: 1 1 50%;

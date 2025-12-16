@@ -1,4 +1,4 @@
-import SourcePanel from "./SourcePanel.jsx";
+import SourcePanel from "./SourcePanel/SourcePanel.jsx";
 import NotePanel from "./NotePanel.jsx";
 import ChatBox from "./ChatBox.jsx";
 import "./WorkspaceLayout.css";
