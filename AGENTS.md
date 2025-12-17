@@ -1,155 +1,36 @@
-# Plan: Markdown-First NotePanel Refactor
-
-## Problem
-Current `findMatchingBlocks` approach fails when `lock_text` from backend doesn't include block type info (e.g., "项目" fails to match because it's parsed as paragraph but exists as heading1 in editor).
-
-## Solution
-Keep markdown string as source of truth. Use `<lock>` tags in markdown and split-then-parse approach.
-
-## Constraint: Block-Level Locks Only
-- Locks operate on **whole lines/blocks**, not partial inline text
-- If user selects partial text within a line, frontend expands selection to full line(s) before sending to backend
-- This avoids inline lock complexity while keeping the parser simple
-
-## Architecture
-
-```
-┌─────────────────────┐
-│  markdownRef (str)  │  ← source of truth (with <lock> tags when locked)
-└──────────┬──────────┘
-           │ md2slate() with lock-aware parsing
-           ▼
-┌─────────────────────┐
-│    Slate Editor     │  ← view layer
-└─────────────────────┘
-```
-
-## Core Logic: Split-Then-Parse
-
-```js
-// Input:
-"hello\n<lock># Title\n- first\n- second</lock>\nother"
-
-// Step 1: Split by lock boundaries
-before = "hello"
-locked = "# Title\n- first\n- second"
-after  = "other"
-
-// Step 2: Parse each separately (existing md2slate logic, untouched)
-nodesBefore = md2slate(before)
-nodesLocked = md2slate(locked)
-nodesAfter  = md2slate(after)
-
-// Step 3: Mark locked nodes
-nodesLocked.forEach(n => n.locked = true)
-
-// Step 4: Combine
-allNodes = [...nodesBefore, ...nodesLocked, ...nodesAfter]
-```
-
-## Implementation Steps
-
-### Step 1: Add markdownRef to SlatePanel
-- `const markdownRef = useRef(note || '')`
-- Initialize from `note` prop
-
-### Step 2: Create `md2slateWithLock` function in RichTextConvertor
-```js
-md2slateWithLock(mdText) {
-    // Check for <lock> tags
-    const lockMatch = mdText.match(/^([\s\S]*?)<lock>([\s\S]*?)<\/lock>([\s\S]*)$/);
-
-    if (!lockMatch) {
-        return this.md2slate(mdText);  // no lock, parse normally
-    }
-
-    // Trim \n at boundaries to avoid extra empty paragraphs
-    const before = lockMatch[1].replace(/\n$/, '');
-    const locked = lockMatch[2];
-    const after = lockMatch[3].replace(/^\n/, '');
-
-    const nodesBefore = before ? this.md2slate(before) : [];
-    const nodesLocked = this.md2slate(locked);
-    const nodesAfter = after ? this.md2slate(after) : [];
-
-    // Mark locked nodes
-    nodesLocked.forEach(n => n.locked = true);
-
-    return [...nodesBefore, ...nodesLocked, ...nodesAfter];
-}
-```
-
-### Step 3: Update renderElement to handle locked blocks
-```js
-const renderElement = ({ attributes, children, element }) => {
-    const lockedClass = element.locked ? 'locked-block' : '';
-    switch (element.type) {
-        case 'heading1':
-            return <h1 {...attributes} className={lockedClass}>{children}</h1>;
-        // ... etc
-    }
-};
-```
-
-### Step 4: Expand selection to full lines before sending
-When user selects text and triggers smart_update:
-```js
-// Get selected blocks from Slate
-const selectedFragment = Editor.fragment(editor, selection);
-const markdown = richTextConvertor.slate2md(selectedFragment);
-
-// markdown is already full lines because Slate selection is block-based
-// Send to backend
-CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_SEND, {
-    type: "workspace_message",
-    sub_type: "smart_update",
-    message_original: markdown,  // full line(s), not partial
-    query: instruction
-});
-```
-
-### Step 5: Refactor lock mechanism in NotePanel
-When `smart_update_lock` received:
-```js
-const lockText = data.lock_text;
-markdownRef.current = markdownRef.current.replace(
-    lockText,
-    `<lock>${lockText}</lock>`
-);
-// Trigger re-render with new markdown
-```
-
-### Step 6: Refactor update mechanism
-When `smart_update` received:
-```js
-markdownRef.current = markdownRef.current.replace(
-    /<lock>[\s\S]*?<\/lock>/,
-    data.result
-);
-// Trigger re-render with new markdown
-```
-
-### Step 7: Update save flow
-On editor change:
-```js
-const newMarkdown = slate2md(editor.children);
-markdownRef.current = newMarkdown;  // keep in sync
-saveToBackend(newMarkdown);
-```
-
-### Step 8: Cleanup
-- Remove `lockedSelection` state
-- Remove `findTextRange` callback
-- Remove lock logic from `decorate` function
-- Remove `findMatchingBlocks` from RichTextConvertor (or keep for other uses)
-
-## Files to Modify
-- `src/Util/RichTextConvertor.js` - add `md2slateWithLock`
-- `src/Modules/WorkSpacePanel/NotePanel.jsx` - refactor to use markdownRef + new parsing
-
-## Benefits
-- Single source of truth (markdown with `<lock>` tags)
-- No complex offset calculations
-- Existing parseInline logic untouched
-- Multi-line locks work naturally
-- Simple string operations for lock/unlock
+react-dom_client.js?v=57b5ac53:20103 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+LoginScreen.jsx:24 User Info: {username: 'ls', workspaces: Array(0), created_at: '2025-10-15T16:26:13.107000', updated_at: '2025-10-15T16:26:13.107000'}
+SourcePanel.jsx:79 [SourcePanel] Fetching sources for workspace: f16198f1-18f1-47d3-b658-dd579a248711
+SourcePanel.jsx:79 [SourcePanel] Fetching sources for workspace: f16198f1-18f1-47d3-b658-dd579a248711
+socket_gateway.js:45 WebSocket connected
+socket_gateway.js:49 Uncaught InvalidStateError: Failed to execute 'send' on 'WebSocket': Still in CONNECTING state.
+at socket.onopen (socket_gateway.js:49:16)
+socket.onopen @ socket_gateway.js:49
+SourcePanel.jsx:81 [SourcePanel] Got sources: {sources: Array(0)}
+SourcePanel.jsx:81 [SourcePanel] Got sources: {sources: Array(0)}
+socket_gateway.js:45 WebSocket connected
+NotePanel.jsx:191 Selected Markdown: Start typing your notes...
+NotePanel.jsx:192 Selection Range: {from: {…}, to: {…}}
+NotePanel.jsx:89 Saving to backend - Markdown: 该视频源探讨了一种名为 x42 的新协议，该协议由 Coinbase 开发，旨在彻底改变互联网上的小额支付方式。x42 利用先前保留的 HTTP 状态码 402 "需要付费"，使 API 请求可以零费用即时处理支付。该协议通过取消对 Stripe 等传统平台的需求，简化了交易，这些平台会对小额交易收取高昂的固定费用，使得按次付费的 API 变得不可行。x42 的主要优势在于其简单性，它允许开发者使用一行代码实现支付墙，并为机器对机器和 AI 代理之间的自动化支付打开了大门。视频的演示部分还展示了如何使用 **Hostinger 提供的虚拟私人服务器（VPS）**来部署和运行一个实际的 x42 货币化 API 示例。
+socket_gateway.js:78 WebSocket received: {type: 'workspace_message', sub_type: 'smart_update_lock', lock_text: '该视频源探讨了一种名为 x42 的新协议，该协议由 Coinbase 开发，旨在彻底改变互联网上的小…nger 提供的虚拟私人服务器（VPS）**来部署和运行一个实际的 x42 货币化 API 示例。'}
+NotePanel.jsx:120 Received smart_update_lock: 该视频源探讨了一种名为 x42 的新协议，该协议由 Coinbase 开发，旨在彻底改变互联网上的小额支付方式。x42 利用先前保留的 HTTP 状态码 402 "需要付费"，使 API 请求可以零费用即时处理支付。该协议通过取消对 Stripe 等传统平台的需求，简化了交易，这些平台会对小额交易收取高昂的固定费用，使得按次付费的 API 变得不可行。x42 的主要优势在于其简单性，它允许开发者使用一行代码实现支付墙，并为机器对机器和 AI 代理之间的自动化支付打开了大门。视频的演示部分还展示了如何使用 **Hostinger 提供的虚拟私人服务器（VPS）**来部署和运行一个实际的 x42 货币化 API 示例。
+RichTextConvertor.js:211 [findMatchingBlocks] Expected blocks: [{…}]0: {type: 'paragraph', text: '该视频源探讨了一种名为 x42 的新协议，该协议由 Coinbase 开发，旨在彻底改变互联网上的小…tinger 提供的虚拟私人服务器（VPS）来部署和运行一个实际的 x42 货币化 API 示例。'}length: 1[[Prototype]]: Array(0)
+RichTextConvertor.js:212 [findMatchingBlocks] Editor blocks: [{…}]0: {idx: 0, type: 'paragraph', text: '该视频源探讨了一种名为 x42 的新协议，该协议由 Coinbase 开发，旨在彻底改变互联网上的小…nger 提供的虚拟私人服务器（VPS）**来部署和运行一个实际的 x42 货币化 API 示例。'}length: 1[[Prototype]]: Array(0)
+NotePanel.jsx:100 Could not find matching blocks in editor
+(anonymous) @ NotePanel.jsx:100
+(anonymous) @ NotePanel.jsx:121
+(anonymous) @ CommendDispatcher.js:119
+Publish2Channel @ CommendDispatcher.js:117
+socket.onmessage @ socket_gateway.js:83
+NotePanel.jsx:125 Failed to find and lock text
+(anonymous) @ NotePanel.jsx:125
+(anonymous) @ CommendDispatcher.js:119
+Publish2Channel @ CommendDispatcher.js:117
+socket.onmessage @ socket_gateway.js:83
+socket_gateway.js:78 WebSocket received: {type: 'workspace_message', sub_type: 'smart_update_result', result: '1. x42协议由Coinbase开发，用于革新互联网小额支付。\n2. 利用HTTP状态码402 "…间自动化支付的可能性。\n6. 演示部分展示了使用Hostinger VPS部署x42货币化API。'}
+NotePanel.jsx:137 Received smart_update_result: 1. x42协议由Coinbase开发，用于革新互联网小额支付。
+2. 利用HTTP状态码402 "需要付费" 来处理即时支付。
+3. 简化交易流程，取消对如Stripe等平台的需求。
+4. 优势在于简单性，允许开发者一行代码实现支付墙。
+5. 开启机器对机器及AI代理间自动化支付的可能性。
+6. 演示部分展示了使用Hostinger VPS部署x42货币化API。

@@ -207,6 +207,10 @@ class RichTextConvertor {
             }))
             .filter(b => b.text.trim() !== '');
 
+        // Debug: log what we're comparing
+        console.log('[findMatchingBlocks] Expected blocks:', expectedBlocks);
+        console.log('[findMatchingBlocks] Editor blocks:', editorBlocks);
+
         // Step 3: Find matching consecutive sequence
         for (let startIdx = 0; startIdx <= editorBlocks.length - expectedBlocks.length; startIdx++) {
             let match = true;
@@ -214,8 +218,9 @@ class RichTextConvertor {
                 const expected = expectedBlocks[j];
                 const actual = editorBlocks[startIdx + j];
 
-                // Match both type AND text
-                if (expected.type !== actual.type || expected.text !== actual.text) {
+                // Match both type AND text (strip markdown from editor text in case it has literal markers)
+                const actualTextClean = this.stripInlineMarkdown(actual.text);
+                if (expected.type !== actual.type || expected.text !== actualTextClean) {
                     match = false;
                     break;
                 }
