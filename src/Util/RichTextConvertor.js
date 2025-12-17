@@ -2,6 +2,29 @@ class RichTextConvertor {
     constructor() {}
 
     // -----------------------------
+    // Wrap lock text with <smart_lock> tags
+    // -----------------------------
+    wrapWithLockTag(markdown, lockText) {
+        if (!markdown || !lockText) return markdown;
+        // Simple string replacement - backend guarantees lockText exists
+        return markdown.replace(lockText, `<smart_lock>${lockText}</smart_lock>`);
+    }
+
+    // -----------------------------
+    // Remove smart_lock tags from text
+    // -----------------------------
+    stripLockTags(text) {
+        return text.replace(/<\/?smart_lock>/g, '');
+    }
+
+    // -----------------------------
+    // Check if text contains lock tags
+    // -----------------------------
+    hasLockTag(text) {
+        return text.includes('<smart_lock>') && text.includes('</smart_lock>');
+    }
+
+    // -----------------------------
     // Slate JSON → Markdown
     // -----------------------------
     slate2md(nodes) {
@@ -159,6 +182,157 @@ class RichTextConvertor {
         }
 
         return nodes;
+    }
+
+    // -----------------------------
+    // Markdown with <smart_lock> → Slate JSON with locked nodes marked
+    // Nodes inside <smart_lock> tags get `locked: true` property
+    // -----------------------------
+    md2slateWithLock(mdText) {
+        if (!mdText) return { nodes: [], lockRange: null };
+
+        const lines = mdText.split('\n');
+        const nodes = [];
+
+        // Track if we're inside a lock region (can span multiple lines)
+        let inLock = false;
+
+        // Track lock range for selection
+        let lockStart = null;
+        let lockEnd = null;
+
+        // Parse inline with lock tag support - marks children with locked: true
+        const parseInlineWithLock = (text, blockIdx) => {
+            const children = [];
+            let i = 0;
+            let localInLock = inLock; // Start with current lock state
+
+            while (i < text.length) {
+                // Check for <smart_lock>
+                if (text.slice(i, i + 12) === '<smart_lock>') {
+                    localInLock = true;
+                    inLock = true;
+                    lockStart = { path: [blockIdx, children.length], offset: 0 };
+                    i += 12;
+                    continue;
+                }
+
+                // Check for </smart_lock>
+                if (text.slice(i, i + 13) === '</smart_lock>') {
+                    localInLock = false;
+                    inLock = false;
+                    const lastChild = children[children.length - 1];
+                    lockEnd = {
+                        path: [blockIdx, Math.max(0, children.length - 1)],
+                        offset: lastChild ? lastChild.text.length : 0
+                    };
+                    i += 13;
+                    continue;
+                }
+
+                // Check for bold **...**
+                if (text.slice(i, i + 2) === '**') {
+                    const endIdx = text.indexOf('**', i + 2);
+                    if (endIdx !== -1) {
+                        const innerText = text.slice(i + 2, endIdx);
+                        const cleanInner = this.stripLockTags(innerText);
+                        const child = { text: cleanInner, bold: true };
+                        if (localInLock) child.locked = true;
+                        children.push(child);
+                        i = endIdx + 2;
+                        continue;
+                    }
+                }
+
+                // Check for italic *...* (but not **)
+                if (text[i] === '*' && text[i + 1] !== '*') {
+                    const endIdx = text.indexOf('*', i + 1);
+                    if (endIdx !== -1 && text[endIdx - 1] !== '*') {
+                        const innerText = text.slice(i + 1, endIdx);
+                        const cleanInner = this.stripLockTags(innerText);
+                        const child = { text: cleanInner, italic: true };
+                        if (localInLock) child.locked = true;
+                        children.push(child);
+                        i = endIdx + 1;
+                        continue;
+                    }
+                }
+
+                // Check for underline _..._
+                if (text[i] === '_') {
+                    const endIdx = text.indexOf('_', i + 1);
+                    if (endIdx !== -1) {
+                        const innerText = text.slice(i + 1, endIdx);
+                        const cleanInner = this.stripLockTags(innerText);
+                        const child = { text: cleanInner, underline: true };
+                        if (localInLock) child.locked = true;
+                        children.push(child);
+                        i = endIdx + 1;
+                        continue;
+                    }
+                }
+
+                // Plain text - collect until next marker
+                let endPlain = i;
+                while (endPlain < text.length) {
+                    const rest = text.slice(endPlain);
+                    if (rest.startsWith('**') || rest.startsWith('*') || rest.startsWith('_') ||
+                        rest.startsWith('<smart_lock>') || rest.startsWith('</smart_lock>')) {
+                        break;
+                    }
+                    endPlain++;
+                }
+                if (endPlain > i) {
+                    const plainText = text.slice(i, endPlain);
+                    const child = { text: plainText };
+                    if (localInLock) child.locked = true;
+                    children.push(child);
+                    i = endPlain;
+                } else {
+                    const child = { text: text[i] };
+                    if (localInLock) child.locked = true;
+                    children.push(child);
+                    i++;
+                }
+            }
+
+            return children.length > 0 ? children : [{ text: '' }];
+        };
+
+        for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+            const line = lines[lineIdx];
+            const blockIdx = nodes.length;
+
+            if (line.trim() === '') {
+                nodes.push({ type: 'paragraph', children: [{ text: '' }] });
+                continue;
+            }
+
+            if (line.startsWith('# ')) {
+                const content = line.slice(2);
+                nodes.push({ type: 'heading1', children: parseInlineWithLock(content, blockIdx) });
+                continue;
+            }
+
+            if (line.startsWith('## ')) {
+                const content = line.slice(3);
+                nodes.push({ type: 'heading2', children: parseInlineWithLock(content, blockIdx) });
+                continue;
+            }
+
+            nodes.push({ type: 'paragraph', children: parseInlineWithLock(line, blockIdx) });
+        }
+
+        // Build lock range if we found both start and end
+        let lockRange = null;
+        if (lockStart && lockEnd) {
+            lockRange = {
+                anchor: lockStart,
+                focus: lockEnd
+            };
+        }
+
+        return { nodes, lockRange };
     }
 
     // -----------------------------

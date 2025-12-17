@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { createEditor, Editor, Transforms, Text, Range, Element as SlateElement } from "slate";
+import { createEditor, Editor, Transforms, Range, Element as SlateElement } from "slate";
 import { Slate, Editable, withReact, ReactEditor } from "slate-react";
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 // Removed custom LiquidGlassScrollBar due to clipping issues in Slate editor
@@ -71,8 +71,17 @@ function SlatePanel({ workspaceId, note, onSave }) {
         selection: null
     });
     const [savedSelection, setSavedSelection] = useState(null);
-    const [lockedSelection, setLockedSelection] = useState(null);
-    // console.log('Note:', note);
+    const [isLocked, setIsLocked] = useState(false);
+
+    // Keep markdown in memory for lock/unlock operations
+    const markdownRef = useRef(note || '');
+    const lockTextRef = useRef(null);
+
+    // Sync markdownRef when note prop changes
+    useEffect(() => {
+        markdownRef.current = note || '';
+    }, [note]);
+
     const getInitialValue = () => {
         if (note) {
             const slateNodes = richTextConvertor.md2slate(note);
@@ -85,7 +94,7 @@ function SlatePanel({ workspaceId, note, onSave }) {
 
     const saveNote = useCallback(() => {
         const markdown = richTextConvertor.slate2md(editor.children);
-        // console.log('Saving to backend - Slate children:', JSON.stringify(editor.children, null, 2));
+        markdownRef.current = markdown;
         console.log('Saving to backend - Markdown:', markdown);
         onSave();
         updateNote(workspaceId, markdown).catch(error => {
@@ -93,23 +102,15 @@ function SlatePanel({ workspaceId, note, onSave }) {
         });
     }, [editor, workspaceId, onSave]);
 
-    // Find text in Slate editor by matching structure (type + text)
-    const findTextRange = useCallback((searchMarkdown) => {
-        const result = richTextConvertor.findMatchingBlocks(searchMarkdown, editor.children);
-        if (!result) {
-            console.warn('Could not find matching blocks in editor');
-            return null;
+    // Helper to replace editor content with new nodes
+    const replaceEditorContent = useCallback((newNodes) => {
+        // Delete all content and insert new
+        Transforms.deselect(editor);
+        const totalNodes = editor.children.length;
+        for (let i = totalNodes - 1; i >= 0; i--) {
+            Transforms.removeNodes(editor, { at: [i] });
         }
-
-        // Convert block indices to Slate Range
-        const lastBlockNode = editor.children[result.endIdx];
-        const lastChildIdx = (lastBlockNode.children?.length || 1) - 1;
-        const lastChildText = lastBlockNode.children?.[lastChildIdx]?.text || '';
-
-        return {
-            anchor: { path: [result.startIdx, 0], offset: 0 },
-            focus: { path: [result.endIdx, lastChildIdx], offset: lastChildText.length }
-        };
+        Transforms.insertNodes(editor, newNodes, { at: [0] });
     }, [editor]);
 
     // Subscribe to SMART_UPDATE_LOCK channel
@@ -118,16 +119,30 @@ function SlatePanel({ workspaceId, note, onSave }) {
             ChannelEnum.SMART_UPDATE_LOCK,
             (data) => {
                 console.log('Received smart_update_lock:', data.lock_text);
-                const range = findTextRange(data.lock_text);
-                if (range) {
-                    setLockedSelection(range);
-                } else {
-                    console.error('Failed to find and lock text');
+
+                // Wrap lock text with <smart_lock> tags in markdown
+                const lockedMarkdown = richTextConvertor.wrapWithLockTag(markdownRef.current, data.lock_text);
+
+                if (!richTextConvertor.hasLockTag(lockedMarkdown)) {
+                    console.error('Failed to find lock text in markdown');
+                    return;
                 }
+
+                // Store lock text for replacement later
+                lockTextRef.current = data.lock_text;
+
+                // Convert to Slate with locked nodes marked
+                const { nodes } = richTextConvertor.md2slateWithLock(lockedMarkdown);
+
+                // Replace editor content
+                replaceEditorContent(nodes);
+                setIsLocked(true);
+
+                console.log('Locked markdown:', lockedMarkdown);
             }
         );
         return unsubscribe;
-    }, [findTextRange]);
+    }, [replaceEditorContent]);
 
     // Subscribe to SMART_UPDATE channel
     useEffect(() => {
@@ -135,22 +150,36 @@ function SlatePanel({ workspaceId, note, onSave }) {
             ChannelEnum.SMART_UPDATE,
             (data) => {
                 console.log('Received smart_update_result:', data.result);
-                // Replace locked selection with result
-                if (lockedSelection) {
-                    Transforms.select(editor, lockedSelection);
-                    Transforms.delete(editor);
 
-                    // Convert result markdown to Slate nodes and insert
-                    const newNodes = richTextConvertor.md2slate(data.result);
-                    Transforms.insertNodes(editor, newNodes);
-
-                    // Clear locked state
-                    setLockedSelection(null);
+                if (!isLocked || !lockTextRef.current) {
+                    console.warn('Received update but no lock active');
+                    return;
                 }
+
+                // Replace lock text in markdown with new content
+                const updatedMarkdown = markdownRef.current.replace(lockTextRef.current, data.result);
+                markdownRef.current = updatedMarkdown;
+
+                // Convert to clean Slate (no lock tags)
+                const newNodes = richTextConvertor.md2slate(updatedMarkdown);
+
+                // Replace editor content
+                replaceEditorContent(newNodes);
+
+                // Clear locked state
+                setIsLocked(false);
+                lockTextRef.current = null;
+
+                // Save to backend
+                updateNote(workspaceId, updatedMarkdown).catch(error => {
+                    console.error('Error saving note after update:', error);
+                });
+
+                console.log('Updated markdown:', updatedMarkdown);
             }
         );
         return unsubscribe;
-    }, [lockedSelection, editor]);
+    }, [isLocked, replaceEditorContent, workspaceId]);
 
     const handleChange = useCallback((newValue) => {
         const isAstChange = editor.operations.some(op => op.type !== 'set_selection');
@@ -291,22 +320,15 @@ function SlatePanel({ workspaceId, note, onSave }) {
 
     const decorate = useCallback(([node, path]) => {
         const ranges = [];
-        // Locked selection - always show (takes priority)
-        if (lockedSelection) {
-            const intersection = Range.intersection(lockedSelection, Editor.range(editor, path));
-            if (intersection) {
-                ranges.push({ ...intersection, locked: true });
-            }
-        }
         // Saved selection highlight (when popup is open or editor not focused)
-        else if (savedSelection && (popupState.show || !ReactEditor.isFocused(editor))) {
+        if (savedSelection && (popupState.show || !ReactEditor.isFocused(editor))) {
             const intersection = Range.intersection(savedSelection, Editor.range(editor, path));
             if (intersection) {
                 ranges.push({ ...intersection, highlight: true });
             }
         }
         return ranges;
-    }, [lockedSelection, savedSelection, editor, popupState.show]);
+    }, [savedSelection, editor, popupState.show]);
 
     const renderLeaf = useCallback((props) => {
         let { attributes, children, leaf } = props;
@@ -403,7 +425,7 @@ function SlatePanel({ workspaceId, note, onSave }) {
                 <Editable
                     className="slate-editor native-scrollbar"
                     placeholder="Start typing your notes..."
-                    readOnly={!!lockedSelection}
+                    readOnly={isLocked}
                     onKeyDown={handleKeyDown}
                     onSelect={handleSelect}
                     onMouseUp={handleMouseUp}
