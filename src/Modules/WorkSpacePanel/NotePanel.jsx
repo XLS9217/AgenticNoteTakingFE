@@ -424,7 +424,7 @@ function SlatePanel({ workspaceId, note, onSave }) {
     );
 }
 
-export default function NotePanel({ workspaceId, note }) {
+export default function NotePanel({ workspaceId, note, isLoading }) {
     const [isSaving, setIsSaving] = useState(false);
 
     const handleSave = () => {
@@ -434,6 +434,8 @@ export default function NotePanel({ workspaceId, note }) {
         }, 1000);
     };
 
+    const dividerClass = `note-divider ${isLoading ? 'loading' : ''} ${isSaving ? 'saving' : ''}`;
+
     return (
         <LiquidGlassDiv blurriness={0.5} variant="workspace">
             <div className="note-panel-container">
@@ -441,7 +443,7 @@ export default function NotePanel({ workspaceId, note }) {
                     <h2 className="panel-title">Note</h2>
                 </div>
 
-                <div className={`note-divider ${isSaving ? 'saving' : ''}`}></div>
+                <div className={dividerClass}></div>
 
                 <div className="note-content">
                     <SlatePanel workspaceId={workspaceId} note={note} onSave={handleSave} />

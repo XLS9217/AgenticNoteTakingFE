@@ -71,6 +71,7 @@ export default function SourcePanel({ workspaceId }) {
     const [isAnimating, setIsAnimating] = useState(false);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
 
     const fetchSources = useCallback(async () => {
         if (!workspaceId) return;
@@ -81,6 +82,8 @@ export default function SourcePanel({ workspaceId }) {
             setSources(res.sources || []);
         } catch (err) {
             console.error('Failed to fetch sources:', err);
+        } finally {
+            setIsLoading(false);
         }
     }, [workspaceId]);
 
@@ -204,7 +207,9 @@ export default function SourcePanel({ workspaceId }) {
                     {/* List view */}
                     <div className={`source-slide source-slide--list ${isExpanded ? 'source-slide--left' : ''}`}>
                         <LiquidGlassScrollBar className="source-list">
-                            {sources.length > 0 ? sources.map(source => (
+                            {isLoading ? (
+                                <p className="source-loading">Loading...</p>
+                            ) : sources.length > 0 ? sources.map(source => (
                                 <SourceListItem
                                     key={source.source_id}
                                     source={source}

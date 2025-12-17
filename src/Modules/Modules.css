@@ -226,6 +226,16 @@ Chat Panel Layout
   min-height: 0;
 }
 
+.chat-loading {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1em;
+  text-align: center;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .message {
   position: relative;
   overflow: hidden;
@@ -632,6 +642,13 @@ Source Panel Layout
 
 .source-empty-state {
   color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9em;
+  text-align: center;
+  padding: var(--spacing-md);
+}
+
+.source-loading {
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.9em;
   text-align: center;
   padding: var(--spacing-md);

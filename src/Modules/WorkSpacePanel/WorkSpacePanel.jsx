@@ -8,6 +8,7 @@ export default function WorkSpacePanel({ workspaceId, onLeave, onWorkspaceNameCh
     const [note, setNote] = useState('');
     const [chatHistory, setChatHistory] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const loadWorkspace = useCallback(async () => {
         try {
@@ -25,6 +26,8 @@ export default function WorkSpacePanel({ workspaceId, onLeave, onWorkspaceNameCh
             }
         } catch (error) {
             console.error('Error loading workspace:', error);
+        } finally {
+            setIsLoading(false);
         }
     }, [workspaceId]);
 
@@ -52,6 +55,7 @@ export default function WorkSpacePanel({ workspaceId, onLeave, onWorkspaceNameCh
                 note={note}
                 isConnected={isConnected}
                 chatHistory={chatHistory}
+                isLoading={isLoading}
             />
         </div>
     );

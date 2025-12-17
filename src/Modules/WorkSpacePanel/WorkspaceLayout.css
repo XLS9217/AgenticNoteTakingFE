@@ -98,6 +98,10 @@ Note Panel Styles
   animation: wave 1s ease-in-out;
 }
 
+.note-divider.loading::after {
+  animation: wave 1.5s ease-in-out infinite;
+}
+
 @keyframes wave {
   0% {
     left: -100%;

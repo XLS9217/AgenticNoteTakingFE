@@ -181,7 +181,7 @@ function UserInputArea({ onSendMessage, selectionData, onPreviewClick }) {
     );
 }
 
-export default function ChatBox({ chatHistory, isConnected }) {
+export default function ChatBox({ chatHistory, isConnected, isLoading }) {
     const [messages, setMessages] = useState([]);
     const [currentChunk, setCurrentChunk] = useState(null);
     const [selectionData, setSelectionData] = useState(null);
@@ -299,17 +299,23 @@ export default function ChatBox({ chatHistory, isConnected }) {
                 </div>
 
                 <LiquidGlassScrollBar className="chat-history">
-                    {messages.map(message => (
-                        message.user === 'You'
-                            ? <UserMessage key={message.id} text={message.text} />
-                            : <AgentMessage key={message.id} text={message.text} />
-                    ))}
-                    <RunningMessage
-                        chunkData={currentChunk}
-                        onMessageComplete={handleMessageComplete}
-                        isWaiting={isWaiting}
-                        onStreamStart={handleStreamStart}
-                    />
+                    {isLoading ? (
+                        <div className="chat-loading">Loading...</div>
+                    ) : (
+                        <>
+                            {messages.map(message => (
+                                message.user === 'You'
+                                    ? <UserMessage key={message.id} text={message.text} />
+                                    : <AgentMessage key={message.id} text={message.text} />
+                            ))}
+                            <RunningMessage
+                                chunkData={currentChunk}
+                                onMessageComplete={handleMessageComplete}
+                                isWaiting={isWaiting}
+                                onStreamStart={handleStreamStart}
+                            />
+                        </>
+                    )}
                     <div ref={messagesEndRef} />
                 </LiquidGlassScrollBar>
 

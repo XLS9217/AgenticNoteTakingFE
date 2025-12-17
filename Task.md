@@ -1,105 +1,108 @@
-# Task: Redesign Source Panel (NotebookLM style)
+# Task: Loading Indicators for Workspace
 
-## My Understanding (ASCII)
+## Goal
+Show loading indicators while workspace data loads:
+- **Sources**: "Loading..." where "No sources yet" appears
+- **Notes**: Moving bar animation (like saving) on the divider
+- **ChatBox**: "Loading..." centered in chat history area
 
-```
-=== STATE 1: Sources List ===
-+--------------------------------------------------+
-|  Sources                              [+ Add]    |
-+--------------------------------------------------+
-|  :  Transcript65942d36...                        |  <-- click row to expand
-|  :  Transcript2e9217ca...                        |
-|  :  TranscriptABC123...                          |
-+--------------------------------------------------+
-   ^
-   three-dot menu (click = dropdown with Delete)
-   hover title = tooltip with full ID
+---
 
-
-=== STATE 2: Source Expanded (takes over whole panel) ===
-+--------------------------------------------------+
-|  Transcript65942d36...                [< Collapse]|
-+--------------------------------------------------+
-|                                                  |
-|  (source content here - transcript/metadata)     |
-|                                                  |
-+--------------------------------------------------+
-
-Header transforms:
-  "Sources"  -->  "Transcript{id}..."
-  "+ Add"    -->  "< Collapse"
-```
-
-## Files
-
-```
-SourcePanel/
-  ├── SourcePanel.jsx      <-- main panel with state switching
-  └── TranscriptPanel.jsx  <-- content when source is expanded
-```
-
-## Plan
-
-### 1. SourcePanel.jsx - Add view state switching
+## 1. SourcePanel.jsx
+Add `isLoading` state, show loading text in source list area.
 
 ```jsx
-export default function SourcePanel({ workspaceId }) {
-    const [selectedSource, setSelectedSource] = useState(null);  // null = list view
+const [isLoading, setIsLoading] = useState(true);
 
-    // When source is selected, show TranscriptPanel
-    if (selectedSource) {
-        return (
-            <LiquidGlassDiv>
-                <div className="source-header">
-                    <h2 className="source-title" title={`Transcript${selectedSource.source_id}`}>
-                        Transcript{selectedSource.source_id.slice(0,8)}...
-                    </h2>
-                    <LiquidGlassInnerTextButton onClick={() => setSelectedSource(null)}>
-                        &lt; Collapse
-                    </LiquidGlassInnerTextButton>
-                </div>
-                <TranscriptPanel source={selectedSource} workspaceId={workspaceId} />
-            </LiquidGlassDiv>
-        );
-    }
+// In fetchSources:
+setIsLoading(false); // after setSources()
 
-    // Otherwise show sources list
-    return (/* sources list with three-dot menu items */);
+// In JSX (source-slide--list):
+{isLoading ? (
+    <p className="source-loading">Loading...</p>
+) : sources.length > 0 ? (
+    // source list
+) : (
+    <p className="source-empty-state">No sources yet...</p>
+)}
+```
+
+---
+
+## 2. WorkSpacePanel.jsx + NotePanel
+Pass `isLoading` prop to show bar animation on note-divider.
+
+**WorkSpacePanel.jsx:**
+```jsx
+const [isLoading, setIsLoading] = useState(true);
+// set false after loadWorkspace completes
+
+// Pass to NoteTakingContent
+<NoteTakingContent ... isLoading={isLoading} />
+```
+
+**NotePanel.jsx:**
+Add `loading` class to note-divider when `isLoading` is true.
+```jsx
+<div className={`note-divider ${isLoading ? 'loading' : ''}`}></div>
+```
+
+**WorkspaceLayout.css:**
+```css
+.note-divider.loading::after {
+  animation: wave 1.5s ease-in-out infinite;
 }
 ```
 
-### 2. Source list item (NotebookLM style)
+---
 
+## 3. ChatBox.jsx
+Add `isLoadingHistory` prop, show centered loading when true.
+
+**WorkSpacePanel.jsx:**
 ```jsx
-<div className="source-item" onClick={() => setSelectedSource(source)}>
-    <button className="source-item-menu" onClick={e => { e.stopPropagation(); toggleMenu(); }}>
-        ⋮
-    </button>
-    <span className="source-item-title" title={`Transcript${sourceId}`}>
-        Transcript{sourceId.slice(0,8)}...
-    </span>
-    {menuOpen && (
-        <div className="source-item-dropdown">
-            <button onClick={handleDelete}>Delete</button>
-        </div>
-    )}
-</div>
+<ChatBox ... isLoadingHistory={isLoading} />
 ```
 
-### 3. TranscriptPanel.jsx - Source content
+**ChatBox.jsx:**
+```jsx
+// In chat-history area:
+{isLoadingHistory ? (
+    <div className="chat-loading">Loading...</div>
+) : (
+    // messages.map(...)
+)}
+```
 
-Move `RawContentUpload`, `ProcessedTranscriptSection`, `MetadataSection` here.
+---
 
-### 4. CSS additions
-
+## 4. CSS (Modules.css)
 ```css
-.source-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.source-item-menu { /* three-dot button */ }
-.source-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; }
-.source-item-dropdown { /* absolute positioned menu */ }
+.source-loading {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9em;
+  text-align: center;
+  padding: var(--spacing-md);
+}
+
+.chat-loading {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1em;
+  text-align: center;
+  padding: 40px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 ```
 
-## Files to modify
-1. `SourcePanel/SourcePanel.jsx` - State switching + NotebookLM list items
-2. `SourcePanel/TranscriptPanel.jsx` - Expanded source content
-3. `Modules.css` - New styles
+---
+
+## Files to Modify
+- `src/Modules/WorkSpacePanel/SourcePanel/SourcePanel.jsx`
+- `src/Modules/WorkSpacePanel/WorkSpacePanel.jsx`
+- `src/Modules/WorkSpacePanel/NotePanel.jsx`
+- `src/Modules/WorkSpacePanel/ChatBox.jsx`
+- `src/Modules/WorkSpacePanel/WorkspaceLayout.css`
+- `src/Modules/Modules.css`
