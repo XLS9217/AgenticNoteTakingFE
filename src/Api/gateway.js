@@ -166,10 +166,11 @@ export async function getChatHistory(workspaceId) {
 // Source API
 // ==============================
 
-export async function createSource(workspaceId, rawContent = '') {
+export async function createSource(workspaceId, sourceName = 'Untitled', rawContent = '') {
     try {
         const response = await request.post(`/note-taking/source/${workspaceId}`, {
             source_type: 'transcript',
+            source_name: sourceName,
             raw_content: rawContent
         });
         return response.data;
