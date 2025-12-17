@@ -9,7 +9,7 @@ import {
 } from "../../../Api/gateway.js";
 
 // Raw Content Upload (shown when not processed yet)
-function RawContentUpload({ rawContent, onChange, onSave, onProcess, isProcessing, processStatus }) {
+function RawContentUpload({ rawContent, onChange, onProcess, isProcessing, processStatus }) {
     const [isDragging, setIsDragging] = useState(false);
 
     const handleDrop = (e) => {
@@ -43,9 +43,6 @@ function RawContentUpload({ rawContent, onChange, onSave, onProcess, isProcessin
                 />
             </LiquidGlassScrollBar>
             <div className="transcript-header-buttons">
-                <LiquidGlassInnerTextButton onClick={onSave}>Save Transcript</LiquidGlassInnerTextButton>
-            </div>
-            <div className="transcript-header-buttons" style={{ marginTop: '8px' }}>
                 <LiquidGlassInnerTextButton onClick={onProcess} disabled={isProcessing}>
                     Process
                 </LiquidGlassInnerTextButton>
@@ -239,22 +236,20 @@ export default function TranscriptPanel({ source, workspaceId }) {
         return unsubscribe;
     }, [sourceId, fetchData]);
 
-    const handleSaveRaw = async () => {
+    const handleProcess = async () => {
         try {
+            // Save first, then process
             await updateSourceRaw(workspaceId, sourceId, rawContent);
+            setStatus('Starting');
+            setIsProcessing(true);
+            CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_SEND, {
+                type: "workspace_message",
+                sub_type: "process_transcript",
+                source_id: sourceId
+            });
         } catch (err) {
             console.error('Failed to save:', err);
         }
-    };
-
-    const handleProcess = () => {
-        setStatus('Starting');
-        setIsProcessing(true);
-        CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_SEND, {
-            type: "workspace_message",
-            sub_type: "process_transcript",
-            source_id: sourceId
-        });
     };
 
     if (!hasProcessed) {
@@ -262,7 +257,6 @@ export default function TranscriptPanel({ source, workspaceId }) {
             <RawContentUpload
                 rawContent={rawContent}
                 onChange={setRawContent}
-                onSave={handleSaveRaw}
                 onProcess={handleProcess}
                 isProcessing={isProcessing}
                 processStatus={status}

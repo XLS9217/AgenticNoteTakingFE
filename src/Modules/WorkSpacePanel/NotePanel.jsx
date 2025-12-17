@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { createPortal } from "react-dom";
 import { createEditor, Editor, Transforms, Range, Element as SlateElement } from "slate";
 import { Slate, Editable, withReact, ReactEditor } from "slate-react";
 import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
@@ -9,67 +8,9 @@ import { updateNote } from "../../Api/gateway.js";
 import CommendDispatcher, { ChannelEnum } from "../../Util/CommendDispatcher.js";
 import richTextConvertor from "../../Util/RichTextConvertor.js";
 
-function SelectionPopup({ position, onUpdate, onCancel }) {
-    const [instruction, setInstruction] = useState('');
-    const [isClosing, setIsClosing] = useState(false);
-    const popupRef = useRef(null);
-
-    const handleClose = (callback) => {
-        setIsClosing(true);
-        setTimeout(() => {
-            callback();
-        }, 150);
-    };
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (popupRef.current && !popupRef.current.contains(e.target)) {
-                handleClose(onCancel);
-            }
-        };
-        const handleKeyDown = (e) => {
-            if (e.key === 'Escape') {
-                handleClose(onCancel);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('keydown', handleKeyDown);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [onCancel]);
-
-    return (
-        <div
-            ref={popupRef}
-            className={`selection-popup ${isClosing ? 'closing' : ''}`}
-            style={{ top: position.top, left: position.left }}
-        >
-            <textarea
-                className="selection-popup-input"
-                placeholder="Enter instruction for LLM..."
-                value={instruction}
-                onChange={(e) => setInstruction(e.target.value)}
-                rows={3}
-            />
-            <div className="selection-popup-buttons">
-                <button onClick={() => handleClose(() => onUpdate(instruction))}>Update</button>
-                <button onClick={() => handleClose(onCancel)}>Cancel</button>
-            </div>
-        </div>
-    );
-}
-
 function SlatePanel({ workspaceId, note, onSave }) {
     const editor = useMemo(() => withReact(createEditor()), []);
     const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, underline: false, heading1: false, heading2: false });
-    const [popupState, setPopupState] = useState({
-        show: false,
-        text: '',
-        position: { top: 0, left: 0 },
-        selection: null
-    });
     const [savedSelection, setSavedSelection] = useState(null);
     const [isLocked, setIsLocked] = useState(false);
 
@@ -233,57 +174,11 @@ function SlatePanel({ workspaceId, note, onSave }) {
                 setSavedSelection(null);
             }
         } else {
-            // Collapsed selection (cursor only) - clear everything
-            setPopupState({ show: false, text: '', position: { top: 0, left: 0 }, selection: null });
+            // Collapsed selection (cursor only) - clear selection
             setSavedSelection(null);
             CommendDispatcher.Publish2Channel(ChannelEnum.TEXT_SELECT, null);
         }
     }, [editor]);
-
-    const handleMouseUp = useCallback(() => {
-        const { selection } = editor;
-        if (selection && !Range.isCollapsed(selection)) {
-            const selectedText = Editor.string(editor, selection);
-            if (selectedText.trim()) {
-                // Get DOM position for popup
-                const domSelection = window.getSelection();
-                if (domSelection.rangeCount > 0) {
-                    const range = domSelection.getRangeAt(0);
-                    const rect = range.getBoundingClientRect();
-                    setPopupState({
-                        show: true,
-                        text: selectedText,
-                        position: { top: rect.bottom + 8, left: rect.left },
-                        selection: selection
-                    });
-                }
-            }
-        }
-    }, [editor]);
-
-    const handlePopupUpdate = (instruction) => {
-        if (popupState.selection && instruction.trim()) {
-            // Get the selected text as markdown
-            const selectedFragment = Editor.fragment(editor, popupState.selection);
-            const originalMarkdown = richTextConvertor.slate2md(selectedFragment);
-
-            // Send smart_update message via SOCKET_SEND channel
-            // Lock will come from backend via SMART_UPDATE_LOCK channel
-            CommendDispatcher.Publish2Channel(ChannelEnum.SOCKET_SEND, {
-                type: "workspace_message",
-                sub_type: "smart_update",
-                message_original: originalMarkdown,
-                query: instruction
-            });
-            console.log('Sent smart_update:', { original: originalMarkdown, query: instruction });
-        }
-        setPopupState({ show: false, text: '', position: { top: 0, left: 0 }, selection: null });
-        setSavedSelection(null);
-    };
-
-    const handlePopupCancel = () => {
-        setPopupState({ show: false, text: '', position: { top: 0, left: 0 }, selection: null });
-    };
 
     const toggleMark = (format) => {
         const isActive = isMarkActive(editor, format);
@@ -320,15 +215,15 @@ function SlatePanel({ workspaceId, note, onSave }) {
 
     const decorate = useCallback(([node, path]) => {
         const ranges = [];
-        // Saved selection highlight (when popup is open or editor not focused)
-        if (savedSelection && (popupState.show || !ReactEditor.isFocused(editor))) {
+        // Saved selection highlight (when editor not focused)
+        if (savedSelection && !ReactEditor.isFocused(editor)) {
             const intersection = Range.intersection(savedSelection, Editor.range(editor, path));
             if (intersection) {
                 ranges.push({ ...intersection, highlight: true });
             }
         }
         return ranges;
-    }, [savedSelection, editor, popupState.show]);
+    }, [savedSelection, editor]);
 
     const renderLeaf = useCallback((props) => {
         let { attributes, children, leaf } = props;
@@ -428,20 +323,11 @@ function SlatePanel({ workspaceId, note, onSave }) {
                     readOnly={isLocked}
                     onKeyDown={handleKeyDown}
                     onSelect={handleSelect}
-                    onMouseUp={handleMouseUp}
                     decorate={decorate}
                     renderLeaf={renderLeaf}
                     renderElement={renderElement}
                 />
             </Slate>
-            {popupState.show && createPortal(
-                <SelectionPopup
-                    position={popupState.position}
-                    onUpdate={handlePopupUpdate}
-                    onCancel={handlePopupCancel}
-                />,
-                document.body
-            )}
         </>
     );
 }
