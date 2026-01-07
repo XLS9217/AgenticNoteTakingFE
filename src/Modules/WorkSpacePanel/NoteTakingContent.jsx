@@ -13,7 +13,7 @@ export default function NoteTakingContent({ workspaceId, note, isConnected, chat
                 <NotePanel workspaceId={workspaceId} note={note} isLoading={isLoading} />
             </div>
             <div className="ide-right-panel">
-                <ChatBox chatHistory={chatHistory} isConnected={isConnected} isLoading={isLoading} />
+                <ChatBox workspaceId={workspaceId} chatHistory={chatHistory} isConnected={isConnected} isLoading={isLoading} />
             </div>
         </div>
     );

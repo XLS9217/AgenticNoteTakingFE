@@ -162,6 +162,19 @@ export async function getChatHistory(workspaceId) {
     }
 }
 
+/**
+ * Clear chat history for a workspace
+ */
+export async function clearChatHistory(workspaceId) {
+    try {
+        const response = await request.delete(`/note-taking/clear-chat-history/${workspaceId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error clearing chat history:', error);
+        throw error;
+    }
+}
+
 // ==============================
 // Source API
 // ==============================
