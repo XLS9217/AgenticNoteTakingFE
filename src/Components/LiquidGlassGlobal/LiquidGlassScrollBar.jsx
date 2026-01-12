@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import './LiquidGlassScrollBar.css';
 
-export default function LiquidGlassScrollBar({ children, className = '' }) {
+export default forwardRef(function LiquidGlassScrollBar({ children, className = '' }, ref) {
     return (
-        <div className={`liquid-glass-scrollbar ${className}`}>
+        <div ref={ref} className={`liquid-glass-scrollbar ${className}`}>
             {children}
         </div>
     );
-}
+});

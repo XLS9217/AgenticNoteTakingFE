@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInner/LiquidGlassInnerTextButton.jsx";
 import CommendDispatcher, { ChannelEnum } from "../../../Util/CommendDispatcher.js";
@@ -125,6 +125,24 @@ function ProcessedTranscriptSection({ utterances }) {
 
 // Metadata Section (Topics + Speakers stacked)
 function MetadataSection({ topics, speakers }) {
+    const [currentSection, setCurrentSection] = useState('Topics');
+    const scrollRef = useRef(null);
+
+    useEffect(() => {
+        const node = scrollRef.current;
+        if (!node) return;
+        const handleScroll = () => {
+            const speakersTitle = node.querySelector('.metadata-group-title--speakers');
+            if (speakersTitle) {
+                const rect = speakersTitle.getBoundingClientRect();
+                const containerRect = node.getBoundingClientRect();
+                setCurrentSection(rect.top <= containerRect.top + 100 ? 'Speakers' : 'Topics');
+            }
+        };
+        node.addEventListener('scroll', handleScroll);
+        return () => node.removeEventListener('scroll', handleScroll);
+    }, []);
+
     const handleScrollToTopic = (topicTitle) => {
         const topicElements = document.querySelectorAll('.source-topic-card .topic-title');
         const targetElement = Array.from(topicElements).find(el => el.textContent === topicTitle);
@@ -159,29 +177,32 @@ function MetadataSection({ topics, speakers }) {
     }, [topics, speakers]);
 
     return (
-        <LiquidGlassScrollBar className="metadata-section">
-            <div className="metadata-group-title">Topics</div>
-            {topics.length > 0 ? topics.map((topic, index) => (
-                <div key={index} className="source-topic-card">
-                    <div className="topic-header">
-                        <img src="/icons/topics.png" alt="Topic" className="topic-icon" />
-                        <div className="topic-title">{topic.title}</div>
+        <div className="metadata-wrapper">
+            <div className="metadata-sticky-header">{currentSection}</div>
+            <LiquidGlassScrollBar className="metadata-section" ref={scrollRef}>
+                <div className={`metadata-group-title metadata-group-title--topics ${currentSection === 'Topics' ? 'metadata-group-title--hidden' : ''}`}>Topics</div>
+                {topics.length > 0 ? topics.map((topic, index) => (
+                    <div key={index} className="source-topic-card">
+                        <div className="topic-header">
+                            <img src="/icons/topics.png" alt="Topic" className="topic-icon" />
+                            <div className="topic-title">{topic.title}</div>
+                        </div>
+                        <div className="topic-summary">{topic.summary}</div>
                     </div>
-                    <div className="topic-summary">{topic.summary}</div>
-                </div>
-            )) : <p className="source-empty-state">No topics available...</p>}
+                )) : <p className="source-empty-state">No topics available...</p>}
 
-            <div className="metadata-group-title">Speakers</div>
-            {speakers.length > 0 ? speakers.map((speaker, index) => (
-                <div key={index} className="source-speaker-card">
-                    <div className="topic-header">
-                        <img src="/icons/user.png" alt="Speaker" className="topic-icon" />
-                        <div className="speaker-title">{speaker.name}</div>
+                <div className={`metadata-group-title metadata-group-title--speakers ${currentSection === 'Speakers' ? 'metadata-group-title--hidden' : ''}`}>Speakers</div>
+                {speakers.length > 0 ? speakers.map((speaker, index) => (
+                    <div key={index} className="source-speaker-card">
+                        <div className="topic-header">
+                            <img src="/icons/user.png" alt="Speaker" className="topic-icon" />
+                            <div className="speaker-title">{speaker.name}</div>
+                        </div>
+                        <div className="topic-summary">{speaker.description}</div>
                     </div>
-                    <div className="topic-summary">{speaker.description}</div>
-                </div>
-            )) : <p className="source-empty-state">No speakers available...</p>}
-        </LiquidGlassScrollBar>
+                )) : <p className="source-empty-state">No speakers available...</p>}
+            </LiquidGlassScrollBar>
+        </div>
     );
 }
 
