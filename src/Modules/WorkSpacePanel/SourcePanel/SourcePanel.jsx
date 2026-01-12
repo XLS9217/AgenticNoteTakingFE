@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import LiquidGlassDiv from "../../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
 import LiquidGlassScrollBar from "../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx";
 import LiquidGlassInnerTextButton from "../../../Components/LiquidGlassInner/LiquidGlassInnerTextButton.jsx";
-import TranscriptPanel from "./TranscriptPanel.jsx";
+import TranscriptPanel from "./TranscriptPanel/TranscriptPanel.jsx";
 import {
     getSources,
     createSource,
