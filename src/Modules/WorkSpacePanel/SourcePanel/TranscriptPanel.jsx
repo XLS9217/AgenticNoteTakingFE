@@ -5,7 +5,11 @@ import CommendDispatcher, { ChannelEnum } from "../../../Util/CommendDispatcher.
 import {
     updateSourceRaw,
     getSourceProcessed,
-    getSourceMetadata
+    getSourceMetadata,
+    getSpeakerCandidates,
+    updateSpeakerName,
+    appendSpeakerCandidate,
+    deleteSpeakerCandidate
 } from "../../../Api/gateway.js";
 
 // Raw Content Upload (shown when not processed yet)
@@ -124,9 +128,14 @@ function ProcessedTranscriptSection({ utterances }) {
 }
 
 // Metadata Section (Topics + Speakers stacked)
-function MetadataSection({ topics, speakers }) {
+function MetadataSection({ topics, speakers, workspaceId, sourceId, onSpeakerUpdate }) {
     const [currentSection, setCurrentSection] = useState('Topics');
+    const [editingSpeaker, setEditingSpeaker] = useState(null);
+    const [candidates, setCandidates] = useState([]);
+    const [customInput, setCustomInput] = useState('');
+    const [showCustomInput, setShowCustomInput] = useState(false);
     const scrollRef = useRef(null);
+    const editRef = useRef(null);
 
     useEffect(() => {
         const node = scrollRef.current;
@@ -143,6 +152,78 @@ function MetadataSection({ topics, speakers }) {
         return () => node.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Click outside to close - only when clicking outside the speaker card
+    useEffect(() => {
+        if (!editingSpeaker) return;
+        const handleClickOutside = (e) => {
+            const speakerCard = editRef.current?.closest('.source-speaker-card');
+            if (speakerCard && !speakerCard.contains(e.target)) {
+                setEditingSpeaker(null);
+                setCandidates([]);
+                setShowCustomInput(false);
+                setCustomInput('');
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [editingSpeaker]);
+
+    const handleSpeakerClick = async (speakerName) => {
+        if (editingSpeaker === speakerName) {
+            setEditingSpeaker(null);
+            setCandidates([]);
+            return;
+        }
+        setEditingSpeaker(speakerName);
+        setShowCustomInput(false);
+        setCustomInput('');
+        try {
+            const res = await getSpeakerCandidates(workspaceId, sourceId, speakerName);
+            setCandidates(res.name_candidate || []);
+        } catch (err) {
+            console.error('Failed to get candidates:', err);
+            setCandidates([]);
+        }
+    };
+
+    const handleSelectCandidate = async (oldName, newName) => {
+        if (oldName === newName) {
+            setEditingSpeaker(null);
+            setCandidates([]);
+            return;
+        }
+        try {
+            await updateSpeakerName(workspaceId, sourceId, oldName, newName);
+            setEditingSpeaker(null);
+            setCandidates([]);
+            onSpeakerUpdate?.();
+        } catch (err) {
+            console.error('Failed to update speaker name:', err);
+        }
+    };
+
+    const handleDeleteCandidate = async (speakerName, candidate, e) => {
+        e.stopPropagation();
+        try {
+            await deleteSpeakerCandidate(workspaceId, sourceId, speakerName, candidate);
+            setCandidates(prev => prev.filter(c => c !== candidate));
+        } catch (err) {
+            console.error('Failed to delete candidate:', err);
+        }
+    };
+
+    const handleAddCandidate = async (speakerName) => {
+        if (!customInput.trim()) return;
+        try {
+            await appendSpeakerCandidate(workspaceId, sourceId, speakerName, customInput.trim());
+            setCandidates(prev => [...prev, customInput.trim()]);
+            setCustomInput('');
+            setShowCustomInput(false);
+        } catch (err) {
+            console.error('Failed to add candidate:', err);
+        }
+    };
+
     const handleScrollToTopic = (topicTitle) => {
         const topicElements = document.querySelectorAll('.source-topic-card .topic-title');
         const targetElement = Array.from(topicElements).find(el => el.textContent === topicTitle);
@@ -155,7 +236,7 @@ function MetadataSection({ topics, speakers }) {
     };
 
     const handleScrollToSpeaker = (speakerName) => {
-        const speakerElements = document.querySelectorAll('.source-speaker-card .speaker-title');
+        const speakerElements = document.querySelectorAll('.source-speaker-card .speaker-candidate-tag--main');
         const targetElement = Array.from(speakerElements).find(el => el.textContent === speakerName);
         if (targetElement) {
             const speakerCard = targetElement.closest('.source-speaker-card');
@@ -196,7 +277,56 @@ function MetadataSection({ topics, speakers }) {
                     <div key={index} className="source-speaker-card">
                         <div className="topic-header">
                             <img src="/icons/user.png" alt="Speaker" className="topic-icon" />
-                            <div className="speaker-title">{speaker.name}</div>
+                            <div
+                                className="speaker-name-tags"
+                                ref={editingSpeaker === speaker.name ? editRef : null}
+                            >
+                                <span
+                                    className={`speaker-candidate-tag speaker-candidate-tag--main ${editingSpeaker === speaker.name ? 'speaker-candidate-tag--active' : ''}`}
+                                    onClick={() => handleSpeakerClick(speaker.name)}
+                                >
+                                    {speaker.name}
+                                </span>
+                                {editingSpeaker === speaker.name && (
+                                    <>
+                                        {candidates.map((candidate, i) => (
+                                            <span
+                                                key={i}
+                                                className="speaker-candidate-tag speaker-candidate-tag--candidate"
+                                                onClick={(e) => { e.stopPropagation(); handleSelectCandidate(speaker.name, candidate); }}
+                                            >
+                                                {candidate}
+                                                <span
+                                                    className="speaker-candidate-tag-delete"
+                                                    onClick={(e) => handleDeleteCandidate(speaker.name, candidate, e)}
+                                                >
+                                                    ×
+                                                </span>
+                                            </span>
+                                        ))}
+                                        {showCustomInput ? (
+                                            <input
+                                                type="text"
+                                                className="speaker-candidate-input"
+                                                value={customInput}
+                                                onChange={(e) => setCustomInput(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleAddCandidate(speaker.name)}
+                                                onBlur={() => { if (!customInput.trim()) setShowCustomInput(false); }}
+                                                onClick={(e) => e.stopPropagation()}
+                                                placeholder="Name..."
+                                                autoFocus
+                                            />
+                                        ) : (
+                                            <span
+                                                className="speaker-candidate-tag speaker-candidate-tag--add"
+                                                onClick={(e) => { e.stopPropagation(); setShowCustomInput(true); }}
+                                            >
+                                                +
+                                            </span>
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         </div>
                         <div className="topic-summary">{speaker.description}</div>
                     </div>
@@ -289,7 +419,13 @@ export default function TranscriptPanel({ source, workspaceId }) {
         <>
             <ProcessedTranscriptSection utterances={processed} />
             <div className="source-divider"></div>
-            <MetadataSection topics={topics} speakers={speakers} />
+            <MetadataSection
+                topics={topics}
+                speakers={speakers}
+                workspaceId={workspaceId}
+                sourceId={sourceId}
+                onSpeakerUpdate={fetchData}
+            />
         </>
     );
 }

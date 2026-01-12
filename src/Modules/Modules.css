@@ -864,6 +864,108 @@ Source Panel Slide Animation
   font-weight: 500;
 }
 
+/* Speaker Name Tags (inline selection) */
+.speaker-name-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.speaker-candidate-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+/* Main tag - normal state looks like plain text */
+.speaker-candidate-tag--main {
+  padding: 2px 4px;
+}
+
+.speaker-candidate-tag--main:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Main tag when editing is active */
+.speaker-candidate-tag--active {
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 2px 10px;
+}
+
+/* Candidate tags - lighter appearance */
+.speaker-candidate-tag--candidate {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+  padding: 2px 8px;
+}
+
+.speaker-candidate-tag--candidate:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Delete X button inside candidate tag */
+.speaker-candidate-tag-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+  border-radius: 50%;
+  font-size: 0.85em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.5);
+  transition: var(--transition-fast);
+}
+
+.speaker-candidate-tag-delete:hover {
+  background: rgba(255, 100, 100, 0.3);
+  color: rgba(255, 150, 150, 1);
+}
+
+/* Add button */
+.speaker-candidate-tag--add {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.5);
+  padding: 2px 12px;
+}
+
+.speaker-candidate-tag--add:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.speaker-candidate-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  padding: 2px 10px;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.9em;
+  outline: none;
+  width: 80px;
+}
+
+.speaker-candidate-input:focus {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.15);
+}
+
 /* Clickable speaker in transcript */
 .transcript-speaker--clickable {
   cursor: pointer;

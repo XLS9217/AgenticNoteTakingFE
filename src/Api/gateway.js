@@ -289,3 +289,37 @@ export async function updateSourceName(workspaceId, sourceId, sourceName) {
         throw error;
     }
 }
+
+export async function getSpeakerCandidates(workspaceId, sourceId, speakerName) {
+    try {
+        const response = await request.get(`/note-taking/source/${workspaceId}/${sourceId}/speaker-candidate/${encodeURIComponent(speakerName)}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching speaker candidates:', error);
+        throw error;
+    }
+}
+
+export async function appendSpeakerCandidate(workspaceId, sourceId, speakerName, candidate) {
+    try {
+        const response = await request.post(`/note-taking/source/${workspaceId}/${sourceId}/speaker-candidate/${encodeURIComponent(speakerName)}`, {
+            candidate
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error appending speaker candidate:', error);
+        throw error;
+    }
+}
+
+export async function deleteSpeakerCandidate(workspaceId, sourceId, speakerName, candidate) {
+    try {
+        const response = await request.delete(`/note-taking/source/${workspaceId}/${sourceId}/speaker-candidate/${encodeURIComponent(speakerName)}`, {
+            data: { candidate }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting speaker candidate:', error);
+        throw error;
+    }
+}

@@ -4,7 +4,8 @@
       "Bash(find:*)",
       "Bash(npm run lint)",
       "WebSearch",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(dir /b \"E:\\\\Project\\\\_MeetingNoteTaking\\\\AgenticNoteTakingBE\\\\src\\\\routers\")"
     ],
     "deny": [],
     "ask": []
