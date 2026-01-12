@@ -976,6 +976,18 @@ Source Panel Slide Animation
   color: rgba(255, 255, 255, 0.9);
 }
 
+.speaker-candidate-input--error {
+  border-color: rgba(255, 100, 100, 0.5);
+  background: rgba(255, 100, 100, 0.08);
+}
+
+.speaker-error-message {
+  color: rgba(255, 120, 120, 0.9);
+  font-size: 0.75em;
+  padding: 4px 8px 0 8px;
+  animation: tagFadeIn 0.2s ease;
+}
+
 /* Clickable speaker in transcript */
 .transcript-speaker--clickable {
   cursor: pointer;

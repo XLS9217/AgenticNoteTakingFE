@@ -31,6 +31,7 @@ function SpeakerList({ speakers, workspaceId, sourceId, onSpeakerUpdate }) {
     const [candidates, setCandidates] = useState([]);
     const [customInput, setCustomInput] = useState('');
     const [showCustomInput, setShowCustomInput] = useState(false);
+    const [error, setError] = useState(null);
     const editRef = useRef(null);
 
     // Click outside to close - only when clicking outside the speaker card
@@ -47,6 +48,7 @@ function SpeakerList({ speakers, workspaceId, sourceId, onSpeakerUpdate }) {
             setCandidates([]);
             setShowCustomInput(false);
             setCustomInput('');
+            setError(null);
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -56,11 +58,13 @@ function SpeakerList({ speakers, workspaceId, sourceId, onSpeakerUpdate }) {
         if (editingSpeaker === speakerName) {
             setEditingSpeaker(null);
             setCandidates([]);
+            setError(null);
             return;
         }
         setEditingSpeaker(speakerName);
         setShowCustomInput(false);
         setCustomInput('');
+        setError(null);
         try {
             const res = await getSpeakerCandidates(workspaceId, sourceId, speakerName);
             setCandidates(res.name_candidate || []);
@@ -103,8 +107,10 @@ function SpeakerList({ speakers, workspaceId, sourceId, onSpeakerUpdate }) {
             setCandidates(prev => [...prev, customInput.trim()]);
             setCustomInput('');
             setShowCustomInput(false);
+            setError(null);
         } catch (err) {
             console.error('Failed to add candidate:', err);
+            setError(err.response?.data?.detail || err.message || 'Failed to add candidate');
         }
     };
 
@@ -144,9 +150,9 @@ function SpeakerList({ speakers, workspaceId, sourceId, onSpeakerUpdate }) {
                                     {showCustomInput ? (
                                         <input
                                             type="text"
-                                            className="speaker-candidate-input"
+                                            className={`speaker-candidate-input ${error && editingSpeaker === speaker.name ? 'speaker-candidate-input--error' : ''}`}
                                             value={customInput}
-                                            onChange={(e) => setCustomInput(e.target.value)}
+                                            onChange={(e) => { setCustomInput(e.target.value); setError(null); }}
                                             onKeyDown={(e) => e.key === 'Enter' && handleAddCandidate(speaker.name)}
                                             onBlur={() => { if (!customInput.trim()) setShowCustomInput(false); }}
                                             onClick={(e) => e.stopPropagation()}
@@ -165,6 +171,9 @@ function SpeakerList({ speakers, workspaceId, sourceId, onSpeakerUpdate }) {
                             )}
                         </div>
                     </div>
+                    {error && editingSpeaker === speaker.name && (
+                        <div className="speaker-error-message">{error}</div>
+                    )}
                     <div className="topic-summary">{speaker.description}</div>
                 </div>
             )) : <p className="source-empty-state">No speakers available...</p>}
