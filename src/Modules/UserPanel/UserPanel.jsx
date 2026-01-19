@@ -1,17 +1,36 @@
-import LiquidGlassDiv from "../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx";
+import './UserPanel.css';
 
 export default function UserPanel({ userInfo }) {
     const username = userInfo?.username || 'User';
-    const workspacesCount = userInfo?.workspaces?.length || 0;
+
+    const menuItems = [
+        { icon: '/icons/user.png', label: 'Profile' },
+        { icon: '/icons/knowledge.png', label: 'Knowledge Base' },
+    ];
 
     return (
-        <div className="user-panel-container">
-            <LiquidGlassDiv blurriness={0.5}>
-                <div className="user-panel-content">
+        <div className="user-panel">
+            <aside className="user-panel-sidebar">
+                <div className="user-panel-profile">
+                    <div className="user-panel-avatar">
+                        <img src="/icons/user.png" alt="User" />
+                    </div>
                     <h2 className="user-panel-username">{username}</h2>
-                    <p>Workspaces: {workspacesCount}</p>
                 </div>
-            </LiquidGlassDiv>
+
+                <nav className="user-panel-menu">
+                    {menuItems.map((item, index) => (
+                        <div key={index} className="user-panel-menu-item">
+                            <img src={item.icon} alt={item.label} className="user-panel-menu-icon" />
+                            <span>{item.label}</span>
+                        </div>
+                    ))}
+                </nav>
+            </aside>
+
+            <main className="user-panel-content">
+                {/* Right side content will go here */}
+            </main>
         </div>
     );
 }

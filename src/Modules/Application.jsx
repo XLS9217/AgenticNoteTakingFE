@@ -16,6 +16,7 @@ export default function Application() {
     const [workspaceName, setWorkspaceName] = useState('');
     const [slideDirection, setSlideDirection] = useState('');
     const [pendingWorkspace, setPendingWorkspace] = useState(null);
+    const [userSlideDirection, setUserSlideDirection] = useState('');
 
     const handleWorkspaceSelect = (workspace, name) => {
         setPendingWorkspace({ id: workspace, name: name || 'Untitled' });
@@ -44,7 +45,16 @@ export default function Application() {
     };
 
     const handleUserClick = () => {
-        setCurrentView(currentView === 'user' ? 'workspace' : 'user');
+        if (currentView === 'user') {
+            setUserSlideDirection('user-slide-right');
+            setTimeout(() => {
+                setCurrentView('workspace');
+                setUserSlideDirection('');
+            }, 300);
+        } else {
+            setUserSlideDirection('user-slide-left');
+            setCurrentView('user');
+        }
     };
 
     const handleTitleChange = async (newName) => {
@@ -75,50 +85,39 @@ export default function Application() {
     const isInWorkspace = !!activeWorkspace;
     const headerTitle = isInWorkspace ? (workspaceName || 'Untitled') : 'Notech';
 
-    if (currentView === 'user') {
-        return (
-            <>
-                <AppHeader
-                    title={headerTitle}
-                    isEditable={false}
-                    onTitleChange={handleTitleChange}
-                    onMenuClick={handleMenuClick}
-                    onUserClick={handleUserClick}
-                    username={userInfo?.username}
-                />
-                <div className="application-container application-container--fullscreen">
-                    <UserPanel userInfo={userInfo} />
-                </div>
-            </>
-        );
-    }
-
     return (
         <>
             <AppHeader
                 title={headerTitle}
-                isEditable={isInWorkspace}
+                isEditable={isInWorkspace && currentView !== 'user'}
                 onTitleChange={handleTitleChange}
                 onMenuClick={handleMenuClick}
                 onUserClick={handleUserClick}
                 username={userInfo?.username}
             />
-            <div className="application-container application-container--fullscreen">
-                <div className="view-container">
-                    <div className={`view-slide view-slide--selection ${slideDirection}`}>
-                        <WorkspaceSelection
-                            onWorkspaceSelect={handleWorkspaceSelect}
-                            userInfo={userInfo}
-                        />
-                    </div>
-                    <div className={`view-slide view-slide--workspace ${slideDirection}`}>
-                        {(activeWorkspace || pendingWorkspace) && (
-                            <WorkSpacePanel
-                                workspaceId={activeWorkspace || pendingWorkspace?.id}
-                                onLeave={handleLeaveWorkspace}
-                                onWorkspaceNameChange={setWorkspaceName}
-                            />
-                        )}
+            <div className="user-view-container">
+                <div className={`user-view-slide user-view-slide--user ${userSlideDirection}`}>
+                    <UserPanel userInfo={userInfo} />
+                </div>
+                <div className={`user-view-slide user-view-slide--main ${userSlideDirection}`}>
+                    <div className="application-container application-container--fullscreen">
+                        <div className="view-container">
+                            <div className={`view-slide view-slide--selection ${slideDirection}`}>
+                                <WorkspaceSelection
+                                    onWorkspaceSelect={handleWorkspaceSelect}
+                                    userInfo={userInfo}
+                                />
+                            </div>
+                            <div className={`view-slide view-slide--workspace ${slideDirection}`}>
+                                {(activeWorkspace || pendingWorkspace) && (
+                                    <WorkSpacePanel
+                                        workspaceId={activeWorkspace || pendingWorkspace?.id}
+                                        onLeave={handleLeaveWorkspace}
+                                        onWorkspaceNameChange={setWorkspaceName}
+                                    />
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

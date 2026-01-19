@@ -73,6 +73,57 @@ View Slide Transitions
   transform: translateX(100%);
 }
 
+/*
+==========================================
+User Panel Slide Transitions
+==========================================
+*/
+
+.user-view-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.user-view-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Default positions - user panel off-screen left, main visible */
+.user-view-slide--user {
+  transform: translateX(-100%);
+}
+
+.user-view-slide--main {
+  transform: translateX(0);
+}
+
+/* Slide left - show user panel */
+.user-view-slide--user.user-slide-left {
+  transform: translateX(0);
+}
+
+.user-view-slide--main.user-slide-left {
+  transform: translateX(100%);
+}
+
+/* Slide right - hide user panel */
+.user-view-slide--user.user-slide-right {
+  transform: translateX(-100%);
+}
+
+.user-view-slide--main.user-slide-right {
+  transform: translateX(0);
+}
+
 .workspace-main {
   display: flex;
   flex-direction: row;
