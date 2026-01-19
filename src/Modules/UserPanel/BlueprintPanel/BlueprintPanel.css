@@ -9,11 +9,51 @@
 }
 
 .blueprint-panel-content {
-    padding: 20px;
+    padding: 10px 15px;
     height: 100%;
     box-sizing: border-box;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
+    display: flex;
+    gap: 15px;
+}
+
+/* ===== Left Section - Info ===== */
+.blueprint-info {
+    width: 200px;
+    flex-shrink: 0;
+}
+
+.blueprint-name {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin: 0 0 10px 0;
+}
+
+.blueprint-description {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ===== Divider ===== */
+.blueprint-divider {
+    width: 1px;
+    background: rgba(255, 255, 255, 0.15);
+    flex-shrink: 0;
+}
+
+/* ===== Right Section - Fields ===== */
+.blueprint-fields {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.blueprint-fields .liquid-glass-scrollbar {
+    height: 100%;
 }
 
 .blueprint-json {
