@@ -1,12 +1,26 @@
+import { useState } from 'react';
 import './UserPanel.css';
+import { listBlueprints, getBlueprint } from '../../Api/gateway.js';
+import BlueprintPanel from './BlueprintPanel/BlueprintPanel.jsx';
 
 export default function UserPanel({ userInfo }) {
     const username = userInfo?.username || 'User';
+    const [blueprints, setBlueprints] = useState([]);
+    const [knowledgeExpanded, setKnowledgeExpanded] = useState(false);
+    const [selectedBlueprint, setSelectedBlueprint] = useState(null);
 
-    const menuItems = [
-        { icon: '/icons/user.png', label: 'Profile' },
-        { icon: '/icons/knowledge.png', label: 'Knowledge Base' },
-    ];
+    const handleKnowledgeClick = async () => {
+        if (!knowledgeExpanded) {
+            const data = await listBlueprints();
+            setBlueprints(data);
+        }
+        setKnowledgeExpanded(!knowledgeExpanded);
+    };
+
+    const handleBlueprintClick = async (bpId) => {
+        const blueprint = await getBlueprint(bpId);
+        setSelectedBlueprint(blueprint);
+    };
 
     return (
         <div className="user-panel">
@@ -19,17 +33,26 @@ export default function UserPanel({ userInfo }) {
                 </div>
 
                 <nav className="user-panel-menu">
-                    {menuItems.map((item, index) => (
-                        <div key={index} className="user-panel-menu-item">
-                            <img src={item.icon} alt={item.label} className="user-panel-menu-icon" />
-                            <span>{item.label}</span>
+                    <div className="user-panel-menu-item" onClick={() => {}}>
+                        <img src="/icons/user.png" alt="Profile" className="user-panel-menu-icon" />
+                        <span>Profile</span>
+                    </div>
+
+                    <div className="user-panel-menu-item" onClick={handleKnowledgeClick}>
+                        <img src="/icons/knowledge.png" alt="Knowledge Base" className="user-panel-menu-icon" />
+                        <span>Blueprint Base</span>
+                    </div>
+
+                    {knowledgeExpanded && blueprints.map((bp) => (
+                        <div key={bp.bp_id} className="user-panel-menu-item user-panel-menu-item--child" onClick={() => handleBlueprintClick(bp.bp_id)}>
+                            <span>{bp.bp_name}</span>
                         </div>
                     ))}
                 </nav>
             </aside>
 
             <main className="user-panel-content">
-                {/* Right side content will go here */}
+                <BlueprintPanel blueprint={selectedBlueprint} />
             </main>
         </div>
     );

@@ -1,0 +1,26 @@
+.blueprint-panel {
+    width: 100%;
+    height: 100%;
+}
+
+.blueprint-panel .liquid-glass-container {
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.blueprint-panel-content {
+    padding: 20px;
+    height: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.blueprint-json {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.8rem;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+}

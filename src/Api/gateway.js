@@ -323,3 +323,101 @@ export async function deleteSpeakerCandidate(workspaceId, sourceId, speakerName,
         throw error;
     }
 }
+
+// ==============================
+// Knowledge Blueprint API
+// ==============================
+
+export async function createBlueprint(bpName, bpDescription, bpFields) {
+    try {
+        const response = await request.post('/knowledge/create', {
+            bp_name: bpName,
+            bp_description: bpDescription,
+            bp_fields: bpFields
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error creating blueprint:', error);
+        throw error;
+    }
+}
+
+export async function listBlueprints() {
+    try {
+        const response = await request.get('/knowledge/list');
+        return response.data;
+    } catch (error) {
+        console.error('Error listing blueprints:', error);
+        throw error;
+    }
+}
+
+export async function getBlueprint(bpId) {
+    try {
+        const response = await request.get(`/knowledge/${bpId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching blueprint:', error);
+        throw error;
+    }
+}
+
+export async function deleteBlueprint(bpName) {
+    try {
+        const response = await request.delete('/knowledge/delete', {
+            data: { bp_name: bpName }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting blueprint:', error);
+        throw error;
+    }
+}
+
+// ==============================
+// Knowledge Instance API
+// ==============================
+
+export async function createBlueprintInstance(bpId) {
+    try {
+        const response = await request.post('/knowledge/instance/create', {
+            bp_id: bpId
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error creating blueprint instance:', error);
+        throw error;
+    }
+}
+
+export async function getBlueprintInstance(instanceId) {
+    try {
+        const response = await request.get(`/knowledge/instance/${instanceId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching blueprint instance:', error);
+        throw error;
+    }
+}
+
+export async function listBlueprintInstances(bpId) {
+    try {
+        const response = await request.get(`/knowledge/instance/list/${bpId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error listing blueprint instances:', error);
+        throw error;
+    }
+}
+
+export async function deleteBlueprintInstance(instanceId) {
+    try {
+        const response = await request.delete('/knowledge/instance/delete', {
+            data: { instance_id: instanceId }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting blueprint instance:', error);
+        throw error;
+    }
+}
