@@ -2,6 +2,15 @@ import LiquidGlassDiv from '../../../Components/LiquidGlassOutter/LiquidGlassDiv
 import LiquidGlassScrollBar from '../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx';
 import './BlueprintPanel.css';
 
+const ATTR_CN = {
+    field_desc: '字段描述',
+    inbound_rule: '录入规则',
+    inbound_once: '单次录入',
+    identifier: '标识字段',
+    list_rule: '分组规则',
+    nested_fields: '嵌套字段'
+};
+
 export default function BlueprintPanel({ blueprint }) {
     if (!blueprint) return null;
 

@@ -6,10 +6,12 @@
 .blueprint-panel .liquid-glass-container {
     height: 100%;
     box-sizing: border-box;
+    padding: 15px;
+    margin: 0;
 }
 
 .blueprint-panel-content {
-    padding: 10px 15px;
+    padding: 0.5%;
     height: 100%;
     box-sizing: border-box;
     overflow: hidden;
