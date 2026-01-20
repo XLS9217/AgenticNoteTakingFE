@@ -411,7 +411,7 @@
     color: rgba(255, 255, 255, 0.9);
     font-size: 0.9em;
     font-weight: 500;
-    margin-bottom: 6px;
+    line-height: 1.4;
 }
 
 .bp-tree-nested-children {
@@ -419,6 +419,21 @@
     flex-direction: column;
     gap: 8px;
     margin-left: 4px;
+    margin-top: 8px;
+}
+
+/* Fix connector height for branches with nested items */
+.bp-tree-children > .bp-tree-branch:has(.bp-tree-nested-item) > .bp-tree-connector {
+    min-height: 20px;
+}
+
+.bp-tree-children > .bp-tree-branch:has(.bp-tree-nested-item) > .bp-tree-connector::after {
+    top: 9px;
+}
+
+/* Last nested item: vertical line stops at the label */
+.bp-tree-children > .bp-tree-branch:last-child:has(.bp-tree-nested-item) > .bp-tree-connector::before {
+    height: 9px;
 }
 
 /* ===== Empty States ===== */
