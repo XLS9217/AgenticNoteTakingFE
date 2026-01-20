@@ -200,6 +200,11 @@
     padding: 15px;
     margin: 0;
     min-height: 0;
+    border-radius: 20px;
+}
+
+.bp-detail-panel .liquid-glass-container::before {
+    display: none;
 }
 
 .bp-detail-content {
@@ -211,18 +216,18 @@
 .bp-detail-back {
     display: flex;
     justify-content: center;
-    padding: 4px;
+    padding: 2px;
     cursor: pointer;
-    margin-bottom: 4px;
     background: transparent;
 }
 
 .bp-back-icon {
-    width: 48px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     filter: brightness(0) invert(1);
     opacity: 0.3;
     transition: opacity 0.2s ease;
+    transform: scaleX(2);
 }
 
 .bp-detail-back:hover .bp-back-icon {
