@@ -90,10 +90,8 @@ function InstanceDetailPanel({ instance, onBack }) {
 function PayloadTree({ name, value }) {
     const isArray = Array.isArray(value);
     const isObject = typeof value === 'object' && value !== null && !isArray;
-
-    // Skip empty arrays or empty strings
-    if (isArray && value.length === 0) return null;
-    if (value === '' || value === null || value === undefined) return null;
+    const isEmpty = value === '' || value === null || value === undefined;
+    const isEmptyArray = isArray && value.length === 0;
 
     const renderBranchItems = (items) => {
         return items.map((item, idx) => (
@@ -115,30 +113,65 @@ function PayloadTree({ name, value }) {
 
     const renderNestedBranches = (obj) => {
         const entries = Object.entries(obj);
-        return entries.map(([k, v], idx) => (
+        return entries.map(([k, v]) => (
             <div key={k} className="bp-tree-branch">
                 <span className="bp-tree-connector" />
-                <div className="bp-tree-card">
-                    <span className="bp-tree-key">{k}:</span> {String(v)}
+                <div className="bp-tree-nested-item">
+                    <span className="bp-tree-nested-label">{k}</span>
+                    <div className="bp-tree-nested-children">
+                        <div className="bp-tree-branch">
+                            <span className="bp-tree-connector" />
+                            <div className="bp-tree-card">
+                                {v === '' || v === null || v === undefined
+                                    ? <span className="bp-no-data">(no knowledge)</span>
+                                    : String(v)
+                                }
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         ));
+    };
+
+    const renderContent = () => {
+        if (isEmpty) {
+            return (
+                <div className="bp-tree-branch">
+                    <span className="bp-tree-connector" />
+                    <div className="bp-tree-card bp-tree-card--empty">
+                        <span className="bp-no-data">(no knowledge)</span>
+                    </div>
+                </div>
+            );
+        }
+        if (isEmptyArray) {
+            return (
+                <div className="bp-tree-branch">
+                    <span className="bp-tree-connector" />
+                    <div className="bp-tree-card bp-tree-card--empty" />
+                </div>
+            );
+        }
+        if (isArray) {
+            return renderBranchItems(value);
+        }
+        if (isObject) {
+            return renderNestedBranches(value);
+        }
+        return (
+            <div className="bp-tree-branch">
+                <span className="bp-tree-connector" />
+                <div className="bp-tree-card">{String(value)}</div>
+            </div>
+        );
     };
 
     return (
         <div className="bp-tree-node">
             <div className="bp-tree-label">{name}</div>
             <div className="bp-tree-children">
-                {isArray ? (
-                    renderBranchItems(value)
-                ) : isObject ? (
-                    renderNestedBranches(value)
-                ) : (
-                    <div className="bp-tree-branch">
-                        <span className="bp-tree-connector" />
-                        <div className="bp-tree-card">{String(value)}</div>
-                    </div>
-                )}
+                {renderContent()}
             </div>
         </div>
     );
