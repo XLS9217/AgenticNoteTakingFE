@@ -23,6 +23,9 @@
 .blueprint-info {
     width: 200px;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .blueprint-name {
@@ -37,6 +40,24 @@
     font-size: 0.9rem;
     margin: 0;
     line-height: 1.5;
+}
+
+.bp-instances-btn {
+    margin-top: auto;
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.bp-instances-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* ===== Divider ===== */
@@ -122,4 +143,29 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+
+/* ===== Instance Cards ===== */
+.bp-instance-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bp-instance-card {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.bp-instance-card:hover {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.bp-instance-name {
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.9em;
 }

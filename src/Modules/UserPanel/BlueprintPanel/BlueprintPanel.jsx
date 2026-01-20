@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import LiquidGlassDiv from '../../../Components/LiquidGlassOutter/LiquidGlassDiv.jsx';
 import LiquidGlassScrollBar from '../../../Components/LiquidGlassGlobal/LiquidGlassScrollBar.jsx';
+import { listBlueprintInstances } from '../../../Api/gateway.js';
 import './BlueprintPanel.css';
 
 const ATTR_CN = {
@@ -46,8 +48,39 @@ function FieldCard({ name, field }) {
     );
 }
 
+function getIdentifierField(bpFields) {
+    for (const [name, field] of Object.entries(bpFields)) {
+        if (field.identifier) return name;
+    }
+    return null;
+}
+
+function InstanceCard({ instance, identifierField }) {
+    const identifier = identifierField ? instance.payload[identifierField] : instance.instance_id;
+    return (
+        <div className="bp-instance-card">
+            <span className="bp-instance-name">{identifier}</span>
+        </div>
+    );
+}
+
 export default function BlueprintPanel({ blueprint }) {
+    const [viewMode, setViewMode] = useState('blueprint');
+    const [instances, setInstances] = useState([]);
+
     if (!blueprint) return null;
+
+    const identifierField = getIdentifierField(blueprint.bp_fields);
+
+    const handleToggle = async () => {
+        if (viewMode === 'blueprint') {
+            const data = await listBlueprintInstances(blueprint.bp_id);
+            setInstances(data);
+            setViewMode('instances');
+        } else {
+            setViewMode('blueprint');
+        }
+    };
 
     return (
         <div className="blueprint-panel">
@@ -58,15 +91,30 @@ export default function BlueprintPanel({ blueprint }) {
                         <p className="blueprint-description">
                             {blueprint.bp_description || 'No description'}
                         </p>
+                        <button className="bp-instances-btn" onClick={handleToggle}>
+                            {viewMode === 'blueprint' ? 'View Instances' : 'View Blueprint'}
+                        </button>
                     </div>
                     <div className="blueprint-divider" />
                     <div className="blueprint-fields">
                         <LiquidGlassScrollBar>
-                            <div className="bp-field-list">
-                                {Object.entries(blueprint.bp_fields).map(([name, field]) => (
-                                    <FieldCard key={name} name={name} field={field} />
-                                ))}
-                            </div>
+                            {viewMode === 'blueprint' ? (
+                                <div className="bp-field-list">
+                                    {Object.entries(blueprint.bp_fields).map(([name, field]) => (
+                                        <FieldCard key={name} name={name} field={field} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="bp-instance-list">
+                                    {instances.map((instance) => (
+                                        <InstanceCard
+                                            key={instance.instance_id}
+                                            instance={instance}
+                                            identifierField={identifierField}
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </LiquidGlassScrollBar>
                     </div>
                 </div>
