@@ -58,11 +58,68 @@
     height: 100%;
 }
 
-.blueprint-json {
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 0.8rem;
-    font-family: monospace;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    margin: 0;
+/* ===== Field Cards ===== */
+.bp-field-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bp-field-card {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.bp-field-card:hover {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.bp-field-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bp-field-name {
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.9em;
+}
+
+.bp-field-tag {
+    font-size: 0.7em;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.bp-field-desc {
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.bp-field-rule {
+    font-size: 0.75em;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.bp-field-label {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.bp-field-nested {
+    margin-top: 4px;
+}
+
+.bp-field-nested-list {
+    margin-top: 6px;
+    margin-left: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
